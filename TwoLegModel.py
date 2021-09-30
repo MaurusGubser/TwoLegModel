@@ -15,7 +15,7 @@ class TwoLegModel(ssm):
     Two leg model...
     """
 
-    def __init__(self, dt, leg_constants, a, P, Q, H):
+    def __init__(self, dt, leg_constants, imu_position, a, P, Q, H):
         self.A = np.ones(DIM_STATES)
         for row in range(0, DIM_STATES):
             for col in range(0, DIM_STATES):
@@ -24,7 +24,8 @@ class TwoLegModel(ssm):
                 if row + 12 == col:
                     self.A[row, col] = dt ** 2 / 2.0
         self.g = 9.81
-        self.cst = leg_constants
+        self.cst = imu_position
+        self.legs = leg_constants
         self.a = a
         self.P = P
         self.Q = Q
@@ -65,12 +66,8 @@ class TwoLegModel(ssm):
         y[4] = 0.0
         y[5] = x[8]
 
-        y[6] = self.cst[1] * x[14] + self.cst[1] * x[15] + self.g * np.sin(x[2] + x[3]) + l_0 * np.sin(x[3]) * \
-                 x[8] ** 2 + l_0 * np.cos(x[3]) * x[14] + np.sin(x[2] + x[3]) * x[13] + np.cos(x[2] + x[3]) * \
-                 x[12]
-        y[7] = self.cst[1] * x[8] ** 2 + 2 * self.cst[1] * x[8] * x[9] + self.cst[1] * x[
-            9] ** 2 + self.g * np.cos(x[2] + x[3]) - l_0 * np.sin(x[3]) * x[14] + l_0 * np.cos(x[3]) * x[
-                     8] ** 2 - np.sin(x[2] + x[3]) * x[12] + np.cos(x[2] + x[3]) * x[13]
+        y[6] = self.cst[1] * x[14] + self.cst[1] * x[15] + self.g * np.sin(x[2] + x[3]) + self.legs[0] * np.sin(x[3]) * x[8] ** 2 + self.legs[0] * np.cos(x[3]) * x[14] + np.sin(x[2] + x[3]) * x[13] + np.cos(x[2] + x[3]) * x[12]
+        y[7] = self.cst[1] * x[8] ** 2 + 2 * self.cst[1] * x[8] * x[9] + self.cst[1] * x[9] ** 2 + self.g * np.cos(x[2] + x[3]) - self.legs[0] * np.sin(x[3]) * x[14] + self.legs[0] * np.cos(x[3]) * x[8] ** 2 - np.sin(x[2] + x[3]) * x[12] + np.cos(x[2] + x[3]) * x[13]
         y[8] = 0.0
         y[9] = 0.0
         y[10] = 0.0
@@ -83,36 +80,25 @@ class TwoLegModel(ssm):
         y[16] = 0.0
         y[17] = x[10]
 
-        y[18] = self.cst[3] * x[16] + self.cst[3] * x[17] + self.g * np.sin(x[4] + x[5]) + l_2 * np.sin(x[5]) * \
-                  x[10] + l_2 * np.cos(x[5]) * x[16] + np.sin(x[4] + x[5]) * x[13] + np.cos(x[4] + x[5]) * x[
-                      12]
-        y[19] = self.cst[3] * x[10] ** 2 + 2 * self.cst[3] * x[10] * x[11] + self.cst[3] * x[
-            11] ** 2 + self.g * np.cos(x[4] + x[5]) - l_2 * np.sin(x[5]) * x[16] + l_2 * np.cos(x[5]) * x[
-                      10] ** 2 - sin(x[4] + x[5]) * x[12] + np.cos(x[4] + x[5]) * x[13]
+        y[18] = self.cst[3] * x[16] + self.cst[3] * x[17] + self.g * np.sin(x[4] + x[5]) + self.legs[2] * np.sin(x[5]) * x[10]**2 + self.legs[2] * np.cos(x[5]) * x[16] + np.sin(x[4] + x[5]) * x[13] + np.cos(x[4] + x[5]) * x[12]
+        y[19] = self.cst[3] * x[10] ** 2 + 2 * self.cst[3] * x[10] * x[11] + self.cst[3] * x[11] ** 2 + self.g * np.cos(x[4] + x[5]) - self.legs[2] * np.sin(x[5]) * x[16] + self.legs[2] * np.cos(x[5]) * x[10] ** 2 - np.sin(x[4] + x[5]) * x[12] + np.cos(x[4] + x[5]) * x[13]
         y[20] = 0.0
         y[21] = 0.0
         y[22] = 0.0
         y[23] = x[10] + x[11]
 
-        y[24] = l_0 * np.cos(x[2]) * x[8] + l_1 * (x[8] + x[9]) * np.cos(x[2] + x[3]) + x[6]
-        y[25] = l_0 * np.sin(x[2]) * x[8] + l_1 * (x[8] + x[9]) * np.sin(x[2] + x[3]) + x[7]
+        y[24] = self.legs[0] * np.cos(x[2]) * x[8] + self.legs[1] * (x[8] + x[9]) * np.cos(x[2] + x[3]) + x[6]
+        y[25] = self.legs[0] * np.sin(x[2]) * x[8] + self.legs[1] * (x[8] + x[9]) * np.sin(x[2] + x[3]) + x[7]
         y[26] = 0.0
-        y[27] = -l_0 * np.sin(x[2]) * x[8] ** 2 + l_0 * np.cos(x[2]) * x[14] - l_1 * (
-                x[8] + x[9]) ** 2 * np.sin(x[2] + x[3]) + l_1 * (x[14] + x[15]) * np.cos(x[2] + x[3]) + x[
-                      12]
-        y[28] = l_0 * np.sin(x[2]) * x[14] + l_0 * np.cos(x[2]) * x[8] ** 2 + l_1 * (x[8] + x[9]) ** 2 * np.cos(
-            x[2] + x[3]) + l_1 * (x[14] + x[15]) * np.sin(x[2] + x[3]) + x[13]
+        y[27] = -self.legs[0] * np.sin(x[2]) * x[8] ** 2 + self.legs[0] * np.cos(x[2]) * x[14] - self.legs[1] * (x[8] + x[9]) ** 2 * np.sin(x[2] + x[3]) + self.legs[1] * (x[14] + x[15]) * np.cos(x[2] + x[3]) + x[12]
+        y[28] = self.legs[0] * np.sin(x[2]) * x[14] + self.legs[0] * np.cos(x[2]) * x[8] ** 2 + self.legs[1] * (x[8] + x[9]) ** 2 * np.cos(x[2] + x[3]) + self.legs[1] * (x[14] + x[15]) * np.sin(x[2] + x[3]) + x[13]
         y[29] = 0.0
 
-        y[30] = l_2 * np.cos(x[4]) * x[10] + l_3 * (x[10] + x[11]) * np.cos(x[4] + x[5]) + x[6]
-        y[31] = l_2 * np.sin(x[4]) * x[10] + l_3 * (x[10] + x[11]) * np.sin(x[4] + x[5]) + x[7]
+        y[30] = self.legs[2] * np.cos(x[4]) * x[10] + self.legs[3] * (x[10] + x[11]) * np.cos(x[4] + x[5]) + x[6]
+        y[31] = self.legs[2] * np.sin(x[4]) * x[10] + self.legs[3] * (x[10] + x[11]) * np.sin(x[4] + x[5]) + x[7]
         y[32] = 0.0
-        y[33] = -l_2 * np.sin(x[4]) * x[10] ** 2 + l_2 * np.cos(x[4]) * x[16] - l_3 * (
-                x[10] + x[11]) ** 2 * np.sin(x[4] + x[5]) + l_3 * (x[16] + x[17]) * np.cos(x[4] + x[5]) + \
-                  x[12]
-        y[34] = l_2 * np.sin(x[4]) * x[16] + l_2 * np.cos(x[4]) * x[10] ** 2 + l_3 * (
-                x[10] + x[11]) ** 2 * np.cos(x[4] + x[5]) + l_3 * (x[16] + x[17]) * np.sin(x[4] + x[5]) + \
-                  x[13]
+        y[33] = -self.legs[2] * np.sin(x[4]) * x[10] ** 2 + self.legs[2] * np.cos(x[4]) * x[16] - self.legs[3] * (x[10] + x[11]) ** 2 * np.sin(x[4] + x[5]) + self.legs[3] * (x[16] + x[17]) * np.cos(x[4] + x[5]) + x[12]
+        y[34] = self.legs[2] * np.sin(x[4]) * x[16] + self.legs[2] * np.cos(x[4]) * x[10] ** 2 + self.legs[3] * (x[10] + x[11]) ** 2 * np.cos(x[4] + x[5]) + self.legs[3] * (x[16] + x[17]) * np.sin(x[4] + x[5]) + x[13]
         y[35] = 0.0
 
         return y
