@@ -30,7 +30,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                       'H': 0.01 * np.ones(DIM_OBSERVATIONS)}
     """
     def __init__(self, dt, leg_constants, imu_position, a, P, Q, H):
-        self.A = np.ones((DIM_STATES, DIM_STATES))
+        self.A = np.eye(DIM_STATES)
         for row in range(0, DIM_STATES):
             for col in range(0, DIM_STATES):
                 if row + 6 == col:
