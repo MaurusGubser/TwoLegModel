@@ -1,7 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sb
-import particles
 
 from particles import state_space_models as ssm
 from particles import distributions as dists
@@ -14,6 +11,7 @@ class TwoLegModel(ssm.StateSpaceModel):
     """
     Two leg model...
     """
+
     """
     default_params = {'g': 9.81,
                       'dt': 0.01,
@@ -28,6 +26,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                       'P': 0.01 * np.ones(DIM_STATES),
                       'Q': 0.01 * np.ones(DIM_STATES),
                       'H': 0.01 * np.ones(DIM_OBSERVATIONS)}
+    """
     """
     def __init__(self, dt, leg_constants, imu_position, a, P, Q, H):
         self.A = np.eye(DIM_STATES)
@@ -44,7 +43,8 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.P = P
         self.Q = Q
         self.H = H
-        """
+    """
+    """
         self.ax = a[0]
         self.Px = P[0]
         self.ay = a[1]
@@ -65,7 +65,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.sigma_imu_gyro = sigma_obs[1]
         self.sigma_press_velo = sigma_obs[2]
         self.sigma_press_acc = sigma_obs[3]
-        """
+    """
 
     def state_transition(self, xp):
         return np.matmul(xp, self.A)
