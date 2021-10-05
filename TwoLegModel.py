@@ -27,7 +27,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                       'Q': 0.01 * np.ones(DIM_STATES),
                       'H': 0.01 * np.ones(DIM_OBSERVATIONS)}
     """
-    """
+
     def __init__(self, dt, leg_constants, imu_position, a, P, Q, H):
         self.A = np.eye(DIM_STATES)
         for row in range(0, DIM_STATES):
@@ -43,7 +43,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.P = P
         self.Q = Q
         self.H = H
-    """
+
     """
         self.ax = a[0]
         self.Px = P[0]
@@ -68,7 +68,7 @@ class TwoLegModel(ssm.StateSpaceModel):
     """
 
     def state_transition(self, xp):
-        return np.matmul(xp, self.A)
+        return np.matmul(self.A, xp.T).T
 
     def state_to_observation(self, x):
         """
@@ -136,7 +136,7 @@ class TwoLegModel(ssm.StateSpaceModel):
 
         return y
 
-    def PX0(self):  # Distribution of X_0
+    def PX0(self):
         """
         # case for 6x3 states
         return dists.IndepProd(*[dists.Normal(loc=self.a, scale=self.P) for a, P in zip(self.a_init, self.P_init)])

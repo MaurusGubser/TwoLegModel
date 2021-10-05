@@ -4,13 +4,15 @@ import csv
 import re
 
 
-class DataReader():
+class DataReader:
 
     def __init__(self):
         self.observations = np.empty(0)
+        self.observations_list = []
         self.true_states = np.empty(0)
+        self.states_list = []
 
-    def read_true_states(self, path_true_states, nb_timesteps):
+    def read_states_as_arr(self, path_true_states, nb_timesteps):
         truth = np.genfromtxt(path_true_states,
                               dtype=np.float32,
                               comments='#',
@@ -21,7 +23,7 @@ class DataReader():
         self.true_states = truth
         return None
 
-    def read_observations(self, path_observations):
+    def read_observations_as_arr(self, path_observations):
         obs = np.genfromtxt(path_observations,
                             dtype=np.float32,
                             comments='#',
@@ -38,9 +40,12 @@ class DataReader():
             observations_array[:, 6 * i:6 * (i + 1)] = obs[nb_timesteps * i: nb_timesteps * (i + 1), :]
         self.observations = observations_array
 
-path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
-path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations_normal.dat'
-reader = DataReader()
-reader.read_true_states(path_truth, nb_timesteps=1014)
-reader.read_observations(path_obs)
-dummy=0
+    def prepare_lists(self):
+        if self.observations.shape[0] != self.true_states.shape[0]:
+            raise AssertionError('Number of time steps in observations is {}; number of time steps in truth is {};'
+                                 'should be the same.'.format(self.observations.shape[0], self.true_states.shape[0]))
+        nb_timesteps = self.true_states.shape[0]
+        for time_step in range(0, nb_timesteps):
+            self.states_list.append(np.reshape(self.true_states[time_step, :], (1, -1)))
+            self.observations_list.append(np.reshape(self.observations[time_step, :], (1, -1)))
+        return None

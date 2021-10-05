@@ -7,6 +7,7 @@ from collections import OrderedDict
 from particles.collectors import Moments
 from particles import state_space_models as ssm
 
+from ReadData import DataReader
 from TwoLegModel import TwoLegModel
 
 if __name__ == '__main__':
@@ -18,21 +19,24 @@ if __name__ == '__main__':
                   2.5362910623050072e+00, -3.7986101392570708e+00, -7.8163469474606714e-02, -8.1819333353243029e-01,
                   -4.0705228907187886e-11, 5.0517984683954827e-03, -1.7762296102838229e+00, 3.3158529817439670e+00,
                   -2.9528844960512168e-01, 5.3581371545316991e-01])
-    P = 0.1 * np.eye(18)
-    A = np.eye(18)
-    for row in range(0, 18):
-        for col in range(0, 18):
-            if row + 6 == col:
-                A[row, col] = dt
-            elif row + 12 == col:
-                A[row, col] = dt**2 / 2.0
-    Q = 0.1 * np.eye(18)
-    H = 1.0 * np.eye(36)
+    P = 10.0 * np.eye(18)
+    Q = 0.01 * np.eye(18)
+    H = 0.1 * np.eye(36)
 
-    my_model = TwoLegModel(dt=dt, legs=leg_constants, cst=imu_position, a=a, P=P, A=A, Q=Q, H=H, g=9.81)
+    my_model = TwoLegModel(dt=dt, leg_constants=leg_constants, imu_position=imu_position, a=a, P=P, Q=Q, H=H)
+
+    path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
+    path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations_normal.dat'
+    data_reader = DataReader()
+    nb_timesteps = 1014
+    data_reader.read_states_as_arr(path_truth, nb_timesteps=nb_timesteps)
+    data_reader.read_observations_as_arr(path_obs)
+    data_reader.prepare_lists()
+    x = data_reader.states_list
+    y = data_reader.observations_list
 
     # simulate data from model
-    x, y = my_model.simulate(100)
+    x_sim, y_sim = my_model.simulate(100)
 
     plotting_states = {'x_H': 0, 'y_H': 1, 'phi_0': 2, 'phi_1': 3}
     """
@@ -59,10 +63,10 @@ if __name__ == '__main__':
         plt.suptitle(name)
     plt.show()
     """
-    more_trajectories = pf.hist.backward_sampling(10, linear_cost=False, return_ar=True)
-    #print('acceptance rate was %1.3f' % acc_rate)
+    smooth_trajectories = pf.hist.backward_sampling(10)
+    # print('acceptance rate was %1.3f' % acc_rate)
     for name, idx in plotting_states.items():
-        plotting_data = [state[:, idx] for state in more_trajectories]
+        plotting_data = [state[:, idx] for state in smooth_trajectories]
         plt.plot(plotting_data, label=name)
         plt.legend()
         plt.show()
