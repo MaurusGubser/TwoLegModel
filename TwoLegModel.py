@@ -15,7 +15,6 @@ class TwoLegModel(ssm.StateSpaceModel):
     Two leg model...
     """
 
-    """
     default_params = {'g': 9.81,
                       'dt': 0.01,
                       'legs': np.array([0.5, 0.6, 0.5, 0.6]),
@@ -26,10 +25,18 @@ class TwoLegModel(ssm.StateSpaceModel):
                                      -3.7986101392570708e+00, -7.8163469474606714e-02, -8.1819333353243029e-01,
                                      -4.0705228907187886e-11, 5.0517984683954827e-03, -1.7762296102838229e+00,
                                      3.3158529817439670e+00, -2.9528844960512168e-01, 5.3581371545316991e-01]),
-                      'P': 0.01 * np.ones(DIM_STATES),
-                      'Q': 0.01 * np.ones(DIM_STATES),
-                      'H': 0.01 * np.ones(DIM_OBSERVATIONS)}
-    """
+                      'P': 0.1*np.eye(DIM_STATES),
+                      'cov_step': 0.1,
+                      'scale_x': 1.0,
+                      'scale_y': 1.0,
+                      'scale_phi': 1.0,
+                      'sf_H': 1.0,
+                      'H': np.diag([0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                                    0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                                    0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                                    0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                                    0.1, 0.1, 0.1, 1.0, 1.0, 1.0,
+                                    0.1, 0.1, 0.1, 1.0, 1.0, 1.0])}
 
     def __init__(self, dt, leg_constants, imu_position, a, P, cov_step, scale_x, scale_y, scale_phi, sf_H, H):
         self.dt = dt
@@ -45,7 +52,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.scale_phi = scale_phi
         self.cov_step = cov_step
         self.Q = np.zeros((DIM_STATES, DIM_STATES))
-        self.set_process_cov(scale_x, scale_y, scale_phi)
+        self.set_process_cov_theory()
         self.sf_H = sf_H
         self.H = H
         self.scale_H()
@@ -83,10 +90,11 @@ class TwoLegModel(ssm.StateSpaceModel):
                     self.A[row, col] = self.dt ** 2 / 2.0
         return None
 
-    def set_process_cov(self, scale_x, scale_y, scale_phi):
+    def set_process_cov_theory(self):
+        block_size = DIM_STATES // 3
         for row in range(0, DIM_STATES):
             for col in range(0, DIM_STATES):
-                if row < 6:
+                if row < block_size:
                     if row == col:
                         self.Q[row, col] = self.cov_step ** 5 / 20.0
                     elif row + 6 == col:
@@ -95,21 +103,31 @@ class TwoLegModel(ssm.StateSpaceModel):
                     elif row + 12 == col:
                         self.Q[row, col] = self.cov_step ** 3 / 6.0
                         self.Q[col, row] = self.cov_step ** 3 / 6.0
-                elif 6 <= row < 12:
+                elif block_size <= row < 2*block_size:
                     if row == col:
                         self.Q[row, col] = self.cov_step ** 3 / 3.0
                     elif row + 6 == col:
                         self.Q[row, col] = self.cov_step ** 2 / 2.0
                         self.Q[col, row] = self.cov_step ** 2 / 2.0
-                elif 12 <= row:
+                elif 2*block_size <= row:
                     if row == col:
                         self.Q[row, col] = self.cov_step
         idx_groups = [[0, 6, 12], [1, 7, 13], [2, 8, 14], [3, 9, 15], [4, 10, 16], [5, 11, 17]]
-        scale_factors = [scale_x, scale_y, scale_phi, scale_phi, scale_phi, scale_phi]
+        scale_factors = [self.scale_x, self.scale_y, self.scale_phi, self.scale_phi, self.scale_phi, self.scale_phi]
         for factor, idxs in zip(scale_factors, idx_groups):
             for row, col in itertools.product(idxs, idxs):
                 self.Q[row, col] *= factor
         return None
+
+    """
+    def set_process_cov_state_groups(self):
+        rows = [0, 0, 0, 6, 6, 12]
+        cols = [0, 6, 12, 6, 12, 12]
+        denominators = [20, 8, 6, 3, 2, 1]
+        sigmas = [self.sigma_x, self.sigma_y, self.sigma_phi, self.sigma_phi, self.sigma_phi, self.sigma_phi]
+        for i in range(0, 6):
+            for j in range(0, 6):
+    """
 
     def scale_H(self):
         self.H = self.sf_H * self.H

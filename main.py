@@ -64,7 +64,7 @@ if __name__ == '__main__':
     x, y = my_model.simulate(max_timesteps)
 
     fk_model = ssm.Bootstrap(ssm=my_model, data=y)
-    pf = particles.SMC(fk=fk_model, N=200, resampling='stratified', collect=[Moments()], store_history=True)
+    pf = particles.SMC(fk=fk_model, N=200, resampling='systematic', collect=[Moments()], store_history=True)
     pf.run()
 
     plotting_states = {'x_H': 0, 'y_H': 1, 'phi_0': 2, 'phi_1': 3,
@@ -84,9 +84,9 @@ if __name__ == '__main__':
     plt.figure()
     sb.boxplot(x=[r['output'].logLt for r in results], y=[r['qmc'] for r in results])
     #plt.show()
-    
+    """
     # smoothing
-    smooth_trajectories = pf.hist.backward_sampling(10)
+    smooth_trajectories = pf.hist.backward_sampling(5)
     for name, idx in plotting_states.items():
         plt.figure()
         samples = [time_step[:, idx] for time_step in smooth_trajectories]
@@ -96,6 +96,7 @@ if __name__ == '__main__':
         plt.legend()
         plt.title(name)
     plt.show()
+
     """
     prior_dict = {'cov_step': dists.Gamma(a=0.8, b=3.0), 'sf_H': dists.Uniform(0.0001, 1.0)}
     my_prior = dists.StructDist(prior_dict)
@@ -117,3 +118,4 @@ if __name__ == '__main__':
         sb.distplot(pmmh.chain.theta[param][burnin:], 40)
         plt.title(param)
     plt.show()
+    """
