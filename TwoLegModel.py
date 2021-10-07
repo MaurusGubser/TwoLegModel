@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 
 from particles import state_space_models as ssm
@@ -5,6 +7,7 @@ from particles import distributions as dists
 
 DIM_STATES = 18
 DIM_OBSERVATIONS = 36
+CONST_GRAVITATION = 9.81
 
 
 class TwoLegModel(ssm.StateSpaceModel):
@@ -28,21 +31,24 @@ class TwoLegModel(ssm.StateSpaceModel):
                       'H': 0.01 * np.ones(DIM_OBSERVATIONS)}
     """
 
-    def __init__(self, dt, leg_constants, imu_position, a, P, Q, H):
-        self.A = np.eye(DIM_STATES)
-        for row in range(0, DIM_STATES):
-            for col in range(0, DIM_STATES):
-                if row + 6 == col:
-                    self.A[row, col] = dt
-                if row + 12 == col:
-                    self.A[row, col] = dt ** 2 / 2.0
-        self.g = 9.81
+    def __init__(self, dt, leg_constants, imu_position, a, P, cov_step, scale_x, scale_y, scale_phi, sf_H, H):
+        self.dt = dt
+        self.A = np.zeros((DIM_STATES, DIM_STATES))
+        self.set_process_transition_matrix()
+        self.g = CONST_GRAVITATION
         self.cst = imu_position
         self.legs = leg_constants
         self.a = a
         self.P = P
-        self.Q = Q
+        self.scale_x = scale_x
+        self.scale_y = scale_y
+        self.scale_phi = scale_phi
+        self.cov_step = cov_step
+        self.Q = np.zeros((DIM_STATES, DIM_STATES))
+        self.set_process_cov(scale_x, scale_y, scale_phi)
+        self.sf_H = sf_H
         self.H = H
+        self.scale_H()
 
     """
         self.ax = a[0]
@@ -67,6 +73,48 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.sigma_press_acc = sigma_obs[3]
     """
 
+    def set_process_transition_matrix(self):
+        self.A = np.eye(DIM_STATES)
+        for row in range(0, DIM_STATES):
+            for col in range(0, DIM_STATES):
+                if row + 6 == col:
+                    self.A[row, col] = self.dt
+                if row + 12 == col:
+                    self.A[row, col] = self.dt ** 2 / 2.0
+        return None
+
+    def set_process_cov(self, scale_x, scale_y, scale_phi):
+        for row in range(0, DIM_STATES):
+            for col in range(0, DIM_STATES):
+                if row < 6:
+                    if row == col:
+                        self.Q[row, col] = self.cov_step ** 5 / 20.0
+                    elif row + 6 == col:
+                        self.Q[row, col] = self.cov_step ** 4 / 8.0
+                        self.Q[col, row] = self.cov_step ** 4 / 8.0
+                    elif row + 12 == col:
+                        self.Q[row, col] = self.cov_step ** 3 / 6.0
+                        self.Q[col, row] = self.cov_step ** 3 / 6.0
+                elif 6 <= row < 12:
+                    if row == col:
+                        self.Q[row, col] = self.cov_step ** 3 / 3.0
+                    elif row + 6 == col:
+                        self.Q[row, col] = self.cov_step ** 2 / 2.0
+                        self.Q[col, row] = self.cov_step ** 2 / 2.0
+                elif 12 <= row:
+                    if row == col:
+                        self.Q[row, col] = self.cov_step
+        idx_groups = [[0, 6, 12], [1, 7, 13], [2, 8, 14], [3, 9, 15], [4, 10, 16], [5, 11, 17]]
+        scale_factors = [scale_x, scale_y, scale_phi, scale_phi, scale_phi, scale_phi]
+        for factor, idxs in zip(scale_factors, idx_groups):
+            for row, col in itertools.product(idxs, idxs):
+                self.Q[row, col] *= factor
+        return None
+
+    def scale_H(self):
+        self.H = self.sf_H * self.H
+        return None
+
     def state_transition(self, xp):
         return np.matmul(self.A, xp.T).T
 
@@ -74,8 +122,13 @@ class TwoLegModel(ssm.StateSpaceModel):
         """
         Transformation from state x to observation y
         """
-        x = x.flatten()
-        y = np.empty(shape=(DIM_OBSERVATIONS, ))
+        nb_parallel, _ = x.shape
+        y = np.empty(shape=(nb_parallel, DIM_OBSERVATIONS))
+        for i in range(0, nb_parallel):
+            self.state_to_observation_1dim(x[i], y[i])
+        return y
+
+    def state_to_observation_1dim(self, x, y):
         y[0] = self.cst[0] * x[14] + self.g * np.sin(x[2]) + np.sin(x[2]) * x[13] + np.cos(x[2]) * x[12]
         y[1] = self.cst[0] * x[8] ** 2 + self.g * np.cos(x[2]) - np.sin(x[2]) * x[12] + np.cos(x[2]) * x[13]
         y[2] = 0.0
