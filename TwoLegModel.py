@@ -15,30 +15,28 @@ class TwoLegModel(ssm.StateSpaceModel):
     Two leg model...
     """
 
-    default_params = {'g': 9.81,
-                      'dt': 0.01,
-                      'legs': np.array([0.5, 0.6, 0.5, 0.6]),
-                      'cst': np.array([0.34, 0.29, 0.315, 0.33]),
-                      'a': np.array([5.6790326970162603e-03, 1.0575269992136509e+00, -1.2846265995420103e-01,
-                                     -2.4793110500096724e-01, 3.6639668719776680e-01, -1.8980094976695036e-01,
-                                     5.6790326966931337e-01, 9.6320242403311385e-02, 2.5362910623050072e+00,
-                                     -3.7986101392570708e+00, -7.8163469474606714e-02, -8.1819333353243029e-01,
-                                     -4.0705228907187886e-11, 5.0517984683954827e-03, -1.7762296102838229e+00,
-                                     3.3158529817439670e+00, -2.9528844960512168e-01, 5.3581371545316991e-01]),
-                      'P': 0.1*np.eye(DIM_STATES),
-                      'cov_step': 0.1,
-                      'scale_x': 1.0,
-                      'scale_y': 1.0,
-                      'scale_phi': 1.0,
-                      'sf_H': 1.0,
-                      'H': np.diag([0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                                    0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                                    0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                                    0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                                    0.1, 0.1, 0.1, 1.0, 1.0, 1.0,
-                                    0.1, 0.1, 0.1, 1.0, 1.0, 1.0])}
-
-    def __init__(self, dt, leg_constants, imu_position, a, P, cov_step, scale_x, scale_y, scale_phi, sf_H, H):
+    def __init__(self,
+                 dt=0.01,
+                 leg_constants=np.array([0.5, 0.6, 0.5, 0.6]),
+                 imu_position=np.array([0.34, 0.29, 0.315, 0.33]),
+                 a=np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
+                             0.57, 0.10, 2.54, -3.8, -0.08, -0.82,
+                             -0.00, 0.01, -1.78, 3.32, -0.30, 0.54]),
+                 P=0.1 * np.eye(DIM_STATES),
+                 cov_step=0.1,
+                 scale_x=1.0,
+                 scale_y=1.0,
+                 scale_phi=1.0,
+                 sigma_x=1.0,
+                 sigma_y=1.0,
+                 sigma_phi=1.0,
+                 sf_H=1.0,
+                 H=np.diag([0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                            0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                            0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                            0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                            0.1, 0.1, 0.1, 1.0, 1.0, 1.0,
+                            0.1, 0.1, 0.1, 1.0, 1.0, 1.0])):
         self.dt = dt
         self.A = np.zeros((DIM_STATES, DIM_STATES))
         self.set_process_transition_matrix()
@@ -47,10 +45,13 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.legs = leg_constants
         self.a = a
         self.P = P
+        self.cov_step = cov_step
         self.scale_x = scale_x
         self.scale_y = scale_y
         self.scale_phi = scale_phi
-        self.cov_step = cov_step
+        self.sigma_x = sigma_x
+        self.sigma_y = sigma_y
+        self.sigma_phi = sigma_phi
         self.Q = np.zeros((DIM_STATES, DIM_STATES))
         self.set_process_cov_theory()
         self.sf_H = sf_H
@@ -103,13 +104,13 @@ class TwoLegModel(ssm.StateSpaceModel):
                     elif row + 12 == col:
                         self.Q[row, col] = self.cov_step ** 3 / 6.0
                         self.Q[col, row] = self.cov_step ** 3 / 6.0
-                elif block_size <= row < 2*block_size:
+                elif block_size <= row < 2 * block_size:
                     if row == col:
                         self.Q[row, col] = self.cov_step ** 3 / 3.0
                     elif row + 6 == col:
                         self.Q[row, col] = self.cov_step ** 2 / 2.0
                         self.Q[col, row] = self.cov_step ** 2 / 2.0
-                elif 2*block_size <= row:
+                elif 2 * block_size <= row:
                     if row == col:
                         self.Q[row, col] = self.cov_step
         idx_groups = [[0, 6, 12], [1, 7, 13], [2, 8, 14], [3, 9, 15], [4, 10, 16], [5, 11, 17]]
@@ -119,15 +120,12 @@ class TwoLegModel(ssm.StateSpaceModel):
                 self.Q[row, col] *= factor
         return None
 
-    """
     def set_process_cov_state_groups(self):
-        rows = [0, 0, 0, 6, 6, 12]
-        cols = [0, 6, 12, 6, 12, 12]
-        denominators = [20, 8, 6, 3, 2, 1]
-        sigmas = [self.sigma_x, self.sigma_y, self.sigma_phi, self.sigma_phi, self.sigma_phi, self.sigma_phi]
-        for i in range(0, 6):
-            for j in range(0, 6):
-    """
+        sigmas = np.diag([self.sigma_x, self.sigma_y, self.sigma_phi, self.sigma_phi, self.sigma_phi, self.sigma_phi])
+        self.Q = np.block([[sigmas/20.0, sigmas/8.0, sigmas/6.0],
+                           [sigmas/8.0, sigmas/3.0, sigmas/2.0],
+                           [sigmas/6.0, sigmas/2.0, sigmas]])
+        return None
 
     def scale_H(self):
         self.H = self.sf_H * self.H
@@ -219,3 +217,12 @@ class TwoLegModel(ssm.StateSpaceModel):
 
     def PY(self, t, xp, x):
         return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
+
+
+class TwoLegModelGuided(TwoLegModel):
+    def proposal0(self, data):
+        return self.PX0()
+
+    def proposal(t, xp, data):  # a silly proposal
+
+        return dists.Normal(loc=rho * xp + data[t], scale=self.sigma)

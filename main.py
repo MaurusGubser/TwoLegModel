@@ -22,14 +22,17 @@ if __name__ == '__main__':
                   -4.0705228907187886e-11, 5.0517984683954827e-03, -1.7762296102838229e+00, 3.3158529817439670e+00,
                   -2.9528844960512168e-01, 5.3581371545316991e-01])
 
-    P = 0.01 * np.eye(18)
+    P = 0.1 * np.eye(18)
 
-    cov_step = 0.5
-    scale_x = 1.0
-    scale_y = 2.0
-    scale_phi = 5.0
+    cov_step = 1.0
+    scale_x = 0.01
+    scale_y = 0.01
+    scale_phi = 0.1
+    sigma_x = 0.1
+    sigma_y = 0.2
+    sigma_phi = 0.5
 
-    sf_H = 0.1
+    sf_H = 1.0
     H = np.diag([0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
                  0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
                  0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
@@ -46,6 +49,9 @@ if __name__ == '__main__':
                            scale_x=scale_x,
                            scale_y=scale_y,
                            scale_phi=scale_phi,
+                           sigma_x=sigma_x,
+                           sigma_y=sigma_y,
+                           sigma_phi=sigma_phi,
                            sf_H=sf_H,
                            H=H)
 
@@ -53,31 +59,31 @@ if __name__ == '__main__':
     path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
     path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations_normal.dat'
     data_reader = DataReader()
-    max_timesteps = 200
+    max_timesteps = 500
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
-    x_tom = data_reader.states_list
-    y_tom = data_reader.observations_list
+    x = data_reader.states_list
+    y = data_reader.observations_list
 
     # simulate data from this model
-    x, y = my_model.simulate(max_timesteps)
+    x_sim, y_sim = my_model.simulate(max_timesteps)
 
     fk_model = ssm.Bootstrap(ssm=my_model, data=y)
-    pf = particles.SMC(fk=fk_model, N=200, resampling='systematic', collect=[Moments()], store_history=True)
+    pf = particles.SMC(fk=fk_model, N=200, qmc=False, resampling='stratified', store_history=True)  #collect=[Moments()]
     pf.run()
 
-    plotting_states = {'x_H': 0, 'y_H': 1, 'phi_0': 2, 'phi_1': 3,
-                       'x_H_dot': 6, 'y_H_dot': 7, 'phi_0_dot': 8, 'phi_1_dot': 9,
-                       'x_H_ddot': 12, 'y_H_ddot': 13, 'phi_0_ddot': 14, 'phi_1_ddot': 15}
+    plotting_states = {'x_H': 0, 'y_H': 1, 'phi_0': 2, 'phi_1': 3,  # 'phi_2': 4, 'phi_3': 5,
+                       'x_H_dot': 6, 'y_H_dot': 7, 'phi_0_dot': 8, 'phi_1_dot': 9,  # 'phi_2_dot': 10, 'phi_3_dot': 11,
+                       'x_H_ddot': 12, 'y_H_ddot': 13, 'phi_0_ddot': 14, 'phi_1_ddot': 15}  # , 'phi_5_ddot': 16, 'phi_3_ddot': 17}
     """
     # plot filtered observations and moments
     for name, idx in plotting_states.items():
         plt.figure()
-        plt.plot([yt[0, idx] ** 2 for yt in y], label=name)
+        plt.plot([xt[0, idx] for xt in x], label=name)
         plt.plot([m['mean'][idx] for m in pf.summaries.moments], label='moments')
         plt.legend()
-    #plt.show()
+    plt.show()
     
     # compare MC and QMC method
     results = particles.multiSMC(fk=fk_model, N=100, nruns=30, qmc={'SMC': False, 'SQMC': True})
@@ -86,30 +92,22 @@ if __name__ == '__main__':
     #plt.show()
     """
     # smoothing
-    smooth_trajectories = pf.hist.backward_sampling(5)
+    smooth_trajectories = pf.hist.backward_sampling(8)
     for name, idx in plotting_states.items():
         plt.figure()
         samples = [time_step[:, idx] for time_step in smooth_trajectories]
-        plt.plot(samples)
+        plt.plot(samples, alpha=0.3)
         truth = [t[0, idx] for t in x]
         plt.plot(truth, label='Truth')
         plt.legend()
         plt.title(name)
     plt.show()
-
     """
-    prior_dict = {'cov_step': dists.Gamma(a=0.8, b=3.0), 'sf_H': dists.Uniform(0.0001, 1.0)}
+    prior_dict = {'sigma_x': dists.Uniform(0.0001, 1.0),
+                  'sigma_y': dists.Uniform(0.0001, 1.0),
+                  'sigma_phi': dists.Uniform(0.0001, 1.0)}
     my_prior = dists.StructDist(prior_dict)
-    pmmh = mcmc.PMMH(ssm_cls=TwoLegModel(dt=dt,
-                                         leg_constants=leg_constants,
-                                         imu_position=imu_position,
-                                         a=a,
-                                         P=P,
-                                         scale_x=scale_x,
-                                         scale_y=scale_y,
-                                         scale_phi=scale_phi,
-                                         H=H),
-                     prior=my_prior, data=y, Nx=50, niter=1000)
+    pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, data=y, Nx=50, niter=1000)
     pmmh.run()  # Warning: takes a few seconds
 
     burnin = 100  # discard the 100 first iterations
