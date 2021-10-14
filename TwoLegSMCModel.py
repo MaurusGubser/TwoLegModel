@@ -6,7 +6,7 @@ from particles import state_space_models as ssm
 from particles import distributions as dists
 
 DIM_STATES = 18
-DIM_OBSERVATIONS = 20
+DIM_OBSERVATIONS = 36
 CONST_GRAVITATION = 9.81
 
 
@@ -235,13 +235,6 @@ class TwoLegModel(ssm.StateSpaceModel):
 class TwoLegModelGuided(TwoLegModel):
 
     def compute_observation_derivatives(self, xp):
-        nb_particles, _ = xp.shape
-        df = []
-        for i in range(0, nb_particles):
-            df.append(self.compute_observation_derivatives_1dim(xp[i]))
-        return np.array(df)
-
-    def compute_observation_derivatives_1dim(self, xp):
         df = np.zeros((36, DIM_STATES))
 
         # left femur
@@ -383,15 +376,15 @@ class TwoLegModelGuided(TwoLegModel):
         self.kalman_covs = np.array([np.eye(DIM_STATES) for _ in range(0, nb_particles)])
         return None
 
-    def compute_ekf_proposal(self, xp, data_i, sigma):
+    def compute_ekf_proposal(self, xp, data_t, sigma):
         x_hat = np.reshape(self.state_transition(xp), (1, DIM_STATES))
         sigma = np.matmul(self.A, np.matmul(sigma, self.A.T)) + self.Q
 
-        df = self.compute_observation_derivatives_1dim(xp)
+        df = self.compute_observation_derivatives(x_hat.flatten())  # self.compute_observation_derivatives_1dim(xp)
         innovation = np.matmul(df, np.matmul(sigma, df.T)) + self.H
         kalman_gain = np.matmul(sigma, np.matmul(df.T, np.linalg.inv(innovation)))
 
-        x_hat = x_hat + np.matmul(kalman_gain, (data_i - self.state_to_observation(x_hat)).T).T
+        x_hat = x_hat + np.matmul(kalman_gain, (data_t - self.state_to_observation(x_hat)).T).T
         sigma = np.matmul(np.eye(DIM_STATES) - np.matmul(kalman_gain, df), sigma)
         return x_hat, sigma
 
@@ -407,10 +400,10 @@ class TwoLegModelGuided(TwoLegModel):
         kalman_covs = np.empty((nb_particles, DIM_STATES, DIM_STATES))
         for i in range(0, nb_particles):
             sigma = self.kalman_covs[i]
-            x_hat, sigma = self.compute_ekf_proposal(xp[i], data[i], sigma)
+            x_hat, sigma = self.compute_ekf_proposal(xp[i], data[t], sigma)
             x_hats[i, :] = x_hat
             kalman_covs[i, :, :] = sigma
         self.kalman_covs = kalman_covs
         covar = np.mean(kalman_covs, axis=0)
-        return dists.MvNormal(loc=x_hats, cov=covar)
+        return dists.MvNormal(loc=x_hats, cov=10.0*covar)
         # return self.PX(t, xp).posterior(data[t], Sigma=1.0*self.Q)
