@@ -412,13 +412,5 @@ class TwoLegModelGuided(TwoLegModel):
             kalman_covs[i, :, :] = sigma
         self.kalman_covs = kalman_covs
         covar = np.mean(kalman_covs, axis=0)
-        """
-        self.kalman_cov = np.matmul(self.A, np.matmul(self.kalman_cov, self.A.T))
-        df = self.compute_observation_derivatives(xp)
-        kalman_gain = self.compute_kalman_gain(df)
-        x_hat = self.compute_state_approx(xp, data[t], kalman_gain)
-        self.kalman_cov = np.matmul((np.eye(DIM_STATES) - np.matmul(kalman_gain, df)), self.kalman_cov)
-        return dists.MvNormal(x_hat, self.kalman_cov)
-        """
         return dists.MvNormal(loc=x_hats, cov=covar)
         # return self.PX(t, xp).posterior(data[t], Sigma=1.0*self.Q)
