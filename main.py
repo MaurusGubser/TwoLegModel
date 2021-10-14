@@ -10,7 +10,7 @@ from particles import state_space_models as ssm
 from particles import mcmc
 
 from ReadData import DataReader
-from TwoLegModel import TwoLegModel, TwoLegModelGuided
+from TwoLegSMCModel import TwoLegModel, TwoLegModelGuided
 from Plotting import Plotter
 
 if __name__ == '__main__':
@@ -34,18 +34,18 @@ if __name__ == '__main__':
     sigma_phi = 1.0
 
     sf_H = 0.1
-    H_36 = np.diag([0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                    0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                    0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                    0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                    0.1, 0.1, 0.1, 1.0, 1.0, 1.0,
-                    0.1, 0.1, 0.1, 1.0, 1.0, 1.0])
-    H = np.diag([0.1, 0.1, 0.01,
-                 0.1, 0.1, 0.01,
-                 0.1, 0.1, 0.01,
-                 0.1, 0.1, 0.01,
-                 0.1, 0.1, 1.0, 1.0,
-                 0.1, 0.1, 1.0, 1.0])
+    H = np.diag([0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                 0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                 0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                 0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                 0.1, 0.1, 0.1, 1.0, 1.0, 1.0,
+                 0.1, 0.1, 0.1, 1.0, 1.0, 1.0])
+    H_20 = np.diag([0.1, 0.1, 0.01,
+                    0.1, 0.1, 0.01,
+                    0.1, 0.1, 0.01,
+                    0.1, 0.1, 0.01,
+                    0.1, 0.1, 1.0, 1.0,
+                    0.1, 0.1, 1.0, 1.0])
 
     my_model = TwoLegModel(dt=dt,
                            leg_constants=leg_constants,
@@ -81,13 +81,13 @@ if __name__ == '__main__':
     path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
     path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations_normal.dat'
     data_reader = DataReader()
-    max_timesteps = 500
+    max_timesteps = 1000
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
     x = data_reader.states_list
     y = data_reader.observations_list
-    y = [obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)] for obs in y]
+    # y = [obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)] for obs in y]
     # simulate data from this model
     x_sim, y_sim = my_model.simulate(max_timesteps)
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # feynman-kac model
     fk_model = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model_prop, data=y)
-    pf = particles.SMC(fk=fk_guided, N=200, qmc=False, resampling='stratified', ESSrmin=0.5,
+    pf = particles.SMC(fk=fk_guided, N=100, qmc=False, resampling='stratified', ESSrmin=0.99,
                        store_history=True)  # , collect=[Moments()])
     pf.run()
 
