@@ -10,7 +10,8 @@ from particles import state_space_models as ssm
 from particles import mcmc
 
 from ReadData import DataReader
-from TwoLegModel import TwoLegModel
+from TwoLegModel import TwoLegModel, TwoLegModelGuided
+from Plotting import Plotter
 
 if __name__ == '__main__':
     dt = 0.01
@@ -22,23 +23,29 @@ if __name__ == '__main__':
                   -4.0705228907187886e-11, 5.0517984683954827e-03, -1.7762296102838229e+00, 3.3158529817439670e+00,
                   -2.9528844960512168e-01, 5.3581371545316991e-01])
 
-    P = 0.1 * np.eye(18)
+    P = 0.01 * np.eye(18)
 
-    cov_step = 1.0
-    scale_x = 0.01
-    scale_y = 0.01
-    scale_phi = 0.1
-    sigma_x = 0.1
-    sigma_y = 0.2
-    sigma_phi = 0.5
+    cov_step = 0.5
+    scale_x = 0.1
+    scale_y = 0.1
+    scale_phi = 10.0
+    sigma_x = 1.0
+    sigma_y = 1.0
+    sigma_phi = 1.0
 
-    sf_H = 1.0
-    H = np.diag([0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                 0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                 0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                 0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                 0.1, 0.1, 0.1, 1.0, 1.0, 1.0,
-                 0.1, 0.1, 0.1, 1.0, 1.0, 1.0])
+    sf_H = 0.1
+    H_36 = np.diag([0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                    0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                    0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                    0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
+                    0.1, 0.1, 0.1, 1.0, 1.0, 1.0,
+                    0.1, 0.1, 0.1, 1.0, 1.0, 1.0])
+    H = np.diag([0.1, 0.1, 0.01,
+                 0.1, 0.1, 0.01,
+                 0.1, 0.1, 0.01,
+                 0.1, 0.1, 0.01,
+                 0.1, 0.1, 1.0, 1.0,
+                 0.1, 0.1, 1.0, 1.0])
 
     my_model = TwoLegModel(dt=dt,
                            leg_constants=leg_constants,
@@ -55,6 +62,21 @@ if __name__ == '__main__':
                            sf_H=sf_H,
                            H=H)
 
+    my_model_prop = TwoLegModelGuided(dt=dt,
+                                      leg_constants=leg_constants,
+                                      imu_position=imu_position,
+                                      a=a,
+                                      P=P,
+                                      cov_step=cov_step,
+                                      scale_x=scale_x,
+                                      scale_y=scale_y,
+                                      scale_phi=scale_phi,
+                                      sigma_x=sigma_x,
+                                      sigma_y=sigma_y,
+                                      sigma_phi=sigma_phi,
+                                      sf_H=sf_H,
+                                      H=H)
+
     # simulated data from weto
     path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
     path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations_normal.dat'
@@ -65,17 +87,22 @@ if __name__ == '__main__':
     data_reader.prepare_lists()
     x = data_reader.states_list
     y = data_reader.observations_list
-
+    y = [obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)] for obs in y]
     # simulate data from this model
     x_sim, y_sim = my_model.simulate(max_timesteps)
 
-    fk_model = ssm.Bootstrap(ssm=my_model, data=y)
-    pf = particles.SMC(fk=fk_model, N=200, qmc=False, resampling='stratified', store_history=True)  #collect=[Moments()]
-    pf.run()
-
     plotting_states = {'x_H': 0, 'y_H': 1, 'phi_0': 2, 'phi_1': 3,  # 'phi_2': 4, 'phi_3': 5,
                        'x_H_dot': 6, 'y_H_dot': 7, 'phi_0_dot': 8, 'phi_1_dot': 9,  # 'phi_2_dot': 10, 'phi_3_dot': 11,
-                       'x_H_ddot': 12, 'y_H_ddot': 13, 'phi_0_ddot': 14, 'phi_1_ddot': 15}  # , 'phi_5_ddot': 16, 'phi_3_ddot': 17}
+                       'x_H_ddot': 12, 'y_H_ddot': 13, 'phi_0_ddot': 14,
+                       'phi_1_ddot': 15}  # , 'phi_5_ddot': 16, 'phi_3_ddot': 17}
+
+    # feynman-kac model
+    fk_model = ssm.Bootstrap(ssm=my_model, data=y)
+    fk_guided = ssm.GuidedPF(ssm=my_model_prop, data=y)
+    pf = particles.SMC(fk=fk_guided, N=200, qmc=False, resampling='stratified', ESSrmin=0.5,
+                       store_history=True)  # , collect=[Moments()])
+    pf.run()
+
     """
     # plot filtered observations and moments
     for name, idx in plotting_states.items():
@@ -84,25 +111,33 @@ if __name__ == '__main__':
         plt.plot([m['mean'][idx] for m in pf.summaries.moments], label='moments')
         plt.legend()
     plt.show()
-    
+    """
+
+    """
     # compare MC and QMC method
     results = particles.multiSMC(fk=fk_model, N=100, nruns=30, qmc={'SMC': False, 'SQMC': True})
     plt.figure()
     sb.boxplot(x=[r['output'].logLt for r in results], y=[r['qmc'] for r in results])
     #plt.show()
     """
+
     # smoothing
-    smooth_trajectories = pf.hist.backward_sampling(8)
+    smooth_trajectories = pf.hist.backward_sampling(5)
+    plotter = Plotter(samples=np.array(smooth_trajectories), truth=np.array(x), export_name='guided_36', delta_t=0.01)
+    plotter.plot_samples_detail()
+    """
     for name, idx in plotting_states.items():
         plt.figure()
         samples = [time_step[:, idx] for time_step in smooth_trajectories]
-        plt.plot(samples, alpha=0.3)
+        plt.plot(samples, alpha=0.8)
         truth = [t[0, idx] for t in x]
         plt.plot(truth, label='Truth')
         plt.legend()
         plt.title(name)
     plt.show()
     """
+    """
+    # learning parameters
     prior_dict = {'sigma_x': dists.Uniform(0.0001, 1.0),
                   'sigma_y': dists.Uniform(0.0001, 1.0),
                   'sigma_phi': dists.Uniform(0.0001, 1.0)}

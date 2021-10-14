@@ -6,7 +6,7 @@ from particles import state_space_models as ssm
 from particles import distributions as dists
 
 DIM_STATES = 18
-DIM_OBSERVATIONS = 36
+DIM_OBSERVATIONS = 20
 CONST_GRAVITATION = 9.81
 
 
@@ -22,8 +22,8 @@ class TwoLegModel(ssm.StateSpaceModel):
                  a=np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
                              0.57, 0.10, 2.54, -3.8, -0.08, -0.82,
                              -0.00, 0.01, -1.78, 3.32, -0.30, 0.54]),
-                 P=0.1 * np.eye(DIM_STATES),
-                 cov_step=0.1,
+                 P=0.01 * np.eye(DIM_STATES),
+                 cov_step=0.01,
                  scale_x=1.0,
                  scale_y=1.0,
                  scale_phi=1.0,
@@ -57,6 +57,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.sf_H = sf_H
         self.H = H
         self.scale_H()
+        self.kalman_covs = None
 
     """
         self.ax = a[0]
@@ -122,9 +123,9 @@ class TwoLegModel(ssm.StateSpaceModel):
 
     def set_process_cov_state_groups(self):
         sigmas = np.diag([self.sigma_x, self.sigma_y, self.sigma_phi, self.sigma_phi, self.sigma_phi, self.sigma_phi])
-        self.Q = np.block([[sigmas/20.0, sigmas/8.0, sigmas/6.0],
-                           [sigmas/8.0, sigmas/3.0, sigmas/2.0],
-                           [sigmas/6.0, sigmas/2.0, sigmas]])
+        self.Q = np.block([[sigmas / 20.0, sigmas / 8.0, sigmas / 6.0],
+                           [sigmas / 8.0, sigmas / 3.0, sigmas / 2.0],
+                           [sigmas / 6.0, sigmas / 2.0, sigmas]])
         return None
 
     def scale_H(self):
@@ -135,16 +136,15 @@ class TwoLegModel(ssm.StateSpaceModel):
         return np.matmul(self.A, xp.T).T
 
     def state_to_observation(self, x):
-        """
-        Transformation from state x to observation y
-        """
-        nb_parallel, _ = x.shape
-        y = np.empty(shape=(nb_parallel, DIM_OBSERVATIONS))
-        for i in range(0, nb_parallel):
-            self.state_to_observation_1dim(x[i], y[i])
+        nb_samples, _ = x.shape
+        y = np.empty(shape=(nb_samples, DIM_OBSERVATIONS))
+        for i in range(0, nb_samples):
+            y[i] = self.state_to_observation_1dim(x[i])   # do i have to remove y[i] = ... ? earlier version was self.state_to_observation_1dim(x[i], y[i])
         return y
 
-    def state_to_observation_1dim(self, x, y):
+    def state_to_observation_1dim(self, x):
+        y = np.empty(shape=36)
+        # left femur
         y[0] = self.cst[0] * x[14] + self.g * np.sin(x[2]) + np.sin(x[2]) * x[13] + np.cos(x[2]) * x[12]
         y[1] = self.cst[0] * x[8] ** 2 + self.g * np.cos(x[2]) - np.sin(x[2]) * x[12] + np.cos(x[2]) * x[13]
         y[2] = 0.0
@@ -152,6 +152,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         y[4] = 0.0
         y[5] = x[8]
 
+        # left fibula
         y[6] = self.cst[1] * x[14] + self.cst[1] * x[15] + self.g * np.sin(x[2] + x[3]) + self.legs[0] * np.sin(x[3]) * \
                x[8] ** 2 + self.legs[0] * np.cos(x[3]) * x[14] + np.sin(x[2] + x[3]) * x[13] + np.cos(x[2] + x[3]) * x[
                    12]
@@ -163,6 +164,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         y[10] = 0.0
         y[11] = x[8] + x[9]
 
+        # right femur
         y[12] = self.cst[2] * x[16] + self.g * np.sin(x[4]) + np.sin(x[4]) * x[13] + np.cos(x[4]) * x[12]
         y[13] = self.cst[2] * x[10] ** 2 + self.g * np.cos(x[4]) - np.sin(x[4]) * x[12] + np.cos(x[4]) * x[13]
         y[14] = 0.0
@@ -170,9 +172,10 @@ class TwoLegModel(ssm.StateSpaceModel):
         y[16] = 0.0
         y[17] = x[10]
 
+        # right fibula
         y[18] = self.cst[3] * x[16] + self.cst[3] * x[17] + self.g * np.sin(x[4] + x[5]) + self.legs[2] * np.sin(x[5]) * \
-                x[10] ** 2 + self.legs[2] * np.cos(x[5]) * x[16] + np.sin(x[4] + x[5]) * x[13] + np.cos(x[4] + x[5]) * \
-                x[12]
+               x[10] ** 2 + self.legs[2] * np.cos(x[5]) * x[16] + np.sin(x[4] + x[5]) * x[13] + np.cos(x[4] + x[5]) * \
+               x[12]
         y[19] = self.cst[3] * x[10] ** 2 + 2 * self.cst[3] * x[10] * x[11] + self.cst[3] * x[11] ** 2 + self.g * np.cos(
             x[4] + x[5]) - self.legs[2] * np.sin(x[5]) * x[16] + self.legs[2] * np.cos(x[5]) * x[10] ** 2 - np.sin(
             x[4] + x[5]) * x[12] + np.cos(x[4] + x[5]) * x[13]
@@ -181,6 +184,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         y[22] = 0.0
         y[23] = x[10] + x[11]
 
+        # left heel
         y[24] = self.legs[0] * np.cos(x[2]) * x[8] + self.legs[1] * (x[8] + x[9]) * np.cos(x[2] + x[3]) + x[6]
         y[25] = self.legs[0] * np.sin(x[2]) * x[8] + self.legs[1] * (x[8] + x[9]) * np.sin(x[2] + x[3]) + x[7]
         y[26] = 0.0
@@ -192,6 +196,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                     13]
         y[29] = 0.0
 
+        # right heel
         y[30] = self.legs[2] * np.cos(x[4]) * x[10] + self.legs[3] * (x[10] + x[11]) * np.cos(x[4] + x[5]) + x[6]
         y[31] = self.legs[2] * np.sin(x[4]) * x[10] + self.legs[3] * (x[10] + x[11]) * np.sin(x[4] + x[5]) + x[7]
         y[32] = 0.0
@@ -203,6 +208,9 @@ class TwoLegModel(ssm.StateSpaceModel):
                 x[13]
         y[35] = 0.0
 
+        if DIM_OBSERVATIONS == 20:
+            y = y[(0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), ]
+
         return y
 
     def PX0(self):
@@ -213,16 +221,221 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=self.a, cov=self.P)
 
     def PX(self, t, xp):
+        #return dists.MvNormal(loc=self.state_transition(xp), cov=np.eye(DIM_STATES))
         return dists.MvNormal(loc=self.state_transition(xp), cov=self.Q)
 
     def PY(self, t, xp, x):
+        nb_particles, _ = x.shape
+        mu = np.zeros(shape=(nb_particles, DIM_OBSERVATIONS))
+        mu[:, 1] = 1.0
+        #return dists.MvNormal(loc=mu, cov=self.H)
         return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
 
 
 class TwoLegModelGuided(TwoLegModel):
+
+    def compute_observation_derivatives(self, xp):
+        nb_particles, _ = xp.shape
+        df = []
+        for i in range(0, nb_particles):
+            df.append(self.compute_observation_derivatives_1dim(xp[i]))
+        return np.array(df)
+
+    def compute_observation_derivatives_1dim(self, xp):
+        df = np.zeros((36, DIM_STATES))
+
+        # left femur
+        df[0, 2] = -xp[12] * np.sin(xp[2]) + (xp[13] + self.g) * np.cos(xp[2])
+        df[0, 12] = np.cos(xp[2])
+        df[0, 13] = np.sin(xp[2])
+        df[0, 14] = self.cst[0]
+        df[1, 2] = -xp[12] * np.cos(xp[2]) - (xp[13] + self.g) * np.sin(xp[2])
+        df[1, 8] = 2 * xp[8] * self.cst[0]
+        df[1, 12] = -np.sin(xp[2])
+        df[1, 13] = np.cos(xp[2])
+        df[5, 8] = 1
+
+        # left fibula
+        df[6, 2] = -xp[12] * np.sin(xp[2] + xp[3]) + xp[13] * np.cos(xp[2] + xp[3]) + self.g * np.cos(xp[2] + xp[3])
+        df[6, 3] = -xp[14] * self.legs[0] * np.sin(xp[3]) - xp[12] * np.sin(xp[2] + xp[3]) + xp[13] * np.cos(
+            xp[2] + xp[3]) + self.legs[0] * xp[8] ** 2 * np.cos(xp[3]) + self.g * np.cos(xp[2] + xp[3])
+        df[6, 8] = 2 * self.legs[0] * xp[8] * np.sin(xp[3])
+        df[6, 12] = np.cos(xp[2] + xp[3])
+        df[6, 13] = np.sin(xp[2] + xp[3])
+        df[6, 14] = self.cst[1] + self.legs[0] * np.cos(xp[3])
+        df[6, 15] = self.cst[1]
+        df[7, 2] = -xp[12] * np.cos(xp[2] + xp[3]) - xp[13] * np.sin(xp[2] + xp[3]) - self.g * np.sin(xp[2] + xp[3])
+        df[7, 3] = -xp[14] * self.legs[0] * np.cos(xp[3]) - xp[12] * np.cos(xp[2] + xp[3]) - xp[13] * np.sin(
+            xp[2] + xp[3]) - self.legs[0] * xp[8] ** 2 * np.sin(xp[3]) - self.g * np.sin(xp[2] + xp[3])
+        df[7, 8] = 2 * self.legs[0] * xp[8] * np.cos(xp[3]) + 2 * self.cst[1] * (xp[8] + xp[9])
+        df[7, 9] = 2 * self.cst[1] * (xp[8] + xp[9])
+        df[7, 12] = -np.sin(xp[2] + xp[3])
+        df[7, 13] = np.cos(xp[2] + xp[3])
+        df[7, 14] = -self.legs[0] * np.sin(xp[3])
+        df[11, 8] = 1
+        df[11, 9] = 1
+
+        # right femur
+        df[12, 2] = -xp[12] * np.sin(xp[4]) + (xp[13] + self.g) * np.cos(xp[4])
+        df[12, 12] = np.cos(xp[4])
+        df[12, 13] = np.sin(xp[4])
+        df[12, 14] = self.cst[2]
+        df[13, 2] = -xp[12] * np.cos(xp[4]) - (xp[13] + self.g) * np.sin(xp[4])
+        df[13, 8] = 2 * xp[10] * self.cst[2]
+        df[13, 12] = -np.sin(xp[4])
+        df[13, 13] = np.cos(xp[4])
+        df[17, 10] = 1
+
+        # right fibula
+        df[18, 4] = -xp[12] * np.sin(xp[4] + xp[5]) + xp[13] * np.cos(xp[4] + xp[5]) + self.g * np.cos(xp[4] + xp[5])
+        df[18, 5] = -xp[16] * self.legs[2] * np.sin(xp[5]) - xp[12] * np.sin(xp[4] + xp[5]) + xp[13] * np.cos(
+            xp[4] + xp[5]) + self.legs[2] * xp[10] ** 2 * np.cos(xp[5]) + self.g * np.cos(xp[4] + xp[5])
+        df[18, 10] = 2 * self.legs[2] * xp[10] * np.sin(xp[5])
+        df[18, 12] = np.cos(xp[4] + xp[5])
+        df[18, 13] = np.sin(xp[4] + xp[5])
+        df[18, 16] = self.cst[3] + self.legs[2] * np.cos(xp[5])
+        df[18, 17] = self.cst[3]
+        df[19, 4] = -xp[12] * np.cos(xp[4] + xp[5]) - xp[13] * np.sin(xp[4] + xp[5]) - self.g * np.sin(xp[4] + xp[5])
+        df[19, 5] = -xp[16] * self.legs[2] * np.cos(xp[5]) - xp[12] * np.cos(xp[4] + xp[5]) - xp[13] * np.sin(
+            xp[4] + xp[5]) - self.legs[2] * xp[10] ** 2 * np.sin(xp[5]) - self.g * np.sin(xp[4] + xp[5])
+        df[19, 10] = 2 * self.legs[2] * xp[10] * np.cos(xp[5]) + 2 * self.cst[3] * (xp[10] + xp[11])
+        df[19, 12] = 2 * self.cst[3] * (xp[10] + xp[11])
+        df[19, 13] = -np.sin(xp[4] + xp[5])
+        df[19, 16] = np.cos(xp[4] + xp[5])
+        df[19, 17] = -self.legs[2] * np.sin(xp[5])
+        df[23, 10] = 1
+        df[23, 11] = 1
+
+        # left heel
+        df[24, 2] = -xp[8] * self.legs[0] + np.sin(xp[2]) - self.legs[1] * (xp[8] + xp[9]) * np.sin(xp[2] + xp[3])
+        df[24, 3] = -self.legs[1] * (xp[8] + xp[9]) * np.sin(xp[2] + xp[3])
+        df[24, 6] = 1
+        df[24, 8] = self.legs[0] * np.cos(xp[2]) + self.legs[1] * np.cos(xp[2] + xp[3])
+        df[24, 9] = self.legs[1] * np.cos(xp[2] + xp[3])
+        df[25, 3] = xp[8] * self.legs[0] * np.cos(xp[2]) + self.legs[1] * (xp[8] + xp[9]) * np.cos(xp[2] + xp[3])
+        df[25, 4] = self.legs[1] * (xp[8] + xp[9]) * np.cos(xp[2] + xp[3])
+        df[25, 7] = 1
+        df[25, 8] = self.legs[0] * np.sin(xp[2]) + self.legs[1] * np.sin(xp[2] + xp[3])
+        df[25, 9] = self.legs[1] * np.sin(xp[2] + xp[3])
+        df[27, 2] = -self.legs[0] * (xp[14] * np.sin(xp[2]) + xp[8] ** 2 * np.cos(xp[2])) - self.legs[1] * (
+                xp[14] + xp[15]) * np.sin(xp[2] + xp[3]) - self.legs[1] * (xp[8] + xp[9]) ** 2 * np.cos(
+            xp[2] + xp[3])
+        df[27, 3] = -self.legs[1] * (xp[14] + xp[15]) * np.sin(xp[2] + xp[3]) - self.legs[1] * (
+                xp[8] + xp[9]) ** 2 * np.cos(xp[2] + xp[3])
+        df[27, 8] = -2 * self.legs[0] * xp[8] * np.sin(xp[2]) - 2 * self.legs[1] * (xp[8] + xp[9]) * np.sin(
+            xp[2] + xp[3])
+        df[27, 9] = -2 * self.legs[1] * (xp[8] + xp[9]) * np.sin(xp[2] + xp[3])
+        df[27, 12] = 1
+        df[27, 14] = self.legs[0] * np.cos(xp[2]) + self.legs[1] * np.cos(xp[2] + xp[3])
+        df[27, 15] = self.legs[1] * np.cos(xp[2] + xp[3])
+        df[28, 2] = -self.legs[0] * (xp[14] * np.cos(xp[2]) - xp[8] ** 2 * np.sin(xp[2])) + self.legs[1] * (
+                xp[14] + xp[15]) * np.cos(xp[2] + xp[3]) - self.legs[1] * (xp[8] + xp[9]) ** 2 * np.sin(
+            xp[2] + xp[3])
+        df[28, 3] = self.legs[1] * (xp[14] + xp[15]) * np.cos(xp[2] + xp[3]) - self.legs[1] * (
+                xp[8] + xp[9]) ** 2 * np.sin(xp[2] + xp[3])
+        df[28, 8] = 2 * self.legs[0] * xp[8] * np.cos(xp[2]) + 2 * self.legs[1] * (xp[8] + xp[9]) * np.cos(
+            xp[2] + xp[3])
+        df[28, 9] = 2 * self.legs[1] * (xp[8] + xp[9]) * np.cos(xp[2] + xp[3])
+        df[28, 13] = 1
+        df[28, 14] = self.legs[0] * np.sin(xp[2]) + self.legs[1] * np.sin(xp[2] + xp[3])
+        df[28, 15] = self.legs[1] * np.sin(xp[2] + xp[3])
+
+        # right heel
+        df[30, 4] = -xp[10] * self.legs[2] + np.sin(xp[4]) - self.legs[3] * (xp[10] + xp[11]) * np.sin(xp[4] + xp[5])
+        df[30, 5] = -self.legs[3] * (xp[10] + xp[11]) * np.sin(xp[4] + xp[5])
+        df[30, 6] = 1
+        df[30, 10] = self.legs[2] * np.cos(xp[4]) + self.legs[3] * np.cos(xp[4] + xp[5])
+        df[30, 11] = self.legs[3] * np.cos(xp[4] + xp[5])
+        df[31, 3] = xp[10] * self.legs[2] * np.cos(xp[4]) + self.legs[3] * (xp[10] + xp[11]) * np.cos(xp[4] + xp[5])
+        df[31, 4] = self.legs[3] * (xp[10] + xp[11]) * np.cos(xp[4] + xp[5])
+        df[31, 7] = 1
+        df[31, 10] = self.legs[2] * np.sin(xp[4]) + self.legs[3] * np.sin(xp[4] + xp[5])
+        df[31, 11] = self.legs[3] * np.sin(xp[4] + xp[5])
+        df[33, 4] = -self.legs[2] * (xp[16] * np.sin(xp[4]) + xp[10] ** 2 * np.cos(xp[4])) - self.legs[3] * (
+                xp[16] + xp[17]) * np.sin(xp[4] + xp[5]) - self.legs[3] * (xp[10] + xp[11]) ** 2 * np.cos(
+            xp[4] + xp[5])
+        df[33, 5] = -self.legs[3] * (xp[16] + xp[17]) * np.sin(xp[4] + xp[5]) - self.legs[3] * (
+                xp[10] + xp[11]) ** 2 * np.cos(xp[4] + xp[5])
+        df[33, 10] = -2 * self.legs[2] * xp[10] * np.sin(xp[4]) - 2 * self.legs[3] * (xp[10] + xp[11]) * np.sin(
+            xp[4] + xp[5])
+        df[33, 11] = -2 * self.legs[3] * (xp[10] + xp[11]) * np.sin(xp[4] + xp[5])
+        df[33, 12] = 1
+        df[33, 16] = self.legs[2] * np.cos(xp[4]) + self.legs[3] * np.cos(xp[4] + xp[5])
+        df[33, 17] = self.legs[3] * np.cos(xp[4] + xp[5])
+        df[34, 4] = -self.legs[2] * (xp[16] * np.cos(xp[4]) - xp[10] ** 2 * np.sin(xp[4])) + self.legs[3] * (
+                xp[16] + xp[17]) * np.cos(xp[4] + xp[5]) - self.legs[3] * (xp[10] + xp[11]) ** 2 * np.sin(
+            xp[4] + xp[5])
+        df[34, 5] = self.legs[3] * (xp[16] + xp[17]) * np.cos(xp[4] + xp[5]) - self.legs[3] * (
+                xp[10] + xp[11]) ** 2 * np.sin(xp[4] + xp[5])
+        df[34, 10] = 2 * self.legs[2] * xp[10] * np.cos(xp[4]) + 2 * self.legs[3] * (xp[10] + xp[11]) * np.cos(
+            xp[4] + xp[5])
+        df[34, 11] = 2 * self.legs[3] * (xp[10] + xp[11]) * np.cos(xp[4] + xp[5])
+        df[34, 13] = 1
+        df[34, 16] = self.legs[2] * np.sin(xp[4]) + self.legs[3] * np.sin(xp[4] + xp[5])
+        df[34, 17] = self.legs[3] * np.sin(xp[4] + xp[5])
+
+        if DIM_OBSERVATIONS == 20:
+            df = df[(0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), :]
+
+        return df
+
+    def compute_kalman_gain(self, df):
+        nb_particles, _, _ = df.shape
+        K = []
+        for i in range(0, nb_particles):
+            S = np.matmul(df[i], np.matmul(self.kalman_cov, df[i].T)) + self.H
+            K.append(np.matmul(self.Q, np.matmul(df[i].T, np.linalg.inv(S))))
+        return np.array(K)
+
+    def compute_state_approx(self, xp, y, kalman_gain):
+        nb_particles, _ = xp.shape
+        x_next = self.state_transition(xp)
+        y_hat = self.state_to_observation(xp)
+        x_hat = []
+        for i in range(0, nb_particles):
+            x_hat.append(x_next[i] + np.matmul(kalman_gain[i], (y - y_hat[i]).T))
+        return np.array(x_hat)
+
+    def init_kalman_covs(self, nb_particles):
+        self.kalman_covs = np.array([np.eye(DIM_STATES) for _ in range(0, nb_particles)])
+        return None
+
+    def compute_ekf_proposal(self, xp, data_i, sigma):
+        x_hat = np.reshape(self.state_transition(xp), (1, DIM_STATES))
+        sigma = np.matmul(self.A, np.matmul(sigma, self.A.T)) + self.Q
+
+        df = self.compute_observation_derivatives_1dim(xp)
+        innovation = np.matmul(df, np.matmul(sigma, df.T)) + self.H
+        kalman_gain = np.matmul(sigma, np.matmul(df.T, np.linalg.inv(innovation)))
+
+        x_hat = x_hat + np.matmul(kalman_gain, (data_i - self.state_to_observation(x_hat)).T).T
+        sigma = np.matmul(np.eye(DIM_STATES) - np.matmul(kalman_gain, df), sigma)
+        return x_hat, sigma
+
     def proposal0(self, data):
         return self.PX0()
+        # return self.PX0().posterior(data[0], Sigma=np.eye(DIM_STATES))
 
-    def proposal(t, xp, data):  # a silly proposal
-
-        return dists.Normal(loc=rho * xp + data[t], scale=self.sigma)
+    def proposal(self, t, xp, data):
+        nb_particles, dim_states = xp.shape
+        if t == 1:
+            self.init_kalman_covs(nb_particles)
+        x_hats = np.empty((nb_particles, DIM_STATES))
+        kalman_covs = np.empty((nb_particles, DIM_STATES, DIM_STATES))
+        for i in range(0, nb_particles):
+            sigma = self.kalman_covs[i]
+            x_hat, sigma = self.compute_ekf_proposal(xp[i], data[i], sigma)
+            x_hats[i, :] = x_hat
+            kalman_covs[i, :, :] = sigma
+        self.kalman_covs = kalman_covs
+        covar = np.mean(kalman_covs, axis=0)
+        """
+        self.kalman_cov = np.matmul(self.A, np.matmul(self.kalman_cov, self.A.T))
+        df = self.compute_observation_derivatives(xp)
+        kalman_gain = self.compute_kalman_gain(df)
+        x_hat = self.compute_state_approx(xp, data[t], kalman_gain)
+        self.kalman_cov = np.matmul((np.eye(DIM_STATES) - np.matmul(kalman_gain, df)), self.kalman_cov)
+        return dists.MvNormal(x_hat, self.kalman_cov)
+        """
+        return dists.MvNormal(loc=x_hats, cov=covar)
+        # return self.PX(t, xp).posterior(data[t], Sigma=1.0*self.Q)
