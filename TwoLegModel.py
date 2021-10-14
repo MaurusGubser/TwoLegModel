@@ -221,14 +221,14 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=self.a, cov=self.P)
 
     def PX(self, t, xp):
-        #return dists.MvNormal(loc=self.state_transition(xp), cov=np.eye(DIM_STATES))
+        # return dists.MvNormal(loc=self.state_transition(xp), cov=np.eye(DIM_STATES))
         return dists.MvNormal(loc=self.state_transition(xp), cov=self.Q)
 
     def PY(self, t, xp, x):
         nb_particles, _ = x.shape
         mu = np.zeros(shape=(nb_particles, DIM_OBSERVATIONS))
         mu[:, 1] = 1.0
-        #return dists.MvNormal(loc=mu, cov=self.H)
+        # return dists.MvNormal(loc=mu, cov=self.H)
         return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
 
 
@@ -378,23 +378,6 @@ class TwoLegModelGuided(TwoLegModel):
             df = df[(0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), :]
 
         return df
-
-    def compute_kalman_gain(self, df):
-        nb_particles, _, _ = df.shape
-        K = []
-        for i in range(0, nb_particles):
-            S = np.matmul(df[i], np.matmul(self.kalman_cov, df[i].T)) + self.H
-            K.append(np.matmul(self.Q, np.matmul(df[i].T, np.linalg.inv(S))))
-        return np.array(K)
-
-    def compute_state_approx(self, xp, y, kalman_gain):
-        nb_particles, _ = xp.shape
-        x_next = self.state_transition(xp)
-        y_hat = self.state_to_observation(xp)
-        x_hat = []
-        for i in range(0, nb_particles):
-            x_hat.append(x_next[i] + np.matmul(kalman_gain[i], (y - y_hat[i]).T))
-        return np.array(x_hat)
 
     def init_kalman_covs(self, nb_particles):
         self.kalman_covs = np.array([np.eye(DIM_STATES) for _ in range(0, nb_particles)])
