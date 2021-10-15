@@ -1,32 +1,16 @@
 import numpy as np
-import itertools
-
-
-CONST_GRAVITATION = 9.81
 
 
 class MechanicalModel:
-    def __init__(self, dt, imu_position, leg_constants, a, P, cov_step, scale_x, scale_y, scale_phi, sf_H, H):
+    def __init__(self, dt, dim_state, dim_observations, imu_position, leg_constants):
         self.dt = dt
-        self.dim_states = a.size
-        self.dim_observations = H.shape[0]
+        self.dim_states = dim_state
+        self.dim_observations = dim_observations
         self.A = np.zeros((self.dim_states, self.dim_states))
         self.set_process_transition_matrix()
-        self.g = CONST_GRAVITATION
+        self.g = 9.81
         self.cst = imu_position
         self.legs = leg_constants
-        self.a = a
-        self.P = P
-        self.cov_step = cov_step
-        self.scale_x = scale_x
-        self.scale_y = scale_y
-        self.scale_phi = scale_phi
-        self.Q = np.zeros((self.dim_states, self.dim_states))
-        self.set_process_cov_theory()
-        self.sf_H = sf_H
-        self.H = H
-        self.scale_H()
-        self.kalman_covs = None
 
     def set_process_transition_matrix(self):
         self.A = np.eye(self.dim_states)
@@ -38,57 +22,17 @@ class MechanicalModel:
                     self.A[row, col] = self.dt ** 2 / 2.0
         return None
 
-    def set_process_cov_theory(self):
-        block_size = self.dim_states // 3
-        for row in range(0, self.dim_states):
-            for col in range(0, self.dim_states):
-                if row < block_size:
-                    if row == col:
-                        self.Q[row, col] = self.cov_step ** 5 / 20.0
-                    elif row + 6 == col:
-                        self.Q[row, col] = self.cov_step ** 4 / 8.0
-                        self.Q[col, row] = self.cov_step ** 4 / 8.0
-                    elif row + 12 == col:
-                        self.Q[row, col] = self.cov_step ** 3 / 6.0
-                        self.Q[col, row] = self.cov_step ** 3 / 6.0
-                elif block_size <= row < 2 * block_size:
-                    if row == col:
-                        self.Q[row, col] = self.cov_step ** 3 / 3.0
-                    elif row + 6 == col:
-                        self.Q[row, col] = self.cov_step ** 2 / 2.0
-                        self.Q[col, row] = self.cov_step ** 2 / 2.0
-                elif 2 * block_size <= row:
-                    if row == col:
-                        self.Q[row, col] = self.cov_step
-        idx_groups = [[0, 6, 12], [1, 7, 13], [2, 8, 14], [3, 9, 15], [4, 10, 16], [5, 11, 17]]
-        scale_factors = [self.scale_x, self.scale_y, self.scale_phi, self.scale_phi, self.scale_phi, self.scale_phi]
-        for factor, idxs in zip(scale_factors, idx_groups):
-            for row, col in itertools.product(idxs, idxs):
-                self.Q[row, col] *= factor
-        return None
+    def state_transition(self, x):
+        return np.matmul(self.A, x.T).T
 
-    def scale_H(self):
-        self.H = self.sf_H * self.H
-        return None
-
-    def state_transition(self, xp):
-        return np.matmul(self.A, xp.T).T
-    """
-    def state_to_observation(self, x):
-        nb_samples, _ = x.shape
-        y = np.empty(shape=(nb_samples, self.dim_observations))
-        for i in range(0, nb_samples):
-            y[i] = self.state_to_observation_1dim(x[i])   # do i have to remove y[i] = ... ? earlier version was self.state_to_observation_1dim(x[i], y[i])
-        return y
-    """
     def state_to_observation(self, x):
         nb_steps, _ = x.shape
         y = np.empty(shape=(nb_steps, 36))
         # left femur
         y[:, 0] = self.cst[0] * x[:, 14] + self.g * np.sin(x[:, 2]) + np.sin(x[:, 2]) * x[:, 13] + np.cos(x[:, 2]) \
-                  * x[:, 12]
+            * x[:, 12]
         y[:, 1] = self.cst[0] * x[:, 8] ** 2 + self.g * np.cos(x[:, 2]) - np.sin(x[:, 2]) * x[:, 12] \
-                  + np.cos(x[:, 2]) * x[:, 13]
+            + np.cos(x[:, 2]) * x[:, 13]
         y[:, 2] = 0.0
         y[:, 3] = 0.0
         y[:, 4] = 0.0
