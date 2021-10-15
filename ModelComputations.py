@@ -65,39 +65,15 @@ y = data_reader.observations
 dt = 0.01
 leg_constants = np.array([0.5, 0.6, 0.5, 0.6])
 imu_position = np.array([0.34, 0.29, 0.315, 0.33])
-a = np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
-              0.57, 0.10, 2.54, -3.8, -0.08, -0.82,
-              -0.00, 0.01, -1.78, 3.32, -0.30, 0.54])
-P = 0.01 * np.eye(18)
-cov_step = 0.01
-scale_x = 1.0
-scale_y = 1.0
-scale_phi = 1.0
-sf_H = 1.0
-H = np.diag([0.1, 0.1, 0.01,
-             0.1, 0.1, 0.01,
-             0.1, 0.1, 0.01,
-             0.1, 0.1, 0.01,
-             0.1, 0.1, 1.0, 1.0,
-             0.1, 0.1, 1.0, 1.0])
-H_36 = np.diag([0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                0.1, 0.1, 0.1, 1.0, 1.0, 1.0,
-                0.1, 0.1, 0.1, 1.0, 1.0, 1.0])
+dim_state = 18
+dim_observations = 20
 
 my_model = MechanicalModel(dt=dt,
+                           dim_state=dim_state,
+                           dim_observations=dim_observations,
                            imu_position=imu_position,
                            leg_constants=leg_constants,
-                           a=a,
-                           P=P,
-                           cov_step=cov_step,
-                           scale_x=scale_x,
-                           scale_y=scale_y,
-                           scale_phi=scale_phi,
-                           sf_H=sf_H,
-                           H=H)
+                           )
 
 # ---------- plotting -----------------
 plot_observations(my_model, x, y)
