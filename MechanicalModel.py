@@ -2,9 +2,9 @@ import numpy as np
 
 
 class MechanicalModel:
-    def __init__(self, dt, dim_state, dim_observations, imu_position, leg_constants):
+    def __init__(self, dt, dim_states, dim_observations, imu_position, leg_constants):
         self.dt = dt
-        self.dim_states = dim_state
+        self.dim_states = dim_states
         self.dim_observations = dim_observations
         self.A = np.zeros((self.dim_states, self.dim_states))
         self.set_process_transition_matrix()
@@ -27,12 +27,13 @@ class MechanicalModel:
 
     def state_to_observation(self, x):
         nb_steps, _ = x.shape
-        y = np.empty(shape=(nb_steps, 36))
+        y = np.empty((nb_steps, self.dim_observations))
         # left femur
-        y[:, 0] = self.cst[0] * x[:, 14] + self.g * np.sin(x[:, 2]) + np.sin(x[:, 2]) * x[:, 13] + np.cos(x[:, 2]) \
-            * x[:, 12]
-        y[:, 1] = self.cst[0] * x[:, 8] ** 2 + self.g * np.cos(x[:, 2]) - np.sin(x[:, 2]) * x[:, 12] \
-            + np.cos(x[:, 2]) * x[:, 13]
+        y[:, 0] = self.cst[0] * x[:, 14] + self.g * np.sin(x[:, 2]) + np.sin(x[:, 2]) * x[:, 13] + np.cos(x[:, 2]) * x[
+                                                                                                                     :,
+                                                                                                                     12]
+        y[:, 1] = self.cst[0] * x[:, 8] ** 2 + self.g * np.cos(x[:, 2]) - np.sin(x[:, 2]) * x[:, 12] + np.cos(
+            x[:, 2]) * x[:, 13]
         y[:, 2] = 0.0
         y[:, 3] = 0.0
         y[:, 4] = 0.0
@@ -40,22 +41,23 @@ class MechanicalModel:
 
         # left fibula
         y[:, 6] = self.cst[1] * x[:, 14] + self.cst[1] * x[:, 15] + self.g * np.sin(x[:, 2] + x[:, 3]) + self.legs[0] \
-            * np.sin(x[:, 3]) * x[:, 8] ** 2 + self.legs[0] * np.cos(x[:, 3]) * x[:, 14] \
-            + np.sin(x[:, 2] + x[:, 3]) * x[:, 13] + np.cos(x[:, 2] + x[:, 3]) * x[:, 12]
+                  * np.sin(x[:, 3]) * x[:, 8] ** 2 + self.legs[0] * np.cos(x[:, 3]) * x[:, 14] \
+                  + np.sin(x[:, 2] + x[:, 3]) * x[:, 13] + np.cos(x[:, 2] + x[:, 3]) * x[:, 12]
         y[:, 7] = self.cst[1] * x[:, 8] ** 2 + 2 * self.cst[1] * x[:, 8] * x[:, 9] + self.cst[1] * x[:, 9] ** 2 \
-            + self.g * np.cos(x[:, 2] + x[:, 3]) - self.legs[0] * np.sin(x[:, 3]) * x[:, 14] + self.legs[0] \
-            * np.cos(x[:, 3]) * x[:, 8] ** 2 - np.sin(x[:, 2] + x[:, 3]) * x[:, 12] + np.cos(x[:, 2] + x[:, 3]) \
-            * x[:, 13]
+                  + self.g * np.cos(x[:, 2] + x[:, 3]) - self.legs[0] * np.sin(x[:, 3]) * x[:, 14] + self.legs[0] \
+                  * np.cos(x[:, 3]) * x[:, 8] ** 2 - np.sin(x[:, 2] + x[:, 3]) * x[:, 12] + np.cos(
+            x[:, 2] + x[:, 3]) * x[:, 13]
         y[:, 8] = 0.0
         y[:, 9] = 0.0
         y[:, 10] = 0.0
         y[:, 11] = x[:, 8] + x[:, 9]
 
         # right femur
-        y[:, 12] = self.cst[2] * x[:, 16] + self.g * np.sin(x[:, 4]) + np.sin(x[:, 4]) * x[:, 13] + np.cos(x[:, 4]) \
-            * x[:, 12]
-        y[:, 13] = self.cst[2] * x[:, 10] ** 2 + self.g * np.cos(x[:, 4]) - np.sin(x[:, 4]) * x[:, 12] \
-            + np.cos(x[:, 4]) * x[:, 13]
+        y[:, 12] = self.cst[2] * x[:, 16] + self.g * np.sin(x[:, 4]) + np.sin(x[:, 4]) * x[:, 13] + np.cos(x[:, 4]) * x[
+                                                                                                                      :,
+                                                                                                                      12]
+        y[:, 13] = self.cst[2] * x[:, 10] ** 2 + self.g * np.cos(x[:, 4]) - np.sin(x[:, 4]) * x[:, 12] + np.cos(
+            x[:, 4]) * x[:, 13]
         y[:, 14] = 0.0
         y[:, 15] = 0.0
         y[:, 16] = 0.0
@@ -63,52 +65,53 @@ class MechanicalModel:
 
         # right fibula
         y[:, 18] = self.cst[3] * x[:, 16] + self.cst[3] * x[:, 17] + self.g * np.sin(x[:, 4] + x[:, 5]) + self.legs[2] \
-            * np.sin(x[:, 5]) * x[:, 10] ** 2 + self.legs[2] * np.cos(x[:, 5]) * x[:, 16] \
-            + np.sin(x[:, 4] + x[:, 5]) * x[:, 13] + np.cos(x[:, 4] + x[:, 5]) * x[:, 12]
+                   * np.sin(x[:, 5]) * x[:, 10] ** 2 + self.legs[2] * np.cos(x[:, 5]) * x[:, 16] \
+                   + np.sin(x[:, 4] + x[:, 5]) * x[:, 13] + np.cos(x[:, 4] + x[:, 5]) * x[:, 12]
         y[:, 19] = self.cst[3] * x[:, 10] ** 2 + 2 * self.cst[3] * x[:, 10] * x[:, 11] + self.cst[3] * x[:, 11] ** 2 \
-            + self.g * np.cos(x[:, 4] + x[:, 5]) - self.legs[2] * np.sin(x[:, 5]) * x[:, 16] + self.legs[2] \
-            * np.cos(x[:, 5]) * x[:, 10] ** 2 - np.sin(x[:, 4] + x[:, 5]) * x[:, 12] + np.cos(x[:, 4] + x[:, 5]) \
-            * x[:, 13]
+                   + self.g * np.cos(x[:, 4] + x[:, 5]) - self.legs[2] * np.sin(x[:, 5]) * x[:, 16] + self.legs[2] \
+                   * np.cos(x[:, 5]) * x[:, 10] ** 2 - np.sin(x[:, 4] + x[:, 5]) * x[:, 12] + np.cos(
+            x[:, 4] + x[:, 5]) * x[:, 13]
         y[:, 20] = 0.0
         y[:, 21] = 0.0
         y[:, 22] = 0.0
         y[:, 23] = x[:, 10] + x[:, 11]
 
         # left heel
-        y[:, 24] = self.legs[0] * np.cos(x[:, 2]) * x[:, 8] + self.legs[1] * (x[:, 8] + x[:, 9]) \
-            * np.cos(x[:, 2] + x[:, 3]) + x[:, 6]
-        y[:, 25] = self.legs[0] * np.sin(x[:, 2]) * x[:, 8] + self.legs[1] * (x[:, 8] + x[:, 9]) \
-            * np.sin(x[:, 2] + x[:, 3]) + x[:, 7]
+        y[:, 24] = self.legs[0] * np.cos(x[:, 2]) * x[:, 8] + self.legs[1] * (x[:, 8] + x[:, 9]) * np.cos(
+            x[:, 2] + x[:, 3]) + x[:, 6]
+        y[:, 25] = self.legs[0] * np.sin(x[:, 2]) * x[:, 8] + self.legs[1] * (x[:, 8] + x[:, 9]) * np.sin(
+            x[:, 2] + x[:, 3]) + x[:, 7]
         y[:, 26] = 0.0
         y[:, 27] = -self.legs[0] * np.sin(x[:, 2]) * x[:, 8] ** 2 + self.legs[0] * np.cos(x[:, 2]) * x[:, 14] \
-            - self.legs[1] * (x[:, 8] + x[:, 9]) ** 2 * np.sin(x[:, 2] + x[:, 3]) + self.legs[1] \
-            * (x[:, 14] + x[:, 15]) * np.cos(x[:, 2] + x[:, 3]) + x[:, 12]
+                   - self.legs[1] * (x[:, 8] + x[:, 9]) ** 2 * np.sin(x[:, 2] + x[:, 3]) + self.legs[1] \
+                   * (x[:, 14] + x[:, 15]) * np.cos(x[:, 2] + x[:, 3]) + x[:, 12]
         y[:, 28] = self.legs[0] * np.sin(x[:, 2]) * x[:, 14] + self.legs[0] * np.cos(x[:, 2]) * x[:, 8] ** 2 \
-            + self.legs[1] * (x[:, 8] + x[:, 9]) ** 2 * np.cos(x[:, 2] + x[:, 3]) + self.legs[1] \
-            * (x[:, 14] + x[:, 15]) * np.sin(x[:, 2] + x[:, 3]) + x[:, 13]
+                   + self.legs[1] * (x[:, 8] + x[:, 9]) ** 2 * np.cos(x[:, 2] + x[:, 3]) + self.legs[1] \
+                   * (x[:, 14] + x[:, 15]) * np.sin(x[:, 2] + x[:, 3]) + x[:, 13]
         y[:, 29] = 0.0
 
         # right heel
-        y[:, 30] = self.legs[2] * np.cos(x[:, 4]) * x[:, 10] + self.legs[3] * (x[:, 10] + x[:, 11]) \
-            * np.cos(x[:, 4] + x[:, 5]) + x[:, 6]
-        y[:, 31] = self.legs[2] * np.sin(x[:, 4]) * x[:, 10] + self.legs[3] * (x[:, 10] + x[:, 11]) \
-            * np.sin(x[:, 4] + x[:, 5]) + x[:, 7]
+        y[:, 30] = self.legs[2] * np.cos(x[:, 4]) * x[:, 10] + self.legs[3] * (x[:, 10] + x[:, 11]) * np.cos(
+            x[:, 4] + x[:, 5]) + x[:, 6]
+        y[:, 31] = self.legs[2] * np.sin(x[:, 4]) * x[:, 10] + self.legs[3] * (x[:, 10] + x[:, 11]) * np.sin(
+            x[:, 4] + x[:, 5]) + x[:, 7]
         y[:, 32] = 0.0
         y[:, 33] = -self.legs[2] * np.sin(x[:, 4]) * x[:, 10] ** 2 + self.legs[2] * np.cos(x[:, 4]) * x[:, 16] \
-            - self.legs[3] * (x[:, 10] + x[:, 11]) ** 2 * np.sin(x[:, 4] + x[:, 5]) + self.legs[3] \
-            * (x[:, 16] + x[:, 17]) * np.cos(x[:, 4] + x[:, 5]) + x[:, 12]
+                   - self.legs[3] * (x[:, 10] + x[:, 11]) ** 2 * np.sin(x[:, 4] + x[:, 5]) + self.legs[3] \
+                   * (x[:, 16] + x[:, 17]) * np.cos(x[:, 4] + x[:, 5]) + x[:, 12]
         y[:, 34] = self.legs[2] * np.sin(x[:, 4]) * x[:, 16] + self.legs[2] * np.cos(x[:, 4]) * x[:, 10] ** 2 \
-            + self.legs[3] * (x[:, 10] + x[:, 11]) ** 2 * np.cos(x[:, 4] + x[:, 5]) + self.legs[3] \
-            * (x[:, 16] + x[:, 17]) * np.sin(x[:, 4] + x[:, 5]) + x[:, 13]
+                   + self.legs[3] * (x[:, 10] + x[:, 11]) ** 2 * np.cos(x[:, 4] + x[:, 5]) + self.legs[3] \
+                   * (x[:, 16] + x[:, 17]) * np.sin(x[:, 4] + x[:, 5]) + x[:, 13]
         y[:, 35] = 0.0
-        if self.dim_observations == 20:
-            y = y[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), ]
-
+        """
+        if self.ignore_zeros:
+            y = y[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
+        """
         return y
 
     def compute_jacobian_observation(self, x):
-        df = np.zeros((36, self.dim_states))
-
+        df = np.zeros((self.dim_observations, self.dim_states))
+        x = x.flatten()
         # left femur
         df[0, 2] = -x[12] * np.sin(x[2]) + (x[13] + self.g) * np.cos(x[2])
         df[0, 12] = np.cos(x[2])
@@ -228,8 +231,7 @@ class MechanicalModel:
         df[33, 16] = self.legs[2] * np.cos(x[4]) + self.legs[3] * np.cos(x[4] + x[5])
         df[33, 17] = self.legs[3] * np.cos(x[4] + x[5])
         df[34, 4] = -self.legs[2] * (-x[16] * np.cos(x[4]) + x[10] ** 2 * np.sin(x[4])) + self.legs[3] * (
-                x[16] + x[17]) * np.cos(x[4] + x[5]) - self.legs[3] * (x[10] + x[11]) ** 2 * np.sin(
-            x[4] + x[5])
+                x[16] + x[17]) * np.cos(x[4] + x[5]) - self.legs[3] * (x[10] + x[11]) ** 2 * np.sin(x[4] + x[5])
         df[34, 5] = self.legs[3] * (x[16] + x[17]) * np.cos(x[4] + x[5]) - self.legs[3] * (
                 x[10] + x[11]) ** 2 * np.sin(x[4] + x[5])
         df[34, 10] = 2 * self.legs[2] * x[10] * np.cos(x[4]) + 2 * self.legs[3] * (x[10] + x[11]) * np.cos(
@@ -239,9 +241,18 @@ class MechanicalModel:
         df[34, 16] = self.legs[2] * np.sin(x[4]) + self.legs[3] * np.sin(x[4] + x[5])
         df[34, 17] = self.legs[3] * np.sin(x[4] + x[5])
 
-        if self.dim_observations == 20:
-            df = df[(0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), :]
+        return df
 
+    def compute_jacobian_observation_numeric(self, x, delta_x=0.01):
+        df = np.empty((self.dim_observations, self.dim_states))
+        x_plus = np.empty_like(x)
+        x_minus = np.empty_like(x)
+        for j in range(self.dim_states):
+            x_plus[:, :] = x_minus[:, :] = x
+            x_plus[:, j] += delta_x
+            x_minus[:, j] -= delta_x
+            delta_f = self.state_to_observation(x_plus) - self.state_to_observation(x_minus)
+            df[:, j] = delta_f / (2 * delta_x)
         return df
 
     def state_to_observation_linear(self, x):
@@ -250,10 +261,5 @@ class MechanicalModel:
         for i in range(0, nb_steps):
             df = self.compute_jacobian_observation(x[i])
             y[i, :] = np.matmul(df, x[i])
-        if self.dim_observations == 36:
-            y[:, (1, 7, 13, 19)] += self.g
-        elif self.dim_observations == 20:
-            y[:, (1, 4, 7, 10)] += self.g
-        else:
-            raise AssertionError('Observations must have dimension 20 or 36; got {}.'.format(self.dim_observations))
+        y[:, (1, 7, 13, 19)] += self.g
         return y
