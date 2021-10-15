@@ -6,7 +6,7 @@ CONST_GRAVITATION = 9.81
 
 
 class MechanicalModel:
-    def __init__(self, dt, imu_position, leg_constants, a, P, cov_step, scale_x, scale_y, scale_phi, sigma_x, sigma_y, sigma_phi, sf_H, H):
+    def __init__(self, dt, imu_position, leg_constants, a, P, cov_step, scale_x, scale_y, scale_phi, sf_H, H):
         self.dt = dt
         self.dim_states = a.size
         self.dim_observations = H.shape[0]
@@ -21,9 +21,6 @@ class MechanicalModel:
         self.scale_x = scale_x
         self.scale_y = scale_y
         self.scale_phi = scale_phi
-        self.sigma_x = sigma_x
-        self.sigma_y = sigma_y
-        self.sigma_phi = sigma_phi
         self.Q = np.zeros((self.dim_states, self.dim_states))
         self.set_process_cov_theory()
         self.sf_H = sf_H
@@ -76,15 +73,15 @@ class MechanicalModel:
 
     def state_transition(self, xp):
         return np.matmul(self.A, xp.T).T
-
+    """
     def state_to_observation(self, x):
         nb_samples, _ = x.shape
         y = np.empty(shape=(nb_samples, self.dim_observations))
         for i in range(0, nb_samples):
             y[i] = self.state_to_observation_1dim(x[i])   # do i have to remove y[i] = ... ? earlier version was self.state_to_observation_1dim(x[i], y[i])
         return y
-
-    def state_to_observation_1dim(self, x):
+    """
+    def state_to_observation(self, x):
         nb_steps, _ = x.shape
         y = np.empty(shape=(nb_steps, 36))
         # left femur
