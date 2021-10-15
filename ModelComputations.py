@@ -5,21 +5,13 @@ from MechanicalModel import MechanicalModel
 from ReadData import DataReader
 
 
-def plot_observations(model, x, y_true, export_name=None):
+def plot_observations(model, x, y_true, supress_zeros, export_name=None):
     y_nonlinear = model.state_to_observation(x)
     y_linear = model.state_to_observation_linear(x)
-    if model.dim_observations == 20:
+    if supress_zeros:
+        y_nonlinear = y_nonlinear[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
+        y_linear = y_linear[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
         y_true = y_true[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
-    nb_steps, nb_observations = y_true.shape
-
-    if nb_observations == 36:
-        obs_names = ['$\ddot x^0$', '$\ddot y^0$', '$\ddot z^0$', '$\omega_x^0$', '$\omega_y^0$', '$\omega_z^0$',
-                     '$\ddot x^1$', '$\ddot y^1$', '$\ddot z^1$', '$\omega_x^1$', '$\omega_y^1$', '$\omega_z^1$',
-                     '$\ddot x^2$', '$\ddot y^2$', '$\ddot z^2$', '$\omega_x^2$', '$\omega_y^2$', '$\omega_z^2$',
-                     '$\ddot x^3$', '$\ddot y^3$', '$\ddot z^3$', '$\omega_x^3$', '$\omega_y^3$', '$\omega_z^3$',
-                     '$\dot x^4$', '$\dot y^4$', '$\dot z^4$', '$\ddot x^4$', '$\ddot y^4$', '$\ddot z^4$',
-                     '$\dot x^5$', '$\dot y^5$', '$\dot z^5$', '$\ddot x^5$', '$\ddot y^5$', '$\ddot z^5$']
-    elif nb_observations == 20:
         obs_names = ['$\ddot x^0$', '$\ddot y^0$', '$\omega_z^0$',
                      '$\ddot x^1$', '$\ddot y^1$', '$\omega_z^1$',
                      '$\ddot x^2$', '$\ddot y^2$', '$\omega_z^2$',
@@ -27,8 +19,14 @@ def plot_observations(model, x, y_true, export_name=None):
                      '$\dot x^4$', '$\dot y^4$', '$\ddot x^4$', '$\ddot y^4$',
                      '$\dot x^5$', '$\dot y^5$', '$\ddot x^5$', '$\ddot y^5$']
     else:
-        raise AssertionError('Observation dimension must be 20 or 36; got {}'.format(nb_observations))
+        obs_names = ['$\ddot x^0$', '$\ddot y^0$', '$\ddot z^0$', '$\omega_x^0$', '$\omega_y^0$', '$\omega_z^0$',
+                     '$\ddot x^1$', '$\ddot y^1$', '$\ddot z^1$', '$\omega_x^1$', '$\omega_y^1$', '$\omega_z^1$',
+                     '$\ddot x^2$', '$\ddot y^2$', '$\ddot z^2$', '$\omega_x^2$', '$\omega_y^2$', '$\omega_z^2$',
+                     '$\ddot x^3$', '$\ddot y^3$', '$\ddot z^3$', '$\omega_x^3$', '$\omega_y^3$', '$\omega_z^3$',
+                     '$\dot x^4$', '$\dot y^4$', '$\dot z^4$', '$\ddot x^4$', '$\ddot y^4$', '$\ddot z^4$',
+                     '$\dot x^5$', '$\dot y^5$', '$\dot z^5$', '$\ddot x^5$', '$\ddot y^5$', '$\ddot z^5$']
 
+    nb_steps, nb_observations = y_true.shape
     t_vals = np.linspace(0.0, nb_steps * model.dt, nb_steps)
     nb_axes = 3
     nb_figures = int(np.ceil(nb_observations / nb_axes))
@@ -66,14 +64,15 @@ dt = 0.01
 leg_constants = np.array([0.5, 0.6, 0.5, 0.6])
 imu_position = np.array([0.34, 0.29, 0.315, 0.33])
 dim_state = 18
-dim_observations = 20
+dim_observations = 36
 
 my_model = MechanicalModel(dt=dt,
-                           dim_state=dim_state,
+                           dim_states=dim_state,
                            dim_observations=dim_observations,
                            imu_position=imu_position,
                            leg_constants=leg_constants,
                            )
 
 # ---------- plotting -----------------
-plot_observations(my_model, x, y)
+supress_zeros = True
+plot_observations(my_model, x, y, supress_zeros=supress_zeros)
