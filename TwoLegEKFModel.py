@@ -127,10 +127,10 @@ a = np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
               0.57, 0.10, 2.54, -3.8, -0.08, -0.82,
               -0.00, 0.01, -1.78, 3.32, -0.30, 0.54])
 # dt already defined for model
-sigma_x = 0.01
-sigma_y = 1.0
-sigma_phi = 100.0
-Q = generate_process_covar(dt=dt, sx=sigma_x, sy=sigma_y, sphi=sigma_phi)
+scale_x = 0.01
+scale_y = 1.0
+scale_phi = 100.0
+Q = generate_process_covar(dt=dt, sx=scale_x, sy=scale_y, sphi=scale_phi)
 sigma_imu_acc = 0.1
 sigma_imu_gyro = 0.01
 sigma_press_velo = 0.1
