@@ -6,7 +6,7 @@ from particles import state_space_models as ssm
 from particles import distributions as dists
 
 DIM_STATES = 18
-DIM_OBSERVATIONS = 36
+DIM_OBSERVATIONS = 20
 CONST_GRAVITATION = 9.81
 
 
@@ -121,13 +121,6 @@ class TwoLegModel(ssm.StateSpaceModel):
                 self.Q[row, col] *= factor
         return None
 
-    def set_process_cov_state_groups(self):
-        sigmas = np.diag([self.sigma_x, self.sigma_y, self.sigma_phi, self.sigma_phi, self.sigma_phi, self.sigma_phi])
-        self.Q = np.block([[sigmas / 20.0, sigmas / 8.0, sigmas / 6.0],
-                           [sigmas / 8.0, sigmas / 3.0, sigmas / 2.0],
-                           [sigmas / 6.0, sigmas / 2.0, sigmas]])
-        return None
-
     def scale_H(self):
         self.H = self.sf_H * self.H
         return None
@@ -234,138 +227,137 @@ class TwoLegModel(ssm.StateSpaceModel):
 
 class TwoLegModelGuided(TwoLegModel):
 
-    def compute_observation_derivatives(self, xp):
+    def compute_observation_derivatives(self, x):
         df = np.zeros((36, DIM_STATES))
 
         # left femur
-        df[0, 2] = -xp[12] * np.sin(xp[2]) + (xp[13] + self.g) * np.cos(xp[2])
-        df[0, 12] = np.cos(xp[2])
-        df[0, 13] = np.sin(xp[2])
+        df[0, 2] = -x[12] * np.sin(x[2]) + (x[13] + self.g) * np.cos(x[2])
+        df[0, 12] = np.cos(x[2])
+        df[0, 13] = np.sin(x[2])
         df[0, 14] = self.cst[0]
-        df[1, 2] = -xp[12] * np.cos(xp[2]) - (xp[13] + self.g) * np.sin(xp[2])
-        df[1, 8] = 2 * xp[8] * self.cst[0]
-        df[1, 12] = -np.sin(xp[2])
-        df[1, 13] = np.cos(xp[2])
+        df[1, 2] = -x[12] * np.cos(x[2]) - (x[13] + self.g) * np.sin(x[2])
+        df[1, 8] = 2 * x[8] * self.cst[0]
+        df[1, 12] = -np.sin(x[2])
+        df[1, 13] = np.cos(x[2])
         df[5, 8] = 1
 
         # left fibula
-        df[6, 2] = -xp[12] * np.sin(xp[2] + xp[3]) + xp[13] * np.cos(xp[2] + xp[3]) + self.g * np.cos(xp[2] + xp[3])
-        df[6, 3] = -xp[14] * self.legs[0] * np.sin(xp[3]) - xp[12] * np.sin(xp[2] + xp[3]) + xp[13] * np.cos(
-            xp[2] + xp[3]) + self.legs[0] * xp[8] ** 2 * np.cos(xp[3]) + self.g * np.cos(xp[2] + xp[3])
-        df[6, 8] = 2 * self.legs[0] * xp[8] * np.sin(xp[3])
-        df[6, 12] = np.cos(xp[2] + xp[3])
-        df[6, 13] = np.sin(xp[2] + xp[3])
-        df[6, 14] = self.cst[1] + self.legs[0] * np.cos(xp[3])
+        df[6, 2] = -x[12] * np.sin(x[2] + x[3]) + x[13] * np.cos(x[2] + x[3]) + self.g * np.cos(x[2] + x[3])
+        df[6, 3] = -x[14] * self.legs[0] * np.sin(x[3]) - x[12] * np.sin(x[2] + x[3]) + x[13] * np.cos(
+            x[2] + x[3]) + self.legs[0] * x[8] ** 2 * np.cos(x[3]) + self.g * np.cos(x[2] + x[3])
+        df[6, 8] = 2 * self.legs[0] * x[8] * np.sin(x[3])
+        df[6, 12] = np.cos(x[2] + x[3])
+        df[6, 13] = np.sin(x[2] + x[3])
+        df[6, 14] = self.cst[1] + self.legs[0] * np.cos(x[3])
         df[6, 15] = self.cst[1]
-        df[7, 2] = -xp[12] * np.cos(xp[2] + xp[3]) - xp[13] * np.sin(xp[2] + xp[3]) - self.g * np.sin(xp[2] + xp[3])
-        df[7, 3] = -xp[14] * self.legs[0] * np.cos(xp[3]) - xp[12] * np.cos(xp[2] + xp[3]) - xp[13] * np.sin(
-            xp[2] + xp[3]) - self.legs[0] * xp[8] ** 2 * np.sin(xp[3]) - self.g * np.sin(xp[2] + xp[3])
-        df[7, 8] = 2 * self.legs[0] * xp[8] * np.cos(xp[3]) + 2 * self.cst[1] * (xp[8] + xp[9])
-        df[7, 9] = 2 * self.cst[1] * (xp[8] + xp[9])
-        df[7, 12] = -np.sin(xp[2] + xp[3])
-        df[7, 13] = np.cos(xp[2] + xp[3])
-        df[7, 14] = -self.legs[0] * np.sin(xp[3])
+        df[7, 2] = -x[12] * np.cos(x[2] + x[3]) - x[13] * np.sin(x[2] + x[3]) - self.g * np.sin(x[2] + x[3])
+        df[7, 3] = -x[14] * self.legs[0] * np.cos(x[3]) - x[12] * np.cos(x[2] + x[3]) - x[13] * np.sin(
+            x[2] + x[3]) - self.legs[0] * x[8] ** 2 * np.sin(x[3]) - self.g * np.sin(x[2] + x[3])
+        df[7, 8] = 2 * self.legs[0] * x[8] * np.cos(x[3]) + 2 * self.cst[1] * (x[8] + x[9])
+        df[7, 9] = 2 * self.cst[1] * (x[8] + x[9])
+        df[7, 12] = -np.sin(x[2] + x[3])
+        df[7, 13] = np.cos(x[2] + x[3])
+        df[7, 14] = -self.legs[0] * np.sin(x[3])
         df[11, 8] = 1
         df[11, 9] = 1
 
         # right femur
-        df[12, 2] = -xp[12] * np.sin(xp[4]) + (xp[13] + self.g) * np.cos(xp[4])
-        df[12, 12] = np.cos(xp[4])
-        df[12, 13] = np.sin(xp[4])
-        df[12, 14] = self.cst[2]
-        df[13, 2] = -xp[12] * np.cos(xp[4]) - (xp[13] + self.g) * np.sin(xp[4])
-        df[13, 8] = 2 * xp[10] * self.cst[2]
-        df[13, 12] = -np.sin(xp[4])
-        df[13, 13] = np.cos(xp[4])
+        df[12, 4] = -x[12] * np.sin(x[4]) + (x[13] + self.g) * np.cos(x[4])
+        df[12, 12] = np.cos(x[4])
+        df[12, 13] = np.sin(x[4])
+        df[12, 16] = self.cst[2]
+        df[13, 4] = -x[12] * np.cos(x[4]) - (x[13] + self.g) * np.sin(x[4])
+        df[13, 10] = 2 * x[10] * self.cst[2]
+        df[13, 12] = -np.sin(x[4])
+        df[13, 13] = np.cos(x[4])
         df[17, 10] = 1
 
         # right fibula
-        df[18, 4] = -xp[12] * np.sin(xp[4] + xp[5]) + xp[13] * np.cos(xp[4] + xp[5]) + self.g * np.cos(xp[4] + xp[5])
-        df[18, 5] = -xp[16] * self.legs[2] * np.sin(xp[5]) - xp[12] * np.sin(xp[4] + xp[5]) + xp[13] * np.cos(
-            xp[4] + xp[5]) + self.legs[2] * xp[10] ** 2 * np.cos(xp[5]) + self.g * np.cos(xp[4] + xp[5])
-        df[18, 10] = 2 * self.legs[2] * xp[10] * np.sin(xp[5])
-        df[18, 12] = np.cos(xp[4] + xp[5])
-        df[18, 13] = np.sin(xp[4] + xp[5])
-        df[18, 16] = self.cst[3] + self.legs[2] * np.cos(xp[5])
+        df[18, 4] = -x[12] * np.sin(x[4] + x[5]) + x[13] * np.cos(x[4] + x[5]) + self.g * np.cos(x[4] + x[5])
+        df[18, 5] = -x[16] * self.legs[2] * np.sin(x[5]) - x[12] * np.sin(x[4] + x[5]) + x[13] * np.cos(
+            x[4] + x[5]) + self.legs[2] * x[10] ** 2 * np.cos(x[5]) + self.g * np.cos(x[4] + x[5])
+        df[18, 10] = 2 * self.legs[2] * x[10] * np.sin(x[5])
+        df[18, 12] = np.cos(x[4] + x[5])
+        df[18, 13] = np.sin(x[4] + x[5])
+        df[18, 16] = self.cst[3] + self.legs[2] * np.cos(x[5])
         df[18, 17] = self.cst[3]
-        df[19, 4] = -xp[12] * np.cos(xp[4] + xp[5]) - xp[13] * np.sin(xp[4] + xp[5]) - self.g * np.sin(xp[4] + xp[5])
-        df[19, 5] = -xp[16] * self.legs[2] * np.cos(xp[5]) - xp[12] * np.cos(xp[4] + xp[5]) - xp[13] * np.sin(
-            xp[4] + xp[5]) - self.legs[2] * xp[10] ** 2 * np.sin(xp[5]) - self.g * np.sin(xp[4] + xp[5])
-        df[19, 10] = 2 * self.legs[2] * xp[10] * np.cos(xp[5]) + 2 * self.cst[3] * (xp[10] + xp[11])
-        df[19, 12] = 2 * self.cst[3] * (xp[10] + xp[11])
-        df[19, 13] = -np.sin(xp[4] + xp[5])
-        df[19, 16] = np.cos(xp[4] + xp[5])
-        df[19, 17] = -self.legs[2] * np.sin(xp[5])
+        df[19, 4] = -x[12] * np.cos(x[4] + x[5]) - x[13] * np.sin(x[4] + x[5]) - self.g * np.sin(x[4] + x[5])
+        df[19, 5] = -x[16] * self.legs[2] * np.cos(x[5]) - x[12] * np.cos(x[4] + x[5]) - x[13] * np.sin(
+            x[4] + x[5]) - self.legs[2] * x[10] ** 2 * np.sin(x[5]) - self.g * np.sin(x[4] + x[5])
+        df[19, 10] = 2 * self.legs[2] * x[10] * np.cos(x[5]) + 2 * self.cst[3] * (x[10] + x[11])
+        df[19, 11] = 2 * self.cst[3] * (x[10] + x[11])
+        df[19, 12] = -np.sin(x[4] + x[5])
+        df[19, 13] = np.cos(x[4] + x[5])
+        df[19, 16] = -self.legs[2] * np.sin(x[5])
         df[23, 10] = 1
         df[23, 11] = 1
 
         # left heel
-        df[24, 2] = -xp[8] * self.legs[0] + np.sin(xp[2]) - self.legs[1] * (xp[8] + xp[9]) * np.sin(xp[2] + xp[3])
-        df[24, 3] = -self.legs[1] * (xp[8] + xp[9]) * np.sin(xp[2] + xp[3])
+        df[24, 2] = -x[8] * self.legs[0] + np.sin(x[2]) - self.legs[1] * (x[8] + x[9]) * np.sin(x[2] + x[3])
+        df[24, 3] = -self.legs[1] * (x[8] + x[9]) * np.sin(x[2] + x[3])
         df[24, 6] = 1
-        df[24, 8] = self.legs[0] * np.cos(xp[2]) + self.legs[1] * np.cos(xp[2] + xp[3])
-        df[24, 9] = self.legs[1] * np.cos(xp[2] + xp[3])
-        df[25, 3] = xp[8] * self.legs[0] * np.cos(xp[2]) + self.legs[1] * (xp[8] + xp[9]) * np.cos(xp[2] + xp[3])
-        df[25, 4] = self.legs[1] * (xp[8] + xp[9]) * np.cos(xp[2] + xp[3])
+        df[24, 8] = self.legs[0] * np.cos(x[2]) + self.legs[1] * np.cos(x[2] + x[3])
+        df[24, 9] = self.legs[1] * np.cos(x[2] + x[3])
+        df[25, 2] = x[8] * self.legs[0] * np.cos(x[2]) + self.legs[1] * (x[8] + x[9]) * np.cos(x[2] + x[3])
+        df[25, 3] = self.legs[1] * (x[8] + x[9]) * np.cos(x[2] + x[3])
         df[25, 7] = 1
-        df[25, 8] = self.legs[0] * np.sin(xp[2]) + self.legs[1] * np.sin(xp[2] + xp[3])
-        df[25, 9] = self.legs[1] * np.sin(xp[2] + xp[3])
-        df[27, 2] = -self.legs[0] * (xp[14] * np.sin(xp[2]) + xp[8] ** 2 * np.cos(xp[2])) - self.legs[1] * (
-                xp[14] + xp[15]) * np.sin(xp[2] + xp[3]) - self.legs[1] * (xp[8] + xp[9]) ** 2 * np.cos(
-            xp[2] + xp[3])
-        df[27, 3] = -self.legs[1] * (xp[14] + xp[15]) * np.sin(xp[2] + xp[3]) - self.legs[1] * (
-                xp[8] + xp[9]) ** 2 * np.cos(xp[2] + xp[3])
-        df[27, 8] = -2 * self.legs[0] * xp[8] * np.sin(xp[2]) - 2 * self.legs[1] * (xp[8] + xp[9]) * np.sin(
-            xp[2] + xp[3])
-        df[27, 9] = -2 * self.legs[1] * (xp[8] + xp[9]) * np.sin(xp[2] + xp[3])
+        df[25, 8] = self.legs[0] * np.sin(x[2]) + self.legs[1] * np.sin(x[2] + x[3])
+        df[25, 9] = self.legs[1] * np.sin(x[2] + x[3])
+        df[27, 2] = -self.legs[0] * (x[14] * np.sin(x[2]) + x[8] ** 2 * np.cos(x[2])) - self.legs[1] * (
+                x[14] + x[15]) * np.sin(x[2] + x[3]) - self.legs[1] * (x[8] + x[9]) ** 2 * np.cos(
+            x[2] + x[3])
+        df[27, 3] = -self.legs[1] * (x[14] + x[15]) * np.sin(x[2] + x[3]) - self.legs[1] * (
+                x[8] + x[9]) ** 2 * np.cos(x[2] + x[3])
+        df[27, 8] = -2 * self.legs[0] * x[8] * np.sin(x[2]) - 2 * self.legs[1] * (x[8] + x[9]) * np.sin(
+            x[2] + x[3])
+        df[27, 9] = -2 * self.legs[1] * (x[8] + x[9]) * np.sin(x[2] + x[3])
         df[27, 12] = 1
-        df[27, 14] = self.legs[0] * np.cos(xp[2]) + self.legs[1] * np.cos(xp[2] + xp[3])
-        df[27, 15] = self.legs[1] * np.cos(xp[2] + xp[3])
-        df[28, 2] = -self.legs[0] * (xp[14] * np.cos(xp[2]) - xp[8] ** 2 * np.sin(xp[2])) + self.legs[1] * (
-                xp[14] + xp[15]) * np.cos(xp[2] + xp[3]) - self.legs[1] * (xp[8] + xp[9]) ** 2 * np.sin(
-            xp[2] + xp[3])
-        df[28, 3] = self.legs[1] * (xp[14] + xp[15]) * np.cos(xp[2] + xp[3]) - self.legs[1] * (
-                xp[8] + xp[9]) ** 2 * np.sin(xp[2] + xp[3])
-        df[28, 8] = 2 * self.legs[0] * xp[8] * np.cos(xp[2]) + 2 * self.legs[1] * (xp[8] + xp[9]) * np.cos(
-            xp[2] + xp[3])
-        df[28, 9] = 2 * self.legs[1] * (xp[8] + xp[9]) * np.cos(xp[2] + xp[3])
+        df[27, 14] = self.legs[0] * np.cos(x[2]) + self.legs[1] * np.cos(x[2] + x[3])
+        df[27, 15] = self.legs[1] * np.cos(x[2] + x[3])
+        df[28, 2] = -self.legs[0] * (-x[14] * np.cos(x[2]) + x[8] ** 2 * np.sin(x[2])) + self.legs[1] * (
+                x[14] + x[15]) * np.cos(x[2] + x[3]) - self.legs[1] * (x[8] + x[9]) ** 2 * np.sin(
+            x[2] + x[3])
+        df[28, 3] = self.legs[1] * (x[14] + x[15]) * np.cos(x[2] + x[3]) - self.legs[1] * (
+                x[8] + x[9]) ** 2 * np.sin(x[2] + x[3])
+        df[28, 8] = 2 * self.legs[0] * x[8] * np.cos(x[2]) + 2 * self.legs[1] * (x[8] + x[9]) * np.cos(
+            x[2] + x[3])
+        df[28, 9] = 2 * self.legs[1] * (x[8] + x[9]) * np.cos(x[2] + x[3])
         df[28, 13] = 1
-        df[28, 14] = self.legs[0] * np.sin(xp[2]) + self.legs[1] * np.sin(xp[2] + xp[3])
-        df[28, 15] = self.legs[1] * np.sin(xp[2] + xp[3])
+        df[28, 14] = self.legs[0] * np.sin(x[2]) + self.legs[1] * np.sin(x[2] + x[3])
+        df[28, 15] = self.legs[1] * np.sin(x[2] + x[3])
 
         # right heel
-        df[30, 4] = -xp[10] * self.legs[2] + np.sin(xp[4]) - self.legs[3] * (xp[10] + xp[11]) * np.sin(xp[4] + xp[5])
-        df[30, 5] = -self.legs[3] * (xp[10] + xp[11]) * np.sin(xp[4] + xp[5])
+        df[30, 4] = -x[10] * self.legs[2] + np.sin(x[4]) - self.legs[3] * (x[10] + x[11]) * np.sin(x[4] + x[5])
+        df[30, 5] = -self.legs[3] * (x[10] + x[11]) * np.sin(x[4] + x[5])
         df[30, 6] = 1
-        df[30, 10] = self.legs[2] * np.cos(xp[4]) + self.legs[3] * np.cos(xp[4] + xp[5])
-        df[30, 11] = self.legs[3] * np.cos(xp[4] + xp[5])
-        df[31, 3] = xp[10] * self.legs[2] * np.cos(xp[4]) + self.legs[3] * (xp[10] + xp[11]) * np.cos(xp[4] + xp[5])
-        df[31, 4] = self.legs[3] * (xp[10] + xp[11]) * np.cos(xp[4] + xp[5])
+        df[30, 10] = self.legs[2] * np.cos(x[4]) + self.legs[3] * np.cos(x[4] + x[5])
+        df[30, 11] = self.legs[3] * np.cos(x[4] + x[5])
+        df[31, 4] = x[10] * self.legs[2] * np.cos(x[4]) + self.legs[3] * (x[10] + x[11]) * np.cos(x[4] + x[5])
+        df[31, 5] = self.legs[3] * (x[10] + x[11]) * np.cos(x[4] + x[5])
         df[31, 7] = 1
-        df[31, 10] = self.legs[2] * np.sin(xp[4]) + self.legs[3] * np.sin(xp[4] + xp[5])
-        df[31, 11] = self.legs[3] * np.sin(xp[4] + xp[5])
-        df[33, 4] = -self.legs[2] * (xp[16] * np.sin(xp[4]) + xp[10] ** 2 * np.cos(xp[4])) - self.legs[3] * (
-                xp[16] + xp[17]) * np.sin(xp[4] + xp[5]) - self.legs[3] * (xp[10] + xp[11]) ** 2 * np.cos(
-            xp[4] + xp[5])
-        df[33, 5] = -self.legs[3] * (xp[16] + xp[17]) * np.sin(xp[4] + xp[5]) - self.legs[3] * (
-                xp[10] + xp[11]) ** 2 * np.cos(xp[4] + xp[5])
-        df[33, 10] = -2 * self.legs[2] * xp[10] * np.sin(xp[4]) - 2 * self.legs[3] * (xp[10] + xp[11]) * np.sin(
-            xp[4] + xp[5])
-        df[33, 11] = -2 * self.legs[3] * (xp[10] + xp[11]) * np.sin(xp[4] + xp[5])
+        df[31, 10] = self.legs[2] * np.sin(x[4]) + self.legs[3] * np.sin(x[4] + x[5])
+        df[31, 11] = self.legs[3] * np.sin(x[4] + x[5])
+        df[33, 4] = -self.legs[2] * (x[16] * np.sin(x[4]) + x[10] ** 2 * np.cos(x[4])) - self.legs[3] * (
+                x[16] + x[17]) * np.sin(x[4] + x[5]) - self.legs[3] * (x[10] + x[11]) ** 2 * np.cos(
+            x[4] + x[5])
+        df[33, 5] = -self.legs[3] * (x[16] + x[17]) * np.sin(x[4] + x[5]) - self.legs[3] * (
+                x[10] + x[11]) ** 2 * np.cos(x[4] + x[5])
+        df[33, 10] = -2 * self.legs[2] * x[10] * np.sin(x[4]) - 2 * self.legs[3] * (x[10] + x[11]) * np.sin(
+            x[4] + x[5])
+        df[33, 11] = -2 * self.legs[3] * (x[10] + x[11]) * np.sin(x[4] + x[5])
         df[33, 12] = 1
-        df[33, 16] = self.legs[2] * np.cos(xp[4]) + self.legs[3] * np.cos(xp[4] + xp[5])
-        df[33, 17] = self.legs[3] * np.cos(xp[4] + xp[5])
-        df[34, 4] = -self.legs[2] * (xp[16] * np.cos(xp[4]) - xp[10] ** 2 * np.sin(xp[4])) + self.legs[3] * (
-                xp[16] + xp[17]) * np.cos(xp[4] + xp[5]) - self.legs[3] * (xp[10] + xp[11]) ** 2 * np.sin(
-            xp[4] + xp[5])
-        df[34, 5] = self.legs[3] * (xp[16] + xp[17]) * np.cos(xp[4] + xp[5]) - self.legs[3] * (
-                xp[10] + xp[11]) ** 2 * np.sin(xp[4] + xp[5])
-        df[34, 10] = 2 * self.legs[2] * xp[10] * np.cos(xp[4]) + 2 * self.legs[3] * (xp[10] + xp[11]) * np.cos(
-            xp[4] + xp[5])
-        df[34, 11] = 2 * self.legs[3] * (xp[10] + xp[11]) * np.cos(xp[4] + xp[5])
+        df[33, 16] = self.legs[2] * np.cos(x[4]) + self.legs[3] * np.cos(x[4] + x[5])
+        df[33, 17] = self.legs[3] * np.cos(x[4] + x[5])
+        df[34, 4] = -self.legs[2] * (-x[16] * np.cos(x[4]) + x[10] ** 2 * np.sin(x[4])) + self.legs[3] * (
+                x[16] + x[17]) * np.cos(x[4] + x[5]) - self.legs[3] * (x[10] + x[11]) ** 2 * np.sin(x[4] + x[5])
+        df[34, 5] = self.legs[3] * (x[16] + x[17]) * np.cos(x[4] + x[5]) - self.legs[3] * (
+                x[10] + x[11]) ** 2 * np.sin(x[4] + x[5])
+        df[34, 10] = 2 * self.legs[2] * x[10] * np.cos(x[4]) + 2 * self.legs[3] * (x[10] + x[11]) * np.cos(
+            x[4] + x[5])
+        df[34, 11] = 2 * self.legs[3] * (x[10] + x[11]) * np.cos(x[4] + x[5])
         df[34, 13] = 1
-        df[34, 16] = self.legs[2] * np.sin(xp[4]) + self.legs[3] * np.sin(xp[4] + xp[5])
-        df[34, 17] = self.legs[3] * np.sin(xp[4] + xp[5])
+        df[34, 16] = self.legs[2] * np.sin(x[4]) + self.legs[3] * np.sin(x[4] + x[5])
+        df[34, 17] = self.legs[3] * np.sin(x[4] + x[5])
 
         if DIM_OBSERVATIONS == 20:
             df = df[(0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), :]
