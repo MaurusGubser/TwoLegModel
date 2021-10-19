@@ -5,8 +5,6 @@ import numpy as np
 from particles import state_space_models as ssm
 from particles import distributions as dists
 
-DIM_STATES = 18
-DIM_OBSERVATIONS = 20
 CONST_GRAVITATION = 9.81
 
 
@@ -17,12 +15,14 @@ class TwoLegModel(ssm.StateSpaceModel):
 
     def __init__(self,
                  dt=0.01,
+                 dim_states=18,
+                 dim_observations=36,
                  leg_constants=np.array([0.5, 0.6, 0.5, 0.6]),
                  imu_position=np.array([0.34, 0.29, 0.315, 0.33]),
                  a=np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
                              0.57, 0.10, 2.54, -3.8, -0.08, -0.82,
                              -0.00, 0.01, -1.78, 3.32, -0.30, 0.54]),
-                 P=0.01 * np.eye(DIM_STATES),
+                 P=0.01 * np.eye(18),
                  cov_step=0.01,
                  scale_x=1.0,
                  scale_y=1.0,
@@ -33,7 +33,9 @@ class TwoLegModel(ssm.StateSpaceModel):
                  sigma_press_acc=10.0,
                  ):
         self.dt = dt
-        self.A = np.zeros((DIM_STATES, DIM_STATES))
+        self.dim_states = dim_states
+        self.dim_observations = dim_observations
+        self.A = np.zeros((dim_states, dim_states))
         self.set_process_transition_matrix()
         self.g = CONST_GRAVITATION
         self.cst = imu_position
@@ -48,39 +50,13 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.sigma_imu_gyro = sigma_imu_gyro
         self.sigma_press_velo = sigma_press_velo
         self.sigma_press_acc = sigma_press_acc
-        self.Q = np.zeros((DIM_STATES, DIM_STATES))
         self.set_process_covariance()
-        self.H = np.zeros((DIM_OBSERVATIONS, DIM_OBSERVATIONS))
         self.set_observation_covariance()
-        self.kalman_covs = None
-
-    """
-        self.ax = a[0]
-        self.Px = P[0]
-        self.ay = a[1]
-        self.Py = P[1]
-        self.a0 = a[2]
-        self.P0 = P[2]
-        self.a1 = a[3]
-        self.P1 = P[3]
-        self.a2 = a[4]
-        self.P2 = P[4]
-        self.a3 = a[5]
-        self.P3 = P[5]
-        self.Qx = sigma_trans[0]
-        self.Qy = sigma_trans[1]
-        self.Qphi = sigma_trans[2]
-        
-        self.sigma_imu_acc = sigma_obs[0]
-        self.sigma_imu_gyro = sigma_obs[1]
-        self.sigma_press_velo = sigma_obs[2]
-        self.sigma_press_acc = sigma_obs[3]
-    """
 
     def set_process_transition_matrix(self):
-        self.A = np.eye(DIM_STATES)
-        for row in range(0, DIM_STATES):
-            for col in range(0, DIM_STATES):
+        self.A = np.eye(self.dim_states)
+        for row in range(0, self.dim_states):
+            for col in range(0, self.dim_states):
                 if row + 6 == col:
                     self.A[row, col] = self.dt
                 if row + 12 == col:
@@ -88,9 +64,10 @@ class TwoLegModel(ssm.StateSpaceModel):
         return None
 
     def set_process_covariance(self):
-        block_size = DIM_STATES // 3
-        for row in range(0, DIM_STATES):
-            for col in range(0, DIM_STATES):
+        self.Q = np.zeros((self.dim_states, self.dim_states))
+        block_size = self.dim_states // 3
+        for row in range(0, self.dim_states):
+            for col in range(0, self.dim_states):
                 if row < block_size:
                     if row == col:
                         self.Q[row, col] = self.cov_step ** 5 / 20.0
@@ -117,14 +94,14 @@ class TwoLegModel(ssm.StateSpaceModel):
         return None
 
     def set_observation_covariance(self):
-        if DIM_OBSERVATIONS == 20:
+        if self.dim_observations == 20:
             self.H = np.diag([self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
                               self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
                               self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
                               self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
                               self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc, self.sigma_press_acc,
                               self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc, self.sigma_press_acc])
-        elif DIM_OBSERVATIONS == 36:
+        elif self.dim_observations == 36:
             self.H = np.diag([self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
                               self.sigma_imu_gyro, self.sigma_imu_gyro,
                               self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
@@ -138,7 +115,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                               self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc,
                               self.sigma_press_acc, self.sigma_press_acc])
         else:
-            raise AssertionError('Observation dimension must be 20 or 36; got {} instead.'.format(DIM_OBSERVATIONS))
+            raise AssertionError('Observation dimension must be 20 or 36; got {} instead.'.format(self.dim_observations))
         return None
 
     def state_transition(self, xp):
@@ -146,10 +123,9 @@ class TwoLegModel(ssm.StateSpaceModel):
 
     def state_to_observation(self, x):
         nb_samples, _ = x.shape
-        y = np.empty(shape=(nb_samples, DIM_OBSERVATIONS))
+        y = np.empty(shape=(nb_samples, self.dim_observations))
         for i in range(0, nb_samples):
-            y[i] = self.state_to_observation_1dim(
-                x[i])  # do i have to remove y[i] = ... ? earlier version was self.state_to_observation_1dim(x[i], y[i])
+            y[i] = self.state_to_observation_1dim(x[i])  # self.state_to_observation_1dim(x[i], y[i])
         return y
 
     def state_to_observation_1dim(self, x):
@@ -218,8 +194,8 @@ class TwoLegModel(ssm.StateSpaceModel):
                 x[13]
         y[35] = 0.0
 
-        if DIM_OBSERVATIONS == 20:
-            y = y[(0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34),]
+        if self.dim_observations == 20:
+            y = y[(0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), ]
 
         return y
 
@@ -231,21 +207,42 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=self.a, cov=self.P)
 
     def PX(self, t, xp):
-        # return dists.MvNormal(loc=self.state_transition(xp), cov=np.eye(DIM_STATES))
+        # return dists.MvNormal(loc=self.state_transition(xp), cov=np.eye(self.dim_states))
         return dists.MvNormal(loc=self.state_transition(xp), cov=self.Q)
 
     def PY(self, t, xp, x):
         nb_particles, _ = x.shape
-        mu = np.zeros(shape=(nb_particles, DIM_OBSERVATIONS))
+        mu = np.zeros(shape=(nb_particles, self.dim_observations))
         mu[:, 1] = 1.0
         # return dists.MvNormal(loc=mu, cov=self.H)
         return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
 
 
 class TwoLegModelGuided(TwoLegModel):
+    def __init__(self,
+                 dt=0.01,
+                 dim_states=18,
+                 dim_observations=36,
+                 leg_constants=np.array([0.5, 0.6, 0.5, 0.6]),
+                 imu_position=np.array([0.34, 0.29, 0.315, 0.33]),
+                 a=np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
+                             0.57, 0.10, 2.54, -3.8, -0.08, -0.82,
+                             -0.00, 0.01, -1.78, 3.32, -0.30, 0.54]),
+                 P=0.01 * np.eye(18),
+                 cov_step=0.01,
+                 scale_x=1.0,
+                 scale_y=1.0,
+                 scale_phi=1.0,
+                 sigma_imu_acc=0.1,
+                 sigma_imu_gyro=0.01,
+                 sigma_press_velo=0.1,
+                 sigma_press_acc=10.0):
+        super().__init__(dt, dim_states, dim_observations, leg_constants, imu_position, a, P, cov_step, scale_x,
+                         scale_y, scale_phi, sigma_imu_acc, sigma_imu_gyro, sigma_press_velo, sigma_press_acc)
+        self.kalman_covs = np.empty((1, self.dim_states, self.dim_states))
 
     def compute_observation_derivatives(self, x):
-        df = np.zeros((36, DIM_STATES))
+        df = np.zeros((36, self.dim_states))
 
         # left femur
         df[0, 2] = -x[12] * np.sin(x[2]) + (x[13] + self.g) * np.cos(x[2])
@@ -376,17 +373,17 @@ class TwoLegModelGuided(TwoLegModel):
         df[34, 16] = self.legs[2] * np.sin(x[4]) + self.legs[3] * np.sin(x[4] + x[5])
         df[34, 17] = self.legs[3] * np.sin(x[4] + x[5])
 
-        if DIM_OBSERVATIONS == 20:
+        if self.dim_observations == 20:
             df = df[(0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), :]
 
         return df
 
     def init_kalman_covs(self, nb_particles):
-        self.kalman_covs = np.array([np.eye(DIM_STATES) for _ in range(0, nb_particles)])
+        self.kalman_covs = np.array([np.eye(self.dim_states) for _ in range(0, nb_particles)])
         return None
 
     def compute_ekf_proposal(self, xp, data_t, sigma):
-        x_hat = np.reshape(self.state_transition(xp), (1, DIM_STATES))
+        x_hat = np.reshape(self.state_transition(xp), (1, self.dim_states))
         sigma = np.matmul(self.A, np.matmul(sigma, self.A.T)) + self.Q
 
         df = self.compute_observation_derivatives(x_hat.flatten())  # self.compute_observation_derivatives_1dim(xp)
@@ -394,19 +391,19 @@ class TwoLegModelGuided(TwoLegModel):
         kalman_gain = np.matmul(sigma, np.matmul(df.T, np.linalg.inv(innovation)))
 
         x_hat = x_hat + np.matmul(kalman_gain, (data_t - self.state_to_observation(x_hat)).T).T
-        sigma = np.matmul(np.eye(DIM_STATES) - np.matmul(kalman_gain, df), sigma)
+        sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), sigma)
         return x_hat, sigma
 
     def proposal0(self, data):
         return self.PX0()
-        # return self.PX0().posterior(data[0], Sigma=np.eye(DIM_STATES))
+        # return self.PX0().posterior(data[0], Sigma=np.eye(self.dim_states))
 
     def proposal(self, t, xp, data):
-        nb_particles, dim_states = xp.shape
+        nb_particles, dim_state = xp.shape
         if t == 1:
             self.init_kalman_covs(nb_particles)
-        x_hats = np.empty((nb_particles, DIM_STATES))
-        kalman_covs = np.empty((nb_particles, DIM_STATES, DIM_STATES))
+        x_hats = np.empty((nb_particles, dim_state))
+        kalman_covs = np.empty((nb_particles, dim_state, dim_state))
         for i in range(0, nb_particles):
             sigma = self.kalman_covs[i]
             x_hat, sigma = self.compute_ekf_proposal(xp[i], data[t], sigma)
