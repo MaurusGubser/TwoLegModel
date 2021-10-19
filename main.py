@@ -15,39 +15,28 @@ from Plotting import Plotter
 
 if __name__ == '__main__':
     dt = 0.01
+    dim_states = 18
+    dim_observations = 20
     leg_constants = np.array([0.5, 0.6, 0.5, 0.6])
     imu_position = np.array([0.34, 0.29, 0.315, 0.33])
-    a = np.array([5.6790326970162603e-03, 1.0575269992136509e+00, -1.2846265995420103e-01, -2.4793110500096724e-01,
-                  3.6639668719776680e-01, -1.8980094976695036e-01, 5.6790326966931337e-01, 9.6320242403311385e-02,
-                  2.5362910623050072e+00, -3.7986101392570708e+00, -7.8163469474606714e-02, -8.1819333353243029e-01,
-                  -4.0705228907187886e-11, 5.0517984683954827e-03, -1.7762296102838229e+00, 3.3158529817439670e+00,
-                  -2.9528844960512168e-01, 5.3581371545316991e-01])
+    a = np.array([5.6790e-03, 1.0575e+00, -1.2846e-01, -2.4793e-01, 3.6639e-01, -1.8980e-01,
+                  5.6790e-01, 9.6320e-02, 2.5362e+00, -3.7986e+00, -7.8163e-02, -8.1819e-01,
+                  -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
 
-    P = 0.01 * np.eye(18)
+    P = 0.01 * np.eye(dim_states)
 
-    cov_step = 0.5
-    scale_x = 0.1
-    scale_y = 0.1
-    scale_phi = 10.0
-    sigma_x = 1.0
-    sigma_y = 1.0
-    sigma_phi = 1.0
-
-    sf_H = 0.1
-    H = np.diag([0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                 0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                 0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                 0.1, 0.1, 0.1, 0.01, 0.01, 0.01,
-                 0.1, 0.1, 0.1, 1.0, 1.0, 1.0,
-                 0.1, 0.1, 0.1, 1.0, 1.0, 1.0])
-    H_20 = np.diag([0.1, 0.1, 0.01,
-                    0.1, 0.1, 0.01,
-                    0.1, 0.1, 0.01,
-                    0.1, 0.1, 0.01,
-                    0.1, 0.1, 1.0, 1.0,
-                    0.1, 0.1, 1.0, 1.0])
+    cov_step = 0.01
+    scale_x = 0.01
+    scale_y = 1.0
+    scale_phi = 100.0
+    sigma_imu_acc = 0.1
+    sigma_imu_gyro = 0.01
+    sigma_press_velo = 0.1
+    sigma_press_acc = 10.0
 
     my_model = TwoLegModel(dt=dt,
+                           dim_states=dim_states,
+                           dim_observations=dim_observations,
                            leg_constants=leg_constants,
                            imu_position=imu_position,
                            a=a,
@@ -56,13 +45,15 @@ if __name__ == '__main__':
                            scale_x=scale_x,
                            scale_y=scale_y,
                            scale_phi=scale_phi,
-                           sigma_x=sigma_x,
-                           sigma_y=sigma_y,
-                           sigma_phi=sigma_phi,
-                           sf_H=sf_H,
-                           H=H)
+                           sigma_imu_acc=sigma_imu_acc,
+                           sigma_imu_gyro=sigma_imu_gyro,
+                           sigma_press_velo=sigma_press_velo,
+                           sigma_press_acc=sigma_press_acc
+                           )
 
     my_model_prop = TwoLegModelGuided(dt=dt,
+                                      dim_states=dim_states,
+                                      dim_observations=dim_observations,
                                       leg_constants=leg_constants,
                                       imu_position=imu_position,
                                       a=a,
@@ -71,11 +62,11 @@ if __name__ == '__main__':
                                       scale_x=scale_x,
                                       scale_y=scale_y,
                                       scale_phi=scale_phi,
-                                      sigma_x=sigma_x,
-                                      sigma_y=sigma_y,
-                                      sigma_phi=sigma_phi,
-                                      sf_H=sf_H,
-                                      H=H)
+                                      sigma_imu_acc=sigma_imu_acc,
+                                      sigma_imu_gyro=sigma_imu_gyro,
+                                      sigma_press_velo=sigma_press_velo,
+                                      sigma_press_acc=sigma_press_acc
+                                      )
 
     # simulated data from weto
     path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
@@ -87,7 +78,8 @@ if __name__ == '__main__':
     data_reader.prepare_lists()
     x = data_reader.states_list
     y = data_reader.observations_list
-    # y = [obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)] for obs in y]
+    if dim_observations == 20:
+        y = [obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)] for obs in y]
     # simulate data from this model
     x_sim, y_sim = my_model.simulate(max_timesteps)
 
@@ -99,7 +91,7 @@ if __name__ == '__main__':
     # feynman-kac model
     fk_model = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model_prop, data=y)
-    pf = particles.SMC(fk=fk_guided, N=100, qmc=False, resampling='stratified', ESSrmin=0.99,
+    pf = particles.SMC(fk=fk_model, N=200, qmc=False, resampling='stratified', ESSrmin=0.99,
                        store_history=True)  # , collect=[Moments()])
     pf.run()
 
@@ -123,7 +115,7 @@ if __name__ == '__main__':
 
     # smoothing
     smooth_trajectories = pf.hist.backward_sampling(5)
-    plotter = Plotter(samples=np.array(smooth_trajectories), truth=np.array(x), export_name='guided_36', delta_t=0.01)
+    plotter = Plotter(samples=np.array(smooth_trajectories), truth=np.array(x), export_name='pf_0', delta_t=0.01)
     plotter.plot_samples_detail()
     """
     for name, idx in plotting_states.items():
