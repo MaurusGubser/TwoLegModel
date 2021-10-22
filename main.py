@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sb
@@ -16,7 +18,7 @@ from Plotting import Plotter
 if __name__ == '__main__':
     dt = 0.01
     dim_states = 18
-    dim_observations = 20
+    dim_observations = 36
     leg_constants = np.array([0.5, 0.6, 0.5, 0.6])
     imu_position = np.array([0.34, 0.29, 0.315, 0.33])
     a = np.array([5.6790e-03, 1.0575e+00, -1.2846e-01, -2.4793e-01, 3.6639e-01, -1.8980e-01,
@@ -72,7 +74,7 @@ if __name__ == '__main__':
     path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
     path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations_normal.dat'
     data_reader = DataReader()
-    max_timesteps = 1000
+    max_timesteps = 500
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -91,20 +93,30 @@ if __name__ == '__main__':
     # feynman-kac model
     fk_model = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model_prop, data=y)
-    pf = particles.SMC(fk=fk_model, N=200, qmc=False, resampling='stratified', ESSrmin=0.99,
-                       store_history=True)  # , collect=[Moments()])
+    pf = particles.SMC(fk=fk_guided, N=100, qmc=False, resampling='stratified', ESSrmin=0.5,
+                       store_history=True, collect=[Moments()])
     pf.run()
+
+    plotter = Plotter(truth=np.array(x), delta_t=0.01)
+    particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
+    particles_var = np.array([m['var'] for m in pf.summaries.moments])
+    plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var, export_name='pf_0')
 
     """
     # plot filtered observations and moments
+    x_vals = np.arange(0, max_timesteps*dt, dt)
     for name, idx in plotting_states.items():
+        states = np.array([xt[0, idx] for xt in x])
+        mean_particles = np.array([m['mean'][idx] for m in pf.summaries.moments])
+        sigma_particles = np.sqrt([m['var'][idx] for m in pf.summaries.moments])
         plt.figure()
-        plt.plot([xt[0, idx] for xt in x], label=name)
-        plt.plot([m['mean'][idx] for m in pf.summaries.moments], label='moments')
+        plt.plot(x_vals, states, label='truth', color='green')
+        plt.plot(x_vals, mean_particles, label='particles', color='blue')
+        plt.fill_between(x_vals, mean_particles - sigma_particles, mean_particles + sigma_particles, alpha=0.2, color='blue')
+        plt.title(name)
         plt.legend()
     plt.show()
     """
-
     """
     # compare MC and QMC method
     results = particles.multiSMC(fk=fk_model, N=100, nruns=30, qmc={'SMC': False, 'SQMC': True})
@@ -115,8 +127,8 @@ if __name__ == '__main__':
 
     # smoothing
     smooth_trajectories = pf.hist.backward_sampling(5)
-    plotter = Plotter(samples=np.array(smooth_trajectories), truth=np.array(x), export_name='pf_0', delta_t=0.01)
-    plotter.plot_samples_detail()
+    plotter.plot_samples_detail(samples=np.array(smooth_trajectories), export_name='pf_0')
+
     """
     for name, idx in plotting_states.items():
         plt.figure()
