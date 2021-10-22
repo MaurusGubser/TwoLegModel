@@ -138,7 +138,7 @@ sigma_press_acc = 10.0
 H = generate_observation_covar(s_imu_acc=sigma_imu_acc, s_imu_gyro=sigma_imu_gyro, s_press_velo=sigma_press_velo,
                                s_press_acc=sigma_press_acc)
 
-my_ekf = TwoLegEKF(model=my_model, x0=a, Q=Q, H=H, numeric_jacobian=True)
+my_ekf = TwoLegEKF(model=my_model, x0=a, Q=Q, H=H, numeric_jacobian=False)
 
 # -------- Simulation -----------
 x_vals = []
@@ -151,5 +151,5 @@ for t in range(0, max_timesteps):
 # -------- Plotting -----------
 x_vals = np.reshape(x_vals, (max_timesteps, 1, DIM_STATES))
 truth = np.reshape(truth, (max_timesteps, 1, DIM_STATES))
-my_plotter = Plotter(samples=x_vals, truth=truth, export_name='ekf_numeric_dt', delta_t=dt)
-my_plotter.plot_samples_detail()
+my_plotter = Plotter(truth=truth, delta_t=dt)
+my_plotter.plot_samples_detail(samples=x_vals, export_name='ekf_analytic')
