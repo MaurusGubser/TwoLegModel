@@ -7,7 +7,9 @@ from ReadData import DataReader
 
 def plot_observations(model, x, y_true, supress_zeros, export_name=None):
     y_nonlinear = model.state_to_observation(x)
-    y_linear = model.state_to_observation_linear(x)
+    xp = np.zeros(x.shape)
+    xp[1:, :] = x[:-1, :]
+    y_linear = model.state_to_observation_linear(x, xp)
     if supress_zeros:
         y_nonlinear = y_nonlinear[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
         y_linear = y_linear[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
@@ -43,7 +45,7 @@ def plot_observations(model, x, y_true, supress_zeros, export_name=None):
             axs[j].set_title(obs_names[i * nb_axes + j])
         fig.tight_layout()
         if export_name:
-            path = "Observation_Plots/{}_{}.pdf".format(export_name, i)
+            path = "State_Plots/{}_{}.pdf".format(export_name, i)
             plt.savefig(path)
     plt.show()
 
@@ -75,4 +77,4 @@ my_model = MechanicalModel(dt=dt,
 
 # ---------- plotting -----------------
 supress_zeros = True
-plot_observations(my_model, x, y, supress_zeros=supress_zeros)
+plot_observations(my_model, x, y, supress_zeros=supress_zeros, export_name='Model_Predictions')
