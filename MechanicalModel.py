@@ -103,10 +103,6 @@ class MechanicalModel:
                    + self.legs[3] * (x[:, 10] + x[:, 11]) ** 2 * np.cos(x[:, 4] + x[:, 5]) + self.legs[3] \
                    * (x[:, 16] + x[:, 17]) * np.sin(x[:, 4] + x[:, 5]) + x[:, 13]
         y[:, 35] = 0.0
-        """
-        if self.ignore_zeros:
-            y = y[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
-        """
         return y
 
     def compute_jacobian_observation(self, x):
@@ -255,11 +251,10 @@ class MechanicalModel:
             df[:, j] = delta_f / (2 * delta_x)
         return df
 
-    def state_to_observation_linear(self, x):
+    def state_to_observation_linear(self, x, xp):
         nb_steps, _ = x.shape
         y = np.empty(shape=(nb_steps, self.dim_observations))
         for i in range(0, nb_steps):
-            df = self.compute_jacobian_observation(x[i])
-            y[i, :] = np.matmul(df, x[i])
-        y[:, (1, 7, 13, 19)] += self.g
+            df = self.compute_jacobian_observation(xp[i])
+            y[i, :] = self.state_to_observation(np.reshape(xp[i], (1, -1))) + np.matmul(df, x[i] - xp[i])
         return y
