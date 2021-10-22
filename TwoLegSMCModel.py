@@ -1,7 +1,6 @@
 import itertools
 
 import numpy as np
-
 from particles import state_space_models as ssm
 from particles import distributions as dists
 
@@ -115,7 +114,8 @@ class TwoLegModel(ssm.StateSpaceModel):
                               self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc,
                               self.sigma_press_acc, self.sigma_press_acc])
         else:
-            raise AssertionError('Observation dimension must be 20 or 36; got {} instead.'.format(self.dim_observations))
+            raise AssertionError(
+                'Observation dimension must be 20 or 36; got {} instead.'.format(self.dim_observations))
         return None
 
     def state_transition(self, xp):
@@ -125,7 +125,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         nb_samples, _ = x.shape
         y = np.empty(shape=(nb_samples, self.dim_observations))
         for i in range(0, nb_samples):
-            y[i] = self.state_to_observation_1dim(x[i])  # self.state_to_observation_1dim(x[i], y[i])
+            y[i] = self.state_to_observation_1dim(x[i])
         return y
 
     def state_to_observation_1dim(self, x):
@@ -139,12 +139,12 @@ class TwoLegModel(ssm.StateSpaceModel):
         y[5] = x[8]
 
         # left fibula
-        y[6] = self.cst[1] * x[14] + self.cst[1] * x[15] + self.g * np.sin(x[2] + x[3]) + self.legs[0] * np.sin(x[3]) * \
-               x[8] ** 2 + self.legs[0] * np.cos(x[3]) * x[14] + np.sin(x[2] + x[3]) * x[13] + np.cos(x[2] + x[3]) * x[
-                   12]
-        y[7] = self.cst[1] * x[8] ** 2 + 2 * self.cst[1] * x[8] * x[9] + self.cst[1] * x[9] ** 2 + self.g * np.cos(
-            x[2] + x[3]) - self.legs[0] * np.sin(x[3]) * x[14] + self.legs[0] * np.cos(x[3]) * x[8] ** 2 - np.sin(
-            x[2] + x[3]) * x[12] + np.cos(x[2] + x[3]) * x[13]
+        y[6] = self.cst[1] * x[14] + self.cst[1] * x[15] + self.g * np.sin(x[2] + x[3]) + self.legs[0] \
+               * np.sin(x[3]) * x[8] ** 2 + self.legs[0] * np.cos(x[3]) * x[14] \
+               + np.sin(x[2] + x[3]) * x[13] + np.cos(x[2] + x[3]) * x[12]
+        y[7] = self.cst[1] * x[8] ** 2 + 2 * self.cst[1] * x[8] * x[9] + self.cst[1] * x[9] ** 2 \
+               + self.g * np.cos(x[2] + x[3]) - self.legs[0] * np.sin(x[3]) * x[14] + self.legs[0] \
+               * np.cos(x[3]) * x[8] ** 2 - np.sin(x[2] + x[3]) * x[12] + np.cos(x[2] + x[3]) * x[13]
         y[8] = 0.0
         y[9] = 0.0
         y[10] = 0.0
@@ -159,12 +159,12 @@ class TwoLegModel(ssm.StateSpaceModel):
         y[17] = x[10]
 
         # right fibula
-        y[18] = self.cst[3] * x[16] + self.cst[3] * x[17] + self.g * np.sin(x[4] + x[5]) + self.legs[2] * np.sin(x[5]) * \
-                x[10] ** 2 + self.legs[2] * np.cos(x[5]) * x[16] + np.sin(x[4] + x[5]) * x[13] + np.cos(x[4] + x[5]) * \
-                x[12]
-        y[19] = self.cst[3] * x[10] ** 2 + 2 * self.cst[3] * x[10] * x[11] + self.cst[3] * x[11] ** 2 + self.g * np.cos(
-            x[4] + x[5]) - self.legs[2] * np.sin(x[5]) * x[16] + self.legs[2] * np.cos(x[5]) * x[10] ** 2 - np.sin(
-            x[4] + x[5]) * x[12] + np.cos(x[4] + x[5]) * x[13]
+        y[18] = self.cst[3] * x[16] + self.cst[3] * x[17] + self.g * np.sin(x[4] + x[5]) + self.legs[2] \
+                * np.sin(x[5]) * x[10] ** 2 + self.legs[2] * np.cos(x[5]) * x[16] \
+                + np.sin(x[4] + x[5]) * x[13] + np.cos(x[4] + x[5]) * x[12]
+        y[19] = self.cst[3] * x[10] ** 2 + 2 * self.cst[3] * x[10] * x[11] + self.cst[3] * x[11] ** 2 \
+                + self.g * np.cos(x[4] + x[5]) - self.legs[2] * np.sin(x[5]) * x[16] + self.legs[2] \
+                * np.cos(x[5]) * x[10] ** 2 - np.sin(x[4] + x[5]) * x[12] + np.cos(x[4] + x[5]) * x[13]
         y[20] = 0.0
         y[21] = 0.0
         y[22] = 0.0
@@ -174,24 +174,24 @@ class TwoLegModel(ssm.StateSpaceModel):
         y[24] = self.legs[0] * np.cos(x[2]) * x[8] + self.legs[1] * (x[8] + x[9]) * np.cos(x[2] + x[3]) + x[6]
         y[25] = self.legs[0] * np.sin(x[2]) * x[8] + self.legs[1] * (x[8] + x[9]) * np.sin(x[2] + x[3]) + x[7]
         y[26] = 0.0
-        y[27] = -self.legs[0] * np.sin(x[2]) * x[8] ** 2 + self.legs[0] * np.cos(x[2]) * x[14] - self.legs[1] * (
-                x[8] + x[9]) ** 2 * np.sin(x[2] + x[3]) + self.legs[1] * (x[14] + x[15]) * np.cos(x[2] + x[3]) + x[
-                    12]
-        y[28] = self.legs[0] * np.sin(x[2]) * x[14] + self.legs[0] * np.cos(x[2]) * x[8] ** 2 + self.legs[1] * (
-                x[8] + x[9]) ** 2 * np.cos(x[2] + x[3]) + self.legs[1] * (x[14] + x[15]) * np.sin(x[2] + x[3]) + x[
-                    13]
+        y[27] = -self.legs[0] * np.sin(x[2]) * x[8] ** 2 + self.legs[0] * np.cos(x[2]) * x[14] \
+            - self.legs[1] * (x[8] + x[9]) ** 2 * np.sin(x[2] + x[3]) + self.legs[1] \
+            * (x[14] + x[15]) * np.cos(x[2] + x[3]) + x[12]
+        y[28] = self.legs[0] * np.sin(x[2]) * x[14] + self.legs[0] * np.cos(x[2]) * x[8] ** 2 \
+            + self.legs[1] * (x[8] + x[9]) ** 2 * np.cos(x[2] + x[3]) + self.legs[1] \
+            * (x[14] + x[15]) * np.sin(x[2] + x[3]) + x[13]
         y[29] = 0.0
 
         # right heel
         y[30] = self.legs[2] * np.cos(x[4]) * x[10] + self.legs[3] * (x[10] + x[11]) * np.cos(x[4] + x[5]) + x[6]
         y[31] = self.legs[2] * np.sin(x[4]) * x[10] + self.legs[3] * (x[10] + x[11]) * np.sin(x[4] + x[5]) + x[7]
         y[32] = 0.0
-        y[33] = -self.legs[2] * np.sin(x[4]) * x[10] ** 2 + self.legs[2] * np.cos(x[4]) * x[16] - self.legs[3] * (
-                x[10] + x[11]) ** 2 * np.sin(x[4] + x[5]) + self.legs[3] * (x[16] + x[17]) * np.cos(x[4] + x[5]) + \
-                x[12]
-        y[34] = self.legs[2] * np.sin(x[4]) * x[16] + self.legs[2] * np.cos(x[4]) * x[10] ** 2 + self.legs[3] * (
-                x[10] + x[11]) ** 2 * np.cos(x[4] + x[5]) + self.legs[3] * (x[16] + x[17]) * np.sin(x[4] + x[5]) + \
-                x[13]
+        y[33] = -self.legs[2] * np.sin(x[4]) * x[10] ** 2 + self.legs[2] * np.cos(x[4]) * x[16] \
+            - self.legs[3] * (x[10] + x[11]) ** 2 * np.sin(x[4] + x[5]) + self.legs[3] \
+            * (x[16] + x[17]) * np.cos(x[4] + x[5]) + x[12]
+        y[34] = self.legs[2] * np.sin(x[4]) * x[16] + self.legs[2] * np.cos(x[4]) * x[10] ** 2 \
+            + self.legs[3] * (x[10] + x[11]) ** 2 * np.cos(x[4] + x[5]) + self.legs[3] \
+            * (x[16] + x[17]) * np.sin(x[4] + x[5]) + x[13]
         y[35] = 0.0
 
         if self.dim_observations == 20:
@@ -213,9 +213,8 @@ class TwoLegModel(ssm.StateSpaceModel):
     def PY(self, t, xp, x):
         nb_particles, _ = x.shape
         mu = np.zeros(shape=(nb_particles, self.dim_observations))
-        mu[:, 1] = 1.0
         # return dists.MvNormal(loc=mu, cov=self.H)
-        return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
+        return dists.MvNormal(loc=self.state_to_observation(x), cov=10000.0*self.H)
 
 
 class TwoLegModelGuided(TwoLegModel):
@@ -410,6 +409,8 @@ class TwoLegModelGuided(TwoLegModel):
             x_hats[i, :] = x_hat
             kalman_covs[i, :, :] = sigma
         self.kalman_covs = kalman_covs
-        covar = np.mean(kalman_covs, axis=0)
-        return dists.MvNormal(loc=x_hats, cov=10.0 * covar)
-        # return self.PX(t, xp).posterior(data[t], Sigma=1.0*self.Q)
+        mean = x_hats
+        covar = 1.0*np.mean(kalman_covs, axis=0)
+
+        return dists.MvNormal(loc=mean, cov=covar)
+        # return dists.IndepProd(*[dists.MvNormal(loc=x_hats[k], cov=kalman_covs[k]) for k in range(0, self.dim_states)])
