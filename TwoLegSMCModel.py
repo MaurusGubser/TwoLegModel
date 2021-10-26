@@ -122,9 +122,9 @@ class TwoLegModel(ssm.StateSpaceModel):
         return np.matmul(self.A, xp.T).T
 
     def state_to_observation(self, x):
-        nb_samples, _ = x.shape
-        y = np.empty(shape=(nb_samples, self.dim_observations))
-        for i in range(0, nb_samples):
+        nb_particles, _ = x.shape
+        y = np.empty(shape=(nb_particles, self.dim_observations))
+        for i in range(0, nb_particles):
             y[i] = self.state_to_observation_1dim(x[i])
         return y
 
