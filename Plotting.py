@@ -10,6 +10,13 @@ def set_export_path(folder_name, export_name):
     return path
 
 
+def compute_hist_stats(X_hist):
+    # nb_steps, nb_particles, dim_states = X_hist.shape
+    hist_mean = np.mean(X_hist, axis=1)
+    hist_var = np.var(X_hist, axis=1)
+    return hist_mean, hist_var
+
+
 class Plotter:
     def __init__(self, truth, delta_t):
         nb_steps, _, dim_states = truth.shape
@@ -18,7 +25,7 @@ class Plotter:
         self.delta_t = delta_t
         self.truth = truth
 
-    def plot_samples_detail(self, samples, export_name):
+    def plot_samples_detail(self, samples, export_name=None):
         nb_steps, nb_samples, dim_states = samples.shape
         if nb_steps != self.nb_steps or dim_states != self.dim_states:
             raise AssertionError(
@@ -42,7 +49,6 @@ class Plotter:
             self.truth = self.truth[:, (0, 1, 2, 3, 6, 7, 8, 9, 12, 13, 14, 15)]
         else:
             raise AssertionError('Dimension of state vector expected to be 12 or 18; got {}'.format(self.dim_states))
-        export_path = set_export_path('State_Plots', export_name)
 
         fig_list = []
         axs_list = []
@@ -59,15 +65,17 @@ class Plotter:
                                       color='green')
                 axs[j % nb_axes].set_title(state_names[nb_axes * i + j])
                 axs[j % nb_axes].legend()
+            fig.suptitle('Sampled states')
             fig.tight_layout()
             fig_list.append(fig)
             axs_list.append(axs)
             if export_name is not None:
+                export_path = set_export_path('State_Plots', export_name)
                 plt.savefig(export_path + '_' + str(i) + '.pdf')
         plt.show()
         return None
 
-    def plot_particle_moments(self, particles_mean, particles_var, export_name):
+    def plot_particle_moments(self, particles_mean, particles_var, X_hist=None, export_name=None):
         nb_axes = 3
         nb_figures = int(np.ceil(self.dim_states / nb_axes))
         t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
@@ -86,7 +94,9 @@ class Plotter:
             self.truth = self.truth[:, (0, 1, 2, 3, 6, 7, 8, 9, 12, 13, 14, 15)]
         else:
             raise AssertionError('Dimension of state vector expected to be 12 or 18; got {}'.format(self.dim_states))
-        export_path = set_export_path('Particles_Plots', export_name)
+        if X_hist is not None:
+            hist_mean, hist_var = compute_hist_stats(X_hist)
+            hist_sd = np.sqrt(hist_var)
         fig_list = []
         axs_list = []
         for i in range(0, nb_figures):
@@ -99,27 +109,35 @@ class Plotter:
                 axs[j].fill_between(t_vals, particles_mean[:, nb_axes * i + j] - particles_sd[:, nb_axes * i + j],
                                     particles_mean[:, nb_axes * i + j] + particles_sd[:, nb_axes * i + j], alpha=0.2,
                                     color='blue')
-                axs[j % nb_axes].plot(t_vals, self.truth[:, :, nb_axes * i + j], label='Truth', color='green',
-                                      linewidth=1.5)
-                axs[j % nb_axes].set_title(state_names[nb_axes * i + j])
-                axs[j % nb_axes].legend()
+                axs[j].plot(t_vals, self.truth[:, :, nb_axes * i + j], label='Truth', color='green',
+                            linewidth=1.5)
+                if X_hist is not None:
+                    axs[j].plot(t_vals, hist_mean[:, nb_axes * i + j], label='History mean', color='orange')
+                    axs[j].fill_between(t_vals, hist_mean[:, nb_axes * i + j] - hist_sd[:, nb_axes * i + j],
+                                        hist_mean[:, nb_axes * i + j] + hist_sd[:, nb_axes * i + j], alpha=0.6,
+                                        color='orange')
+                axs[j].set_title(state_names[nb_axes * i + j])
+                axs[j].legend()
+
+            fig.suptitle('Particles mean and variance')
             fig.tight_layout()
             fig_list.append(fig)
             axs_list.append(axs)
             if export_name is not None:
+                export_path = set_export_path('ParticlesStats_Plots', export_name)
                 plt.savefig(export_path + '_' + str(i) + '.pdf')
         plt.show()
 
         return None
 
-    def plot_particles_trajectories(self, hist_X, export_name):
-        nb_steps, nb_particles, dim_states = hist_X.shape
+    def plot_particles_trajectories(self, X_hist, export_name=None):
+        nb_steps, nb_particles, dim_states = X_hist.shape
         if nb_steps != self.nb_steps or dim_states != self.dim_states:
             raise AssertionError(
                 'Truth and particles are not compatible: shape truth is {}; shape particles is {}'.format(
-                    self.truth.shape, hist_X.shape))
+                    self.truth.shape, X_hist.shape))
 
-        nb_graphs = min(nb_particles, 8)
+        nb_graphs = min(nb_particles, 5)
         nb_axes = 3
         nb_figures = int(np.ceil(self.dim_states / nb_axes))
         t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
@@ -137,7 +155,6 @@ class Plotter:
             self.truth = self.truth[:, (0, 1, 2, 3, 6, 7, 8, 9, 12, 13, 14, 15)]
         else:
             raise AssertionError('Dimension of state vector expected to be 12 or 18; got {}'.format(self.dim_states))
-        export_path = set_export_path('Particle_Plots', export_name)
 
         fig_list = []
         axs_list = []
@@ -148,16 +165,16 @@ class Plotter:
                     break
                 axs[j].grid(axis='both')
                 for k in range(0, nb_graphs):
-                    axs[j % nb_axes].plot(t_vals, hist_X[:, k, nb_axes * i + j], label='Sample {}'.format(k),
-                                          linewidth=1)
-                axs[j % nb_axes].plot(t_vals, self.truth[:, :, nb_axes * i + j], label='truth', linewidth=1.5,
-                                      color='green')
-                axs[j % nb_axes].set_title(state_names[nb_axes * i + j])
-                axs[j % nb_axes].legend()
+                    axs[j].plot(t_vals, X_hist[:, k, nb_axes * i + j], label='Sample {}'.format(k), linewidth=1)
+                axs[j].plot(t_vals, self.truth[:, :, nb_axes * i + j], label='truth', linewidth=1.5, color='green')
+                axs[j].set_title(state_names[nb_axes * i + j])
+                axs[j].legend()
+            fig.suptitle('{} particle trajectories'.format(nb_graphs))
             fig.tight_layout()
             fig_list.append(fig)
             axs_list.append(axs)
             if export_name is not None:
+                export_path = set_export_path('Particles_Plots', export_name)
                 plt.savefig(export_path + '_' + str(i) + '.pdf')
         plt.show()
         return None
