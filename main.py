@@ -74,7 +74,7 @@ if __name__ == '__main__':
     path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
     path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations_normal.dat'
     data_reader = DataReader()
-    max_timesteps = 500
+    max_timesteps = 300
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     if dim_observations == 20:
         y = [obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)] for obs in y]
     # simulate data from this model
-    x_sim, y_sim = my_model.simulate(max_timesteps)
+    # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
@@ -93,10 +93,12 @@ if __name__ == '__main__':
     pf.run()
 
     plotter = Plotter(truth=np.array(x), delta_t=0.01)
-    plotter.plot_particles_trajectories(np.array(pf.hist.X), 'boostrap_trajectories')
+    plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name='trajectories_9_Q1_H1_Prop100')
+
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
-    #plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var, export_name='pf_0')
+    plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var,
+                                  X_hist=np.array(pf.hist.X), export_name='trajectories_9_Q1_H1_Prop100')
 
     """
     # compare MC and QMC method
@@ -107,8 +109,8 @@ if __name__ == '__main__':
     """
 
     # smoothing
-    smooth_trajectories = pf.hist.backward_sampling(5)
-    #plotter.plot_samples_detail(samples=np.array(smooth_trajectories), export_name='pf_0')
+    #smooth_trajectories = pf.hist.backward_sampling(5)
+    #plotter.plot_samples_detail(samples=np.array(smooth_trajectories), export_name='trajectories_0_Q1_H1')
 
     """
     # learning parameters
