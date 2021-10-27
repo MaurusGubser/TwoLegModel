@@ -382,7 +382,8 @@ class TwoLegModelGuided(TwoLegModel):
         x_hat = np.reshape(MechanicalModel.state_transition(self, xp), (1, self.dim_states))
         sigma = np.matmul(self.A, np.matmul(sigma, self.A.T)) + self.Q
 
-        df = self.compute_observation_derivatives(x_hat.flatten())  # self.compute_observation_derivatives_1dim(xp)
+        df = MechanicalModel.compute_jacobian_observation(self, x_hat)
+        # df = MechanicalModel.compute_jacobian_observation_numeric(self, x_hat)
         innovation = np.matmul(df, np.matmul(sigma, df.T)) + self.H
         kalman_gain = np.matmul(sigma, np.matmul(df.T, np.linalg.inv(innovation)))
 
