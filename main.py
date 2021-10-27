@@ -25,7 +25,7 @@ if __name__ == '__main__':
                   5.6790e-01, 9.6320e-02, 2.5362e+00, -3.7986e+00, -7.8163e-02, -8.1819e-01,
                   -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
 
-    P = 0.01 * np.eye(dim_states)
+    P = 0.1 * np.eye(dim_states)
 
     cov_step = 0.01
     scale_x = 0.01
@@ -88,17 +88,17 @@ if __name__ == '__main__':
     # feynman-kac model
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model_prop, data=y)
-    pf = particles.SMC(fk=fk_guided, N=20, qmc=False, resampling='stratified', ESSrmin=0.5,
+    pf = particles.SMC(fk=fk_guided, N=50, qmc=False, resampling='stratified', ESSrmin=0.5,
                        store_history=True, collect=[Moments()])
     pf.run()
 
     plotter = Plotter(truth=np.array(x), delta_t=0.01)
-    plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name='trajectories_9_Q1_H1_Prop100')
+    plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name='trajectories_0')
 
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var,
-                                  X_hist=np.array(pf.hist.X), export_name='trajectories_9_Q1_H1_Prop100')
+                                  X_hist=np.array(pf.hist.X), export_name='trajectories_0')
 
     """
     # compare MC and QMC method
@@ -109,8 +109,8 @@ if __name__ == '__main__':
     """
 
     # smoothing
-    #smooth_trajectories = pf.hist.backward_sampling(5)
-    #plotter.plot_samples_detail(samples=np.array(smooth_trajectories), export_name='trajectories_0_Q1_H1')
+    smooth_trajectories = pf.hist.backward_sampling(5)
+    plotter.plot_samples_detail(samples=np.array(smooth_trajectories), export_name='trajectories_10_Q1_H001_Prop100')
 
     """
     # learning parameters

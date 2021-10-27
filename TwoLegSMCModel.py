@@ -200,21 +200,17 @@ class TwoLegModel(ssm.StateSpaceModel):
         return y
 
     def PX0(self):
-        """
-        # case for 6x3 states
-        return dists.IndepProd(*[dists.Normal(loc=self.a, scale=self.P) for a, P in zip(self.a_init, self.P_init)])
-        """
         return dists.MvNormal(loc=self.a, cov=self.P)
 
     def PX(self, t, xp):
         # return dists.MvNormal(loc=self.state_transition(xp), cov=np.eye(self.dim_states))
-        return dists.MvNormal(loc=self.state_transition(xp), cov=self.Q)
+        return dists.MvNormal(loc=self.state_transition(xp), cov=1.0*self.Q)
 
     def PY(self, t, xp, x):
         nb_particles, _ = x.shape
         mu = np.zeros(shape=(nb_particles, self.dim_observations))
         # return dists.MvNormal(loc=mu, cov=self.H)
-        return dists.MvNormal(loc=self.state_to_observation(x), cov=10000.0*self.H)
+        return dists.MvNormal(loc=self.state_to_observation(x), cov=1.0*self.H)
 
 
 class TwoLegModelGuided(TwoLegModel):
@@ -403,14 +399,20 @@ class TwoLegModelGuided(TwoLegModel):
             self.init_kalman_covs(nb_particles)
         x_hats = np.empty((nb_particles, dim_state))
         kalman_covs = np.empty((nb_particles, dim_state, dim_state))
+        # x_hats = []
+        # kalman_covs = []
         for i in range(0, nb_particles):
             sigma = self.kalman_covs[i]
             x_hat, sigma = self.compute_ekf_proposal(xp[i], data[t], sigma)
             x_hats[i, :] = x_hat
             kalman_covs[i, :, :] = sigma
+            #x_hats.append(x_hat.flatten())
+            #kalman_covs.append(sigma)
         self.kalman_covs = kalman_covs
         mean = x_hats
         covar = 1.0*np.mean(kalman_covs, axis=0)
+        # mean = np.reshape(x_hats, (-1, ))
+        # covar = block_diag(*kalman_covs)
 
         return dists.MvNormal(loc=mean, cov=covar)
         # return dists.IndepProd(*[dists.MvNormal(loc=x_hats[k], cov=kalman_covs[k]) for k in range(0, self.dim_states)])

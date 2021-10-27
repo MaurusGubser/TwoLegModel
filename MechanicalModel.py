@@ -29,9 +29,8 @@ class MechanicalModel:
         nb_steps, _ = x.shape
         y = np.empty((nb_steps, self.dim_observations))
         # left femur
-        y[:, 0] = self.cst[0] * x[:, 14] + self.g * np.sin(x[:, 2]) + np.sin(x[:, 2]) * x[:, 13] + np.cos(x[:, 2]) * x[
-                                                                                                                     :,
-                                                                                                                     12]
+        y[:, 0] = self.cst[0] * x[:, 14] + self.g * np.sin(x[:, 2]) + np.sin(x[:, 2]) * x[:, 13] \
+                  + np.cos(x[:, 2]) * x[:, 12]
         y[:, 1] = self.cst[0] * x[:, 8] ** 2 + self.g * np.cos(x[:, 2]) - np.sin(x[:, 2]) * x[:, 12] + np.cos(
             x[:, 2]) * x[:, 13]
         y[:, 2] = 0.0
@@ -53,9 +52,8 @@ class MechanicalModel:
         y[:, 11] = x[:, 8] + x[:, 9]
 
         # right femur
-        y[:, 12] = self.cst[2] * x[:, 16] + self.g * np.sin(x[:, 4]) + np.sin(x[:, 4]) * x[:, 13] + np.cos(x[:, 4]) * x[
-                                                                                                                      :,
-                                                                                                                      12]
+        y[:, 12] = self.cst[2] * x[:, 16] + self.g * np.sin(x[:, 4]) + np.sin(x[:, 4]) * x[:, 13] \
+                   + np.cos(x[:, 4]) * x[:, 12]
         y[:, 13] = self.cst[2] * x[:, 10] ** 2 + self.g * np.cos(x[:, 4]) - np.sin(x[:, 4]) * x[:, 12] + np.cos(
             x[:, 4]) * x[:, 13]
         y[:, 14] = 0.0
