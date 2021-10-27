@@ -4,6 +4,8 @@ import numpy as np
 from particles import state_space_models as ssm
 from particles import distributions as dists
 
+from MechanicalModel import MechanicalModel
+
 CONST_GRAVITATION = 9.81
 
 
@@ -203,14 +205,13 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=self.a, cov=self.P)
 
     def PX(self, t, xp):
-        # return dists.MvNormal(loc=self.state_transition(xp), cov=np.eye(self.dim_states))
-        return dists.MvNormal(loc=self.state_transition(xp), cov=1.0*self.Q)
+        return dists.MvNormal(loc=MechanicalModel.state_transition(self, xp), cov=1.0*self.Q)
 
     def PY(self, t, xp, x):
         nb_particles, _ = x.shape
         mu = np.zeros(shape=(nb_particles, self.dim_observations))
         # return dists.MvNormal(loc=mu, cov=self.H)
-        return dists.MvNormal(loc=self.state_to_observation(x), cov=1.0*self.H)
+        return dists.MvNormal(loc=MechanicalModel.state_to_observation(self, x), cov=1.0*self.H)
 
 
 class TwoLegModelGuided(TwoLegModel):
@@ -378,14 +379,14 @@ class TwoLegModelGuided(TwoLegModel):
         return None
 
     def compute_ekf_proposal(self, xp, data_t, sigma):
-        x_hat = np.reshape(self.state_transition(xp), (1, self.dim_states))
+        x_hat = np.reshape(MechanicalModel.state_transition(self, xp), (1, self.dim_states))
         sigma = np.matmul(self.A, np.matmul(sigma, self.A.T)) + self.Q
 
         df = self.compute_observation_derivatives(x_hat.flatten())  # self.compute_observation_derivatives_1dim(xp)
         innovation = np.matmul(df, np.matmul(sigma, df.T)) + self.H
         kalman_gain = np.matmul(sigma, np.matmul(df.T, np.linalg.inv(innovation)))
 
-        x_hat = x_hat + np.matmul(kalman_gain, (data_t - self.state_to_observation(x_hat)).T).T
+        x_hat = x_hat + np.matmul(kalman_gain, (data_t - MechanicalModel.state_to_observation(self, x_hat)).T).T
         sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), sigma)
         return x_hat, sigma
 
@@ -415,4 +416,3 @@ class TwoLegModelGuided(TwoLegModel):
         # covar = block_diag(*kalman_covs)
 
         return dists.MvNormal(loc=mean, cov=covar)
-        # return dists.IndepProd(*[dists.MvNormal(loc=x_hats[k], cov=kalman_covs[k]) for k in range(0, self.dim_states)])
