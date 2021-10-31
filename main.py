@@ -71,8 +71,8 @@ if __name__ == '__main__':
                                       )
 
     # simulated data from weto
-    path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
-    path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations_normal.dat'
+    path_truth = 'GeneratedData/Normal/truth_normal.dat'
+    path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'
     data_reader = DataReader()
     max_timesteps = 1000
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
