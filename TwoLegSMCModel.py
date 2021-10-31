@@ -3,6 +3,8 @@ import itertools
 import numpy as np
 from particles import state_space_models as ssm
 from particles import distributions as dists
+from MyDists import MyMvNormal
+from scipy.linalg import block_diag
 
 from MechanicalModel import MechanicalModel
 
@@ -401,8 +403,8 @@ class TwoLegModelGuided(TwoLegModel):
             self.init_kalman_covs(nb_particles)
         x_hats = np.empty((nb_particles, dim_state))
         kalman_covs = np.empty((nb_particles, dim_state, dim_state))
-        # x_hats = []
-        # kalman_covs = []
+        #x_hats = []
+        #kalman_covs = []
         for i in range(0, nb_particles):
             sigma = self.kalman_covs[i]
             x_hat, sigma = self.compute_ekf_proposal(xp[i], data[t], sigma)
@@ -412,8 +414,8 @@ class TwoLegModelGuided(TwoLegModel):
             #kalman_covs.append(sigma)
         self.kalman_covs = kalman_covs
         mean = x_hats
-        covar = 1.0*np.mean(kalman_covs, axis=0)
-        # mean = np.reshape(x_hats, (-1, ))
-        # covar = block_diag(*kalman_covs)
-
-        return dists.MvNormal(loc=mean, cov=covar)
+        covar = np.mean(kalman_covs, axis=0)
+        #mean = np.reshape(x_hats, (-1, ))
+        #covar = block_diag(*kalman_covs)
+        return MyMvNormal(loc=mean, cov=kalman_covs)
+        # return dists.MvNormal(loc=mean, cov=covar)

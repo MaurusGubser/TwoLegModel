@@ -74,7 +74,7 @@ if __name__ == '__main__':
     path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
     path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations_normal.dat'
     data_reader = DataReader()
-    max_timesteps = 300
+    max_timesteps = 1000
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     # feynman-kac model
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model_prop, data=y)
-    pf = particles.SMC(fk=fk_guided, N=50, qmc=False, resampling='stratified', ESSrmin=0.5,
+    pf = particles.SMC(fk=fk_guided, N=100, qmc=False, resampling='stratified', ESSrmin=0.5,
                        store_history=True, collect=[Moments()])
     pf.run()
 
