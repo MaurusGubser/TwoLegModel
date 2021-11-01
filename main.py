@@ -11,6 +11,7 @@ from particles.collectors import Moments
 from particles import state_space_models as ssm
 from particles import mcmc
 
+from MechanicalModel import MechanicalModel
 from ReadData import DataReader
 from TwoLegSMCModel import TwoLegModel, TwoLegModelGuided
 from Plotting import Plotter
@@ -92,9 +93,9 @@ if __name__ == '__main__':
                        store_history=True, collect=[Moments()])
     pf.run()
 
-    plotter = Plotter(truth=np.array(x), delta_t=0.01)
+    plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=0.01)
+    plotter.plot_observations(np.array(pf.hist.X), model=my_model)
     plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name='trajectories_0')
-
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var,
