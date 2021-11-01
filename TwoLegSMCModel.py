@@ -6,7 +6,7 @@ from particles import distributions as dists
 from MyDists import MyMvNormal
 from scipy.linalg import block_diag
 
-from MechanicalModel import MechanicalModel
+from MechanicalModel import state_to_obs, compute_jacobian_obs
 
 CONST_GRAVITATION = 9.81
 
@@ -126,94 +126,21 @@ class TwoLegModel(ssm.StateSpaceModel):
         return np.matmul(self.A, xp.T).T
 
     def state_to_observation(self, x):
-        nb_particles, _ = x.shape
-        y = np.empty(shape=(nb_particles, self.dim_observations))
-        for i in range(0, nb_particles):
-            y[i] = self.state_to_observation_1dim(x[i])
-        return y
-
-    def state_to_observation_1dim(self, x):
-        y = np.empty(shape=36)
-        # left femur
-        y[0] = self.cst[0] * x[14] + self.g * np.sin(x[2]) + np.sin(x[2]) * x[13] + np.cos(x[2]) * x[12]
-        y[1] = self.cst[0] * x[8] ** 2 + self.g * np.cos(x[2]) - np.sin(x[2]) * x[12] + np.cos(x[2]) * x[13]
-        y[2] = 0.0
-        y[3] = 0.0
-        y[4] = 0.0
-        y[5] = x[8]
-
-        # left fibula
-        y[6] = self.cst[1] * x[14] + self.cst[1] * x[15] + self.g * np.sin(x[2] + x[3]) + self.legs[0] \
-               * np.sin(x[3]) * x[8] ** 2 + self.legs[0] * np.cos(x[3]) * x[14] \
-               + np.sin(x[2] + x[3]) * x[13] + np.cos(x[2] + x[3]) * x[12]
-        y[7] = self.cst[1] * x[8] ** 2 + 2 * self.cst[1] * x[8] * x[9] + self.cst[1] * x[9] ** 2 \
-               + self.g * np.cos(x[2] + x[3]) - self.legs[0] * np.sin(x[3]) * x[14] + self.legs[0] \
-               * np.cos(x[3]) * x[8] ** 2 - np.sin(x[2] + x[3]) * x[12] + np.cos(x[2] + x[3]) * x[13]
-        y[8] = 0.0
-        y[9] = 0.0
-        y[10] = 0.0
-        y[11] = x[8] + x[9]
-
-        # right femur
-        y[12] = self.cst[2] * x[16] + self.g * np.sin(x[4]) + np.sin(x[4]) * x[13] + np.cos(x[4]) * x[12]
-        y[13] = self.cst[2] * x[10] ** 2 + self.g * np.cos(x[4]) - np.sin(x[4]) * x[12] + np.cos(x[4]) * x[13]
-        y[14] = 0.0
-        y[15] = 0.0
-        y[16] = 0.0
-        y[17] = x[10]
-
-        # right fibula
-        y[18] = self.cst[3] * x[16] + self.cst[3] * x[17] + self.g * np.sin(x[4] + x[5]) + self.legs[2] \
-                * np.sin(x[5]) * x[10] ** 2 + self.legs[2] * np.cos(x[5]) * x[16] \
-                + np.sin(x[4] + x[5]) * x[13] + np.cos(x[4] + x[5]) * x[12]
-        y[19] = self.cst[3] * x[10] ** 2 + 2 * self.cst[3] * x[10] * x[11] + self.cst[3] * x[11] ** 2 \
-                + self.g * np.cos(x[4] + x[5]) - self.legs[2] * np.sin(x[5]) * x[16] + self.legs[2] \
-                * np.cos(x[5]) * x[10] ** 2 - np.sin(x[4] + x[5]) * x[12] + np.cos(x[4] + x[5]) * x[13]
-        y[20] = 0.0
-        y[21] = 0.0
-        y[22] = 0.0
-        y[23] = x[10] + x[11]
-
-        # left heel
-        y[24] = self.legs[0] * np.cos(x[2]) * x[8] + self.legs[1] * (x[8] + x[9]) * np.cos(x[2] + x[3]) + x[6]
-        y[25] = self.legs[0] * np.sin(x[2]) * x[8] + self.legs[1] * (x[8] + x[9]) * np.sin(x[2] + x[3]) + x[7]
-        y[26] = 0.0
-        y[27] = -self.legs[0] * np.sin(x[2]) * x[8] ** 2 + self.legs[0] * np.cos(x[2]) * x[14] \
-            - self.legs[1] * (x[8] + x[9]) ** 2 * np.sin(x[2] + x[3]) + self.legs[1] \
-            * (x[14] + x[15]) * np.cos(x[2] + x[3]) + x[12]
-        y[28] = self.legs[0] * np.sin(x[2]) * x[14] + self.legs[0] * np.cos(x[2]) * x[8] ** 2 \
-            + self.legs[1] * (x[8] + x[9]) ** 2 * np.cos(x[2] + x[3]) + self.legs[1] \
-            * (x[14] + x[15]) * np.sin(x[2] + x[3]) + x[13]
-        y[29] = 0.0
-
-        # right heel
-        y[30] = self.legs[2] * np.cos(x[4]) * x[10] + self.legs[3] * (x[10] + x[11]) * np.cos(x[4] + x[5]) + x[6]
-        y[31] = self.legs[2] * np.sin(x[4]) * x[10] + self.legs[3] * (x[10] + x[11]) * np.sin(x[4] + x[5]) + x[7]
-        y[32] = 0.0
-        y[33] = -self.legs[2] * np.sin(x[4]) * x[10] ** 2 + self.legs[2] * np.cos(x[4]) * x[16] \
-            - self.legs[3] * (x[10] + x[11]) ** 2 * np.sin(x[4] + x[5]) + self.legs[3] \
-            * (x[16] + x[17]) * np.cos(x[4] + x[5]) + x[12]
-        y[34] = self.legs[2] * np.sin(x[4]) * x[16] + self.legs[2] * np.cos(x[4]) * x[10] ** 2 \
-            + self.legs[3] * (x[10] + x[11]) ** 2 * np.cos(x[4] + x[5]) + self.legs[3] \
-            * (x[16] + x[17]) * np.sin(x[4] + x[5]) + x[13]
-        y[35] = 0.0
-
-        if self.dim_observations == 20:
-            y = y[(0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), ]
-
-        return y
+        return state_to_obs(x, self.dim_observations, self.g, self.legs, self.cst)
 
     def PX0(self):
         return dists.MvNormal(loc=self.a, cov=self.P)
 
     def PX(self, t, xp):
-        return dists.MvNormal(loc=MechanicalModel.state_transition(self, xp), cov=1.0*self.Q)
+        return dists.MvNormal(loc=self.state_transition(xp), cov=1.0*self.Q)
 
     def PY(self, t, xp, x):
         nb_particles, _ = x.shape
         mu = np.zeros(shape=(nb_particles, self.dim_observations))
         # return dists.MvNormal(loc=mu, cov=self.H)
-        return dists.MvNormal(loc=MechanicalModel.state_to_observation(self, x), cov=1.0*self.H)
+        return dists.MvNormal(loc=self.state_to_observation(x), cov=1.0*self.H)
+        # y = self.state_to_observation(x)
+        # return dists.IndepProd(*[dists.Normal(loc=y[:, i], scale=self.H[i, i]) for i in range(0, self.dim_observations)])
 
 
 class TwoLegModelGuided(TwoLegModel):
@@ -240,8 +167,10 @@ class TwoLegModelGuided(TwoLegModel):
         self.kalman_covs = np.empty((1, self.dim_states, self.dim_states))
 
     def compute_observation_derivatives(self, x):
+        return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.legs, self.cst)
+        """
         df = np.zeros((36, self.dim_states))
-
+        
         # left femur
         df[0, 2] = -x[12] * np.sin(x[2]) + (x[13] + self.g) * np.cos(x[2])
         df[0, 12] = np.cos(x[2])
@@ -375,21 +304,21 @@ class TwoLegModelGuided(TwoLegModel):
             df = df[(0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), :]
 
         return df
-
+    """
     def init_kalman_covs(self, nb_particles):
         self.kalman_covs = np.array([np.eye(self.dim_states) for _ in range(0, nb_particles)])
         return None
 
     def compute_ekf_proposal(self, xp, data_t, sigma):
-        x_hat = np.reshape(MechanicalModel.state_transition(self, xp), (1, self.dim_states))
+        x_hat = np.reshape(self.state_transition(xp), (1, self.dim_states))
         sigma = np.matmul(self.A, np.matmul(sigma, self.A.T)) + self.Q
 
-        df = MechanicalModel.compute_jacobian_observation(self, x_hat)
+        df = self.compute_observation_derivatives(x_hat)
         # df = MechanicalModel.compute_jacobian_observation_numeric(self, x_hat)
         innovation = np.matmul(df, np.matmul(sigma, df.T)) + self.H
         kalman_gain = np.matmul(sigma, np.matmul(df.T, np.linalg.inv(innovation)))
 
-        x_hat = x_hat + np.matmul(kalman_gain, (data_t - MechanicalModel.state_to_observation(self, x_hat)).T).T
+        x_hat = x_hat + np.matmul(kalman_gain, (data_t - self.state_to_observation(x_hat)).T).T
         sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), sigma)
         return x_hat, sigma
 

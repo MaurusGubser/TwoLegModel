@@ -116,7 +116,7 @@ max_timesteps = 1000
 data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
 data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
 data_reader.prepare_lists()
-truth = data_reader.true_states
+true_states = data_reader.true_states
 # truth = np.reshape(truth, (max_timesteps, 1, dim_state))
 obs = data_reader.observations
 # obs = np.reshape(obs, (max_timesteps, 1, dim_observations))
@@ -149,6 +149,6 @@ for t in range(0, max_timesteps):
 
 # -------- Plotting -----------
 x_vals = np.reshape(x_vals, (max_timesteps, 1, DIM_STATES))
-truth = np.reshape(truth, (max_timesteps, 1, DIM_STATES))
-my_plotter = Plotter(truth=truth, delta_t=dt)
+true_states = np.reshape(true_states, (max_timesteps, 1, DIM_STATES))
+my_plotter = Plotter(true_states=true_states, true_obs=obs, delta_t=dt)
 my_plotter.plot_samples_detail(samples=x_vals, export_name='ekf_analytic')
