@@ -31,7 +31,7 @@ class Plotter:
         self.true_obs = true_obs
         self.delta_t = delta_t
 
-    def plot_samples_detail(self, samples, export_name=None):
+    def plot_smoothed_trajectories(self, samples, export_name=None):
         nb_steps, nb_samples, dim_states = samples.shape
         if nb_steps != self.nb_steps or dim_states != self.dim_states:
             raise AssertionError(
@@ -72,7 +72,7 @@ class Plotter:
                                       color='green')
                 axs[j % nb_axes].set_title(state_names[nb_axes * i + j])
                 axs[j % nb_axes].legend()
-            fig.suptitle('Sampled states')
+            fig.suptitle('Smoothed samples')
             fig.tight_layout()
             fig_list.append(fig)
             axs_list.append(axs)
@@ -215,6 +215,7 @@ class Plotter:
                          '$\dot x^5$', '$\dot y^5$', '$\dot z^5$', '$\ddot x^5$', '$\ddot y^5$', '$\ddot z^5$']
         else:
             raise ValueError('Observation dimension has to be 20 or 36; got {} instead.'.format(self.dim_observations))
+        residuals = self.compute_residuals(obs)
         _, _, nb_observations = obs.shape
         t_vals = np.linspace(0.0, nb_steps * self.delta_t, nb_steps)
         nb_graphs = min(nb_samples, 5)
@@ -227,8 +228,9 @@ class Plotter:
                     break
                 axs[j].grid(axis='both')
                 for k in range(0, nb_graphs):
-                    axs[j].plot(t_vals, obs[:, k, i * nb_axes + j], label='Sample {}'.format(k), linewidth=1)
-                axs[j].plot(t_vals, true_obs[:, :, i * nb_axes + j], label='True observation', linewidth=1.5)
+                    axs[j].plot(t_vals, obs[:, k, i * nb_axes + j], label='Sample {}'.format(k), lw=1)
+                    # axs[j].plot(t_vals, residuals[:, k, i*nb_axes+j], ls='--')
+                axs[j].plot(t_vals, true_obs[:, :, i * nb_axes + j], label='True observation', lw=1.5)
                 axs[j].legend()
                 axs[j].set_title(obs_names[i * nb_axes + j])
             fig.tight_layout()
@@ -237,3 +239,8 @@ class Plotter:
                 plt.savefig(export_path + '_' + str(i) + '.pdf')
         plt.show()
         return None
+
+    def compute_residuals(self, observations):
+        residuals = np.empty_like(observations)
+        residuals = np.abs(self.true_obs - observations)
+        return residuals
