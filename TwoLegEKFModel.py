@@ -151,4 +151,4 @@ for t in range(0, max_timesteps):
 x_vals = np.reshape(x_vals, (max_timesteps, 1, DIM_STATES))
 true_states = np.reshape(true_states, (max_timesteps, 1, DIM_STATES))
 my_plotter = Plotter(true_states=true_states, true_obs=obs, delta_t=dt)
-my_plotter.plot_samples_detail(samples=x_vals, export_name='ekf_analytic')
+my_plotter.plot_smoothed_trajectories(samples=x_vals, export_name='ekf_analytic')
