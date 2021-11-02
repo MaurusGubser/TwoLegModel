@@ -73,13 +73,13 @@ def state_to_obs(x, dim_observations, g, legs, cst):
     y[:, 35] = 0.0
 
     if dim_observations == 20:
-        y = y[(0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34),]
+        y = y[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
 
     return y
 
 
 def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, cst):
-    df = np.zeros((dim_observations, dim_states))
+    df = np.zeros((36, dim_states))
     x = x.flatten()
     # left femur
     df[0, 2] = -x[12] * np.sin(x[2]) + (x[13] + g) * np.cos(x[2])
@@ -199,7 +199,21 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, cst):
     df[34, 16] = legs[2] * np.sin(x[4]) + legs[3] * np.sin(x[4] + x[5])
     df[34, 17] = legs[3] * np.sin(x[4] + x[5])
 
+    if dim_observations == 20:
+        df = df[(0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), :]
+
     return df
+
+
+def state_to_obs_linear(x, xp, dim_states, dim_observations, g, legs, cst):
+    if xp is None:
+        xp = np.zeros(x.shape)
+    nb_steps, _ = x.shape
+    y = np.empty(shape=(nb_steps, dim_observations))
+    for i in range(0, nb_steps):
+        df = compute_jacobian_obs(xp[i], dim_states, dim_observations, g, legs, cst)
+        y[i, :] = state_to_obs(np.reshape(xp[i], (1, -1)), dim_observations, g, legs, cst) + np.matmul(df, x[i] - xp[i])
+    return y
 
 
 class MechanicalModel:
@@ -245,9 +259,4 @@ class MechanicalModel:
         return df
 
     def state_to_observation_linear(self, x, xp):
-        nb_steps, _ = x.shape
-        y = np.empty(shape=(nb_steps, self.dim_observations))
-        for i in range(0, nb_steps):
-            df = self.compute_jacobian_observation(xp[i])
-            y[i, :] = self.state_to_observation(np.reshape(xp[i], (1, -1))) + np.matmul(df, x[i] - xp[i])
-        return y
+        return state_to_obs_linear(x, xp, self.dim_states, self.dim_observations, self.g, self.legs, self.cst)
