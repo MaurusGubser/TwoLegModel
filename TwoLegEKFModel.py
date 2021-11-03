@@ -117,9 +117,7 @@ data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
 data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
 data_reader.prepare_lists()
 true_states = data_reader.true_states
-# truth = np.reshape(truth, (max_timesteps, 1, dim_state))
 obs = data_reader.observations
-# obs = np.reshape(obs, (max_timesteps, 1, dim_observations))
 
 # -------- EKF -----------
 a = np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
@@ -150,5 +148,6 @@ for t in range(0, max_timesteps):
 # -------- Plotting -----------
 x_vals = np.reshape(x_vals, (max_timesteps, 1, DIM_STATES))
 true_states = np.reshape(true_states, (max_timesteps, 1, DIM_STATES))
+obs = np.reshape(obs, (max_timesteps, 1, DIM_OBSERVATIONS))
 my_plotter = Plotter(true_states=true_states, true_obs=obs, delta_t=dt)
 my_plotter.plot_smoothed_trajectories(samples=x_vals, export_name='ekf_analytic')

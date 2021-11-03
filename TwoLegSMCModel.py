@@ -144,8 +144,16 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=self.state_transition(xp), cov=self.Q)
 
     def PY(self, t, xp, x):
-        # return dists.MvNormal(loc=self.state_to_observation(x), cov=1.0*self.H)
-        return dists.MvNormal(loc=self.state_to_observation_linear(x, xp), cov=self.H)
+        ############### remove after debug ################
+        """
+        y_nonlin = self.state_to_observation(x)
+        y_lin = self.state_to_observation_linear(x, xp)
+        y_res = np.abs(y_nonlin - y_lin)
+        y_res_mean = np.mean(y_res, axis=0)
+        """
+        ###################################################
+        return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
+        # return dists.MvNormal(loc=self.state_to_observation_linear(x, xp), cov=self.H)
 
 
 class TwoLegModelGuided(TwoLegModel):
@@ -186,27 +194,51 @@ class TwoLegModelGuided(TwoLegModel):
     def compute_ekf_proposal(self, xp, data_t, sigma):
         x_hat = np.reshape(self.state_transition(xp), (1, self.dim_states))
         sigma = np.matmul(self.A, np.matmul(sigma, self.A.T)) + self.Q
-
         df = self.compute_observation_derivatives(x_hat)
-        innovation = np.matmul(df, np.matmul(sigma, df.T)) + self.H
-        kalman_gain = np.matmul(sigma, np.matmul(df.T, np.linalg.inv(innovation)))
+
+        innovation_inv = np.linalg.inv(np.matmul(df, np.matmul(sigma, df.T)) + self.H)
+        kalman_gain = np.matmul(sigma, np.matmul(df.T, innovation_inv))
 
         x_hat = x_hat + np.matmul(kalman_gain, (data_t - self.state_to_observation(x_hat)).T).T
         sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), sigma)
         return x_hat, sigma
 
+    def compute_cappe_proposal(self, xp, data_t):
+        df = self.compute_observation_derivatives(xp)
+        innovation_inv = np.linalg.inv(np.matmul(df, np.matmul(self.Q, df.T)) + self.H)
+        kalman_gain = np.matmul(self.Q, np.matmul(df.T, innovation_inv))
+
+        x_hat = np.reshape(self.state_transition(xp), (1, self.dim_states))
+        mean = x_hat + np.matmul(kalman_gain, (data_t - self.state_to_observation(x_hat)).T).T
+        cov = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), self.Q)
+        return mean, cov
+
     def proposal0(self, data):
         return self.PX0()
 
     def proposal(self, t, xp, data):
+        ############### remove after debug ################
+        """
+        xpp = self.state_transition(xp)
+        y_nonlin = self.state_to_observation(xpp)
+        y_lin = self.state_to_observation_linear(xpp, xp)
+        y_res = np.mean(np.abs(y_nonlin - y_lin), axis=0)
+        y_res_nonlin = np.mean(np.abs(data[t] - y_nonlin), axis=0)
+        err_rel_nonlin = y_res_nonlin/np.abs(data[t])
+        y_res_lin = np.mean(np.abs(data[t] - y_lin), axis=0)
+        err_rel_lin = y_res_lin/np.abs(data[t])
+        """
+        ###################################################
         nb_particles, dim_state = xp.shape
         if t == 1:
             self.init_kalman_covs(nb_particles)
         x_hats = np.empty((nb_particles, dim_state))
         kalman_covs = np.empty((nb_particles, dim_state, dim_state))
         for i in range(0, nb_particles):
-            sigma = self.kalman_covs[i]
-            x_hat, sigma = self.compute_ekf_proposal(xp[i], data[t], sigma)
+            # sigma = self.kalman_covs[i]
+            sigma = np.zeros((dim_state, dim_state))
+            x_hat, sigma = self.compute_ekf_proposal(xp[i], data[t], sigma)   # ekf version
+            # x_hat, sigma = self.compute_cappe_proposal(xp[i], data[t])  # cappe version
             x_hats[i, :] = x_hat
             kalman_covs[i, :, :] = sigma
         self.kalman_covs = kalman_covs

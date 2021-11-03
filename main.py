@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     P = 0.0001 * np.eye(dim_states)
 
-    cov_step = 0.5  # 0.01
+    cov_step = 0.10  # 0.01
     scale_x = 1.0   # 0.01
     scale_y = 1.0   # 1.0
     scale_phi = 1.0     # 100.0
@@ -37,9 +37,9 @@ if __name__ == '__main__':
     sigma_imu_gyro = 0.01
     sigma_press_velo = 0.1
     sigma_press_acc = 10.0
-    factor_H = 1.0
+    factor_H = 0.01
 
-    factor_kalman = 1.0
+    factor_kalman = 10.0
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
