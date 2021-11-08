@@ -237,6 +237,7 @@ class TwoLegModelGuided(TwoLegModel):
         for i in range(0, nb_particles):
             # sigma = self.kalman_covs[i]
             sigma = np.zeros((dim_state, dim_state))
+            # sigma = 4.0 * np.eye(dim_state)
             x_hat, sigma = self.compute_ekf_proposal(xp[i], data[t], sigma)   # ekf version
             # x_hat, sigma = self.compute_cappe_proposal(xp[i], data[t])  # cappe version
             x_hats[i, :] = x_hat
