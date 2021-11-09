@@ -181,8 +181,10 @@ class TwoLegModelGuided(TwoLegModel):
         super().__init__(dt, dim_states, dim_observations, leg_constants, imu_position, a, P, cov_step, scale_x,
                          scale_y, scale_phi, factor_Q, sigma_imu_acc, sigma_imu_gyro, sigma_press_velo, sigma_press_acc,
                          factor_H)
+        self.H_inv = np.linalg.inv(self.H)
+        self.Q_inv = np.linalg.inv(self.Q)
         self.kalman_covs = np.empty((1, self.dim_states, self.dim_states))
-        self.factor_kalman=factor_kalman
+        self.factor_kalman = factor_kalman
 
     def compute_observation_derivatives(self, x):
         return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.legs, self.cst)
@@ -199,9 +201,20 @@ class TwoLegModelGuided(TwoLegModel):
         innovation_inv = np.linalg.inv(np.matmul(df, np.matmul(sigma, df.T)) + self.H)
         kalman_gain = np.matmul(sigma, np.matmul(df.T, innovation_inv))
 
-        x_hat = x_hat + np.matmul(kalman_gain, (data_t - self.state_to_observation(x_hat)).T).T
+        mu = x_hat + np.matmul(kalman_gain, (data_t - self.state_to_observation(x_hat)).T).T
         sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), sigma)
-        return x_hat, sigma
+        return mu, sigma
+
+    def compute_tom_proposal(self, xp, data_t):
+        x_hat = np.reshape(self.state_transition(xp), (1, self.dim_states))
+        df = self.compute_observation_derivatives(x_hat)
+
+        sigma = np.linalg.inv(np.matmul(df.T, np.matmul(self.H_inv, df)) + self.Q_inv)
+        x_hat = np.matmul(np.matmul(df.T, self.H_inv), (data_t - self.state_to_observation(x_hat)).T).T + np.matmul(
+            self.Q_inv, x_hat.T).T
+        mu = np.matmul(sigma, x_hat.T).T
+
+        return mu, sigma
 
     def compute_cappe_proposal(self, xp, data_t):
         df = self.compute_observation_derivatives(xp)
@@ -237,13 +250,14 @@ class TwoLegModelGuided(TwoLegModel):
         for i in range(0, nb_particles):
             # sigma = self.kalman_covs[i]
             sigma = np.zeros((dim_state, dim_state))
-            # sigma = 4.0 * np.eye(dim_state)
-            x_hat, sigma = self.compute_ekf_proposal(xp[i], data[t], sigma)   # ekf version
+            # sigma = 1.0 * np.eye(dim_state)
+            x_hat, sigma = self.compute_ekf_proposal(xp[i], data[t], sigma)  # ekf version
             # x_hat, sigma = self.compute_cappe_proposal(xp[i], data[t])  # cappe version
+            # x_hat, sigma = self.compute_tom_proposal(xp[i], data[t])
             x_hats[i, :] = x_hat
             kalman_covs[i, :, :] = sigma
         self.kalman_covs = kalman_covs
         mean = x_hats
-        covar = self.factor_kalman * np.mean(kalman_covs, axis=0)   # covar = self.factor_kalman * kalman_covs
+        covar = self.factor_kalman * np.mean(kalman_covs, axis=0)  # covar = self.factor_kalman * kalman_covs
         # return MyMvNormal(loc=mean, cov=kalman_covs)
         return dists.MvNormal(loc=mean, cov=covar)

@@ -25,10 +25,10 @@ if __name__ == '__main__':
     a = np.array([5.6790e-03, 1.0575e+00, -1.2846e-01, -2.4793e-01, 3.6639e-01, -1.8980e-01,
                   5.6790e-01, 9.6320e-02, 2.5362e+00, -3.7986e+00, -7.8163e-02, -8.1819e-01,
                   -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
-    P = 0.01 * np.eye(dim_states)
+    P = 0.001 * np.eye(dim_states)
 
-    cov_step = 0.01  # 0.01
-    scale_x = 1.0   # 0.01
+    cov_step = 0.1  # 0.01
+    scale_x = 0.01   # 0.01
     scale_y = 1.0   # 1.0
     scale_phi = 100.0     # 100.0
     factor_Q = 1.0
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     sigma_imu_gyro = 0.01
     sigma_press_velo = 0.1
     sigma_press_acc = 1000.0
-    factor_H = 0.01
+    factor_H = 1.0
 
     factor_kalman = 10.0
 
@@ -110,9 +110,9 @@ if __name__ == '__main__':
     plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name=export_name)
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
+    plotter.plot_ESS(pf.summaries.ESSs)
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var,
                                   X_hist=np.array(pf.hist.X), export_name=export_name)
-
     """
     # compare MC and QMC method
     results = particles.multiSMC(fk=fk_model, N=100, nruns=30, qmc={'SMC': False, 'SQMC': True})
