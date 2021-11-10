@@ -27,17 +27,17 @@ if __name__ == '__main__':
                   -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
     P = 0.01 * np.eye(dim_states)
 
-    cov_step = 0.01  # 0.01
-    scale_x = 0.01   # 0.01
+    cov_step = 0.1  # 0.01
+    scale_x = 1.0   # 0.01
     scale_y = 1.0   # 1.0
     scale_phi = 100.0     # 100.0
     factor_Q = 1.0
     diag_Q = True
     sigma_imu_acc = 0.1  # 0.1
-    sigma_imu_gyro = 0.01
-    sigma_press_velo = 0.1
-    sigma_press_acc = 1000.0
-    factor_H = 0.01
+    sigma_imu_gyro = 0.01   # 0.01
+    sigma_press_velo = 0.1  # 0.1
+    sigma_press_acc = 1000.0   # 1000.0
+    factor_H = 10.0
 
     factor_kalman = 10.0
 
@@ -53,6 +53,7 @@ if __name__ == '__main__':
                            scale_y=scale_y,
                            scale_phi=scale_phi,
                            factor_Q=factor_Q,
+                           diag_Q=diag_Q,
                            sigma_imu_acc=sigma_imu_acc,
                            sigma_imu_gyro=sigma_imu_gyro,
                            sigma_press_velo=sigma_press_velo,
@@ -72,6 +73,7 @@ if __name__ == '__main__':
                                       scale_y=scale_y,
                                       scale_phi=scale_phi,
                                       factor_Q=factor_Q,
+                                      diag_Q=diag_Q,
                                       sigma_imu_acc=sigma_imu_acc,
                                       sigma_imu_gyro=sigma_imu_gyro,
                                       sigma_press_velo=sigma_press_velo,
@@ -84,7 +86,7 @@ if __name__ == '__main__':
     path_truth = 'GeneratedData/Normal/truth_normal.dat'
     path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'
     data_reader = DataReader()
-    max_timesteps = 250
+    max_timesteps = 1000
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -96,10 +98,10 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 100
+    nb_particles = 1000
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model_prop, data=y)
-    pf = particles.SMC(fk=fk_guided, N=nb_particles, qmc=False, resampling='stratified', ESSrmin=0.2,
+    pf = particles.SMC(fk=fk_boot, N=nb_particles, qmc=False, resampling='stratified', ESSrmin=0.2,
                        store_history=True, collect=[Moments()])
     pf.run()
 

@@ -35,7 +35,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                  sigma_imu_acc=0.1,
                  sigma_imu_gyro=0.01,
                  sigma_press_velo=0.1,
-                 sigma_press_acc=10.0,
+                 sigma_press_acc=1000.0,
                  factor_H=1.0
                  ):
         self.dt = dt
@@ -101,6 +101,7 @@ class TwoLegModel(ssm.StateSpaceModel):
             for row, col in itertools.product(idxs, idxs):
                 self.Q[row, col] *= factor
         self.Q *= self.factor_Q
+        print('Determinant process cov det(Q)={}'.format(np.linalg.det(self.Q)))
         return None
 
     def set_observation_covariance(self):
@@ -128,6 +129,7 @@ class TwoLegModel(ssm.StateSpaceModel):
             raise AssertionError(
                 'Observation dimension must be 20 or 36; got {} instead.'.format(self.dim_observations))
         self.H *= self.factor_H
+        print('Determinant observation cov det(H)={}'.format(np.linalg.det(self.H)))
         return None
 
     def state_transition(self, xp):
@@ -174,15 +176,18 @@ class TwoLegModelGuided(TwoLegModel):
                  scale_y=1.0,
                  scale_phi=1.0,
                  factor_Q=1.0,
+                 diag_Q=False,
                  sigma_imu_acc=0.1,
                  sigma_imu_gyro=0.01,
                  sigma_press_velo=0.1,
-                 sigma_press_acc=10.0,
+                 sigma_press_acc=1000.0,
                  factor_H=1.0,
                  factor_kalman=1.0):
-        super().__init__(dt, dim_states, dim_observations, leg_constants, imu_position, a, P, cov_step, scale_x,
-                         scale_y, scale_phi, factor_Q, sigma_imu_acc, sigma_imu_gyro, sigma_press_velo, sigma_press_acc,
-                         factor_H)
+        super().__init__(dt=dt, dim_states=dim_states, dim_observations=dim_observations, leg_constants=leg_constants,
+                         imu_position=imu_position, a=a, P=P, cov_step=cov_step, scale_x=scale_x, scale_y=scale_y,
+                         scale_phi=scale_phi, factor_Q=factor_Q, diag_Q=diag_Q, sigma_imu_acc=sigma_imu_acc,
+                         sigma_imu_gyro=sigma_imu_gyro, sigma_press_velo=sigma_press_velo,
+                         sigma_press_acc=sigma_press_acc, factor_H=factor_H)
         self.H_inv = np.linalg.inv(self.H)
         self.Q_inv = np.linalg.inv(self.Q)
         self.kalman_covs = np.empty((1, self.dim_states, self.dim_states))
