@@ -27,17 +27,17 @@ if __name__ == '__main__':
                   -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
     P = 0.01 * np.eye(dim_states)
 
-    cov_step = 0.1  # 0.01
-    scale_x = 1.0   # 0.01
+    cov_step = 0.01  # 0.01
+    scale_x = 0.01   # 0.01
     scale_y = 1.0   # 1.0
     scale_phi = 100.0     # 100.0
     factor_Q = 1.0
-    diag_Q = True
+    diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
     sigma_imu_gyro = 0.01   # 0.01
     sigma_press_velo = 0.1  # 0.1
     sigma_press_acc = 1000.0   # 1000.0
-    factor_H = 10.0
+    factor_H = 1.0
 
     factor_kalman = 10.0
 
@@ -101,8 +101,7 @@ if __name__ == '__main__':
     nb_particles = 1000
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model_prop, data=y)
-    pf = particles.SMC(fk=fk_boot, N=nb_particles, qmc=False, resampling='stratified', ESSrmin=0.2,
-                       store_history=True, collect=[Moments()])
+    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.2, store_history=True, collect=[Moments()], verbose=True)
     pf.run()
 
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
