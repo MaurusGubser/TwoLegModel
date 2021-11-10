@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 from particles import state_space_models as ssm
 from particles import distributions as dists
-from MyDists import MyMvNormal
+from MyDists import MyMvNormal, MvStudent
 from scipy.linalg import block_diag
 
 from MechanicalModel import state_to_obs, compute_jacobian_obs, state_to_obs_linear
@@ -31,6 +31,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                  scale_y=1.0,
                  scale_phi=1.0,
                  factor_Q=1.0,
+                 diag_Q=False,
                  sigma_imu_acc=0.1,
                  sigma_imu_gyro=0.01,
                  sigma_press_velo=0.1,
@@ -52,6 +53,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.scale_y = scale_y
         self.scale_phi = scale_phi
         self.factor_Q = factor_Q
+        self.diag_Q = diag_Q
         self.sigma_imu_acc = sigma_imu_acc
         self.sigma_imu_gyro = sigma_imu_gyro
         self.sigma_press_velo = sigma_press_velo
@@ -78,16 +80,16 @@ class TwoLegModel(ssm.StateSpaceModel):
                 if row < block_size:
                     if row == col:
                         self.Q[row, col] = self.cov_step ** 5 / 20.0
-                    elif row + 6 == col:
+                    elif row + 6 == col and not self.diag_Q:
                         self.Q[row, col] = self.cov_step ** 4 / 8.0
                         self.Q[col, row] = self.cov_step ** 4 / 8.0
-                    elif row + 12 == col:
+                    elif row + 12 == col and not self.diag_Q:
                         self.Q[row, col] = self.cov_step ** 3 / 6.0
                         self.Q[col, row] = self.cov_step ** 3 / 6.0
                 elif block_size <= row < 2 * block_size:
                     if row == col:
                         self.Q[row, col] = self.cov_step ** 3 / 3.0
-                    elif row + 6 == col:
+                    elif row + 6 == col and not self.diag_Q:
                         self.Q[row, col] = self.cov_step ** 2 / 2.0
                         self.Q[col, row] = self.cov_step ** 2 / 2.0
                 elif 2 * block_size <= row:
@@ -261,3 +263,4 @@ class TwoLegModelGuided(TwoLegModel):
         covar = self.factor_kalman * np.mean(kalman_covs, axis=0)  # covar = self.factor_kalman * kalman_covs
         # return MyMvNormal(loc=mean, cov=kalman_covs)
         return dists.MvNormal(loc=mean, cov=covar)
+        # return MvStudent(loc=mean, shape=covar)

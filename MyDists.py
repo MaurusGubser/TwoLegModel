@@ -1,5 +1,7 @@
 from __future__ import division, print_function
 
+import warnings
+
 from particles.distributions import ProbDist
 from collections import OrderedDict  # see prior
 import numpy as np
@@ -133,3 +135,28 @@ class MyMvNormal(ProbDist):
                   np.matmu(Siginv, np.sum(x, axis=0)))
 
         return MyMvNormal(loc=mupost, cov=Sigpost)
+
+
+class MvStudent(ProbDist):
+
+    def __init__(self, loc=0., shape=1, df=1.0):
+        self.loc = loc
+        self.locs = [loc[i, :] for i in range(0, loc.shape[0])]
+        self.shape = shape
+        self.df = df
+
+    @property
+    def dim(self):
+        return self.cov.shape[1]
+
+    def logpdf(self, x):
+        nb_particles, _ = x.shape
+        return np.array([stats.multivariate_t(loc=self.locs[i], shape=self.shape, allow_singular=True).logpdf(x[i, :]) for i in range(0, nb_particles)])
+
+    def rvs(self, size=1):
+        return np.array(
+            [stats.multivariate_t(loc=mu, shape=self.shape, allow_singular=True).rvs(size=1) for mu in self.locs])
+
+    def ppf(self, u):
+        warnings.warn('Using ppf of MvStudent', UserWarning)
+        pass
