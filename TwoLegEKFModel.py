@@ -18,6 +18,8 @@ class TwoLegEKF:
         self.I, self.P = np.eye(len(x0)), np.eye(len(x0))
         # modify these if the noise is not independent
         self.Q, self.H = Q, H
+        self.dim_states = Q.shape[0]
+        self.dim_observations = H.shape[0]
         if numeric_jacobian:
             self.compute_jacobian = model.compute_jacobian_observation_numeric
         else:
@@ -31,6 +33,7 @@ class TwoLegEKF:
     def update(self, z):
         x, P, H, I, h = self.x, self.P, self.H, self.I, self.h
         df = self.compute_jacobian(x)
+        df = np.reshape(df, (self.dim_observations, self.dim_states))
         y = z - h(x)
         S = (df @ P @ df.T) + H
         K = P @ df.T @ np.linalg.inv(S)
@@ -84,13 +87,21 @@ def generate_process_covar(dt, sx, sy, sphi):
         return None
 
 
-def generate_observation_covar(s_imu_acc, s_imu_gyro, s_press_velo, s_press_acc):
-    h = [s_imu_acc, s_imu_acc, s_imu_acc, s_imu_gyro, s_imu_gyro, s_imu_gyro,
-         s_imu_acc, s_imu_acc, s_imu_acc, s_imu_gyro, s_imu_gyro, s_imu_gyro,
-         s_imu_acc, s_imu_acc, s_imu_acc, s_imu_gyro, s_imu_gyro, s_imu_gyro,
-         s_imu_acc, s_imu_acc, s_imu_acc, s_imu_gyro, s_imu_gyro, s_imu_gyro,
-         s_press_velo, s_press_velo, s_press_velo, s_press_acc, s_press_acc, s_imu_acc,
-         s_press_velo, s_press_velo, s_press_velo, s_press_acc, s_press_acc, s_imu_acc]
+def generate_observation_covar(s_imu_acc, s_imu_gyro, s_press_velo, s_press_acc, dim_observations):
+    if dim_observations == 20:
+        h = [s_imu_acc, s_imu_acc, s_imu_gyro,
+             s_imu_acc, s_imu_acc, s_imu_gyro,
+             s_imu_acc, s_imu_acc, s_imu_gyro,
+             s_imu_acc, s_imu_acc, s_imu_gyro,
+             s_press_velo, s_press_velo, s_press_acc, s_press_acc,
+             s_press_velo, s_press_velo, s_press_acc, s_press_acc]
+    else:
+        h = [s_imu_acc, s_imu_acc, s_imu_acc, s_imu_gyro, s_imu_gyro, s_imu_gyro,
+             s_imu_acc, s_imu_acc, s_imu_acc, s_imu_gyro, s_imu_gyro, s_imu_gyro,
+             s_imu_acc, s_imu_acc, s_imu_acc, s_imu_gyro, s_imu_gyro, s_imu_gyro,
+             s_imu_acc, s_imu_acc, s_imu_acc, s_imu_gyro, s_imu_gyro, s_imu_gyro,
+             s_press_velo, s_press_velo, s_press_velo, s_press_acc, s_press_acc, s_press_acc,
+             s_press_velo, s_press_velo, s_press_velo, s_press_acc, s_press_acc, s_press_acc]
     return np.diag(h)
 
 
@@ -99,7 +110,7 @@ dt = 0.01
 leg_constants = np.array([0.5, 0.6, 0.5, 0.6])
 imu_position = np.array([0.34, 0.29, 0.315, 0.33])
 DIM_STATES = 18
-DIM_OBSERVATIONS = 36
+DIM_OBSERVATIONS = 20
 
 my_model = MechanicalModel(dt=dt,
                            dim_states=DIM_STATES,
@@ -118,6 +129,10 @@ data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
 data_reader.prepare_lists()
 true_states = data_reader.true_states
 obs = data_reader.observations
+true_states = np.reshape(true_states, (max_timesteps, 1, DIM_STATES))
+if DIM_OBSERVATIONS == 20:
+    obs = obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
+obs = np.reshape(obs, (max_timesteps, 1, DIM_OBSERVATIONS))
 
 # -------- EKF -----------
 a = np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
@@ -133,9 +148,9 @@ sigma_imu_gyro = 0.01
 sigma_press_velo = 0.1
 sigma_press_acc = 10.0
 H = generate_observation_covar(s_imu_acc=sigma_imu_acc, s_imu_gyro=sigma_imu_gyro, s_press_velo=sigma_press_velo,
-                               s_press_acc=sigma_press_acc)
+                               s_press_acc=sigma_press_acc, dim_observations=DIM_OBSERVATIONS)
 
-my_ekf = TwoLegEKF(model=my_model, x0=a, Q=Q, H=H, numeric_jacobian=False)
+my_ekf = TwoLegEKF(model=my_model, x0=a, Q=Q, H=H, numeric_jacobian=True)
 
 # -------- Simulation -----------
 x_vals = []
@@ -147,7 +162,5 @@ for t in range(0, max_timesteps):
 
 # -------- Plotting -----------
 x_vals = np.reshape(x_vals, (max_timesteps, 1, DIM_STATES))
-true_states = np.reshape(true_states, (max_timesteps, 1, DIM_STATES))
-obs = np.reshape(obs, (max_timesteps, 1, DIM_OBSERVATIONS))
 my_plotter = Plotter(true_states=true_states, true_obs=obs, delta_t=dt)
 my_plotter.plot_smoothed_trajectories(samples=x_vals, export_name='ekf_analytic')
