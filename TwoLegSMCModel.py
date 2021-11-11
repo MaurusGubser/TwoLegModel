@@ -201,14 +201,14 @@ class TwoLegModelGuided(TwoLegModel):
         return None
 
     def compute_ekf_proposal(self, xp, data_t, sigma):
-        x_hat = np.reshape(self.state_transition(xp), (1, self.dim_states))
+        x_hat = self.state_transition(xp)
         sigma = np.matmul(self.A, np.matmul(sigma, self.A.T)) + self.Q
         df = self.compute_observation_derivatives(x_hat)
 
-        innovation_inv = np.linalg.inv(np.matmul(df, np.matmul(sigma, df.T)) + self.H)
-        kalman_gain = np.matmul(sigma, np.matmul(df.T, innovation_inv))
+        innovation_inv = np.linalg.inv(np.matmul(df, np.matmul(sigma, np.transpose(df, (0, 2, 1)))) + self.H)
+        kalman_gain = np.matmul(sigma, np.matmul(np.transpose(df, (0, 2, 1)), innovation_inv))
 
-        mu = x_hat + np.matmul(kalman_gain, (data_t - self.state_to_observation(x_hat)).T).T
+        mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, data_t - self.state_to_observation(x_hat))
         sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), sigma)
         return mu, sigma
 
@@ -249,21 +249,8 @@ class TwoLegModelGuided(TwoLegModel):
         err_rel_lin = y_res_lin/np.abs(data[t])
         """
         ###################################################
-        nb_particles, dim_state = xp.shape
-        if t == 1:
-            self.init_kalman_covs(nb_particles)
-        x_hats = np.empty((nb_particles, dim_state))
-        kalman_covs = np.empty((nb_particles, dim_state, dim_state))
-        for i in range(0, nb_particles):
-            # sigma = self.kalman_covs[i]
-            sigma = np.zeros((dim_state, dim_state))
-            # sigma = 1.0 * np.eye(dim_state)
-            x_hat, sigma = self.compute_ekf_proposal(xp[i], data[t], sigma)  # ekf version
-            # x_hat, sigma = self.compute_cappe_proposal(xp[i], data[t])  # cappe version
-            # x_hat, sigma = self.compute_tom_proposal(xp[i], data[t])
-            x_hats[i, :] = x_hat
-            kalman_covs[i, :, :] = sigma
-        self.kalman_covs = kalman_covs
+        sigma = np.zeros((self.dim_state, self.dim_state))
+        x_hats, kalman_covs = self.compute_ekf_proposal(xp, data[t], sigma)
         mean = x_hats
         covar = self.factor_kalman * np.mean(kalman_covs, axis=0)  # covar = self.factor_kalman * kalman_covs
         # return MyMvNormal(loc=mean, cov=kalman_covs)
