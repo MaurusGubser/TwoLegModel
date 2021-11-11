@@ -28,8 +28,8 @@ if __name__ == '__main__':
     P = 0.01 * np.eye(dim_states)
 
     cov_step = 0.01  # 0.01
-    scale_x = 0.01   # 0.01
-    scale_y = 1.0   # 1.0
+    scale_x = 10.0   # 0.01
+    scale_y = 10.0   # 1.0
     scale_phi = 100.0     # 100.0
     factor_Q = 1.0
     diag_Q = False
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     path_truth = 'GeneratedData/Normal/truth_normal.dat'
     path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'
     data_reader = DataReader()
-    max_timesteps = 1000
+    max_timesteps = 200
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -106,7 +106,7 @@ if __name__ == '__main__':
 
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
 
-    plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=0.01)
+    plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
     export_name = 'GF_diag'
     plotter.plot_observations(np.array(pf.hist.X), model=my_model, export_name=export_name)
     plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name=export_name)
