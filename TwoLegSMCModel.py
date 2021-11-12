@@ -249,7 +249,7 @@ class TwoLegModelGuided(TwoLegModel):
         err_rel_lin = y_res_lin/np.abs(data[t])
         """
         ###################################################
-        sigma = np.zeros((self.dim_state, self.dim_state))
+        sigma = np.zeros((self.dim_states, self.dim_states))
         x_hats, kalman_covs = self.compute_ekf_proposal(xp, data[t], sigma)
         mean = x_hats
         covar = self.factor_kalman * np.mean(kalman_covs, axis=0)  # covar = self.factor_kalman * kalman_covs

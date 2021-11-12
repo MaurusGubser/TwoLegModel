@@ -27,9 +27,9 @@ if __name__ == '__main__':
                   -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
     P = 0.01 * np.eye(dim_states)
 
-    cov_step = 0.01  # 0.01
-    scale_x = 10.0   # 0.01
-    scale_y = 10.0   # 1.0
+    cov_step = 0.1  # 0.01
+    scale_x = 0.01   # 0.01
+    scale_y = 1.0   # 1.0
     scale_phi = 100.0     # 100.0
     factor_Q = 1.0
     diag_Q = False
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     sigma_imu_gyro = 0.01   # 0.01
     sigma_press_velo = 0.1  # 0.1
     sigma_press_acc = 1000.0   # 1000.0
-    factor_H = 1.0
+    factor_H = 0.1
 
     factor_kalman = 10.0
 
