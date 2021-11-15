@@ -147,7 +147,7 @@ class MvStudent(ProbDist):
 
     @property
     def dim(self):
-        return self.cov.shape[1]
+        return self.df.shape[1]
 
     def logpdf(self, x):
         nb_particles, _ = x.shape
