@@ -27,19 +27,19 @@ if __name__ == '__main__':
                   -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
     P = 0.01 * np.eye(dim_states)
 
-    cov_step = 0.1  # 0.01
+    cov_step = 0.01  # 0.01
     scale_x = 0.01   # 0.01
     scale_y = 1.0   # 1.0
     scale_phi = 100.0     # 100.0
-    factor_Q = 1.0
+    factor_Q = 1.0  # 1.0
     diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
     sigma_imu_gyro = 0.01   # 0.01
     sigma_press_velo = 0.1  # 0.1
     sigma_press_acc = 1000.0   # 1000.0
-    factor_H = 0.1
+    factor_H = 0.1  # 1.0
 
-    factor_kalman = 10.0
+    factor_kalman = 1.5
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -83,10 +83,10 @@ if __name__ == '__main__':
                                       )
 
     # simulated data from weto
-    path_truth = 'GeneratedData/Normal/truth_normal.dat'
-    path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'
+    path_truth = 'GeneratedData/Normal/truth_normal.dat'  # GeneratedData/Normal/truth_normal.dat
+    path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'  # GeneratedData/Normal/noised_observations_normal.dat
     data_reader = DataReader()
-    max_timesteps = 200
+    max_timesteps = 500
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -101,13 +101,13 @@ if __name__ == '__main__':
     nb_particles = 1000
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model_prop, data=y)
-    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.2, store_history=True, collect=[Moments()], verbose=True)
+    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.1, store_history=True, collect=[Moments()], verbose=True)
     pf.run()
 
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
 
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
-    export_name = 'GF_diag'
+    export_name = 'GF_'
     plotter.plot_observations(np.array(pf.hist.X), model=my_model, export_name=export_name)
     plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name=export_name)
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
@@ -124,8 +124,8 @@ if __name__ == '__main__':
     """
 
     # smoothing
-    smooth_trajectories = pf.hist.backward_sampling(5, linear_cost=False)
-    plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories), export_name=export_name)
+    # smooth_trajectories = pf.hist.backward_sampling(5, linear_cost=False)
+    # plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories), export_name=export_name)
 
     """
     # learning parameters
