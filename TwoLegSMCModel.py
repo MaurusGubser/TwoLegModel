@@ -183,7 +183,7 @@ class TwoLegModelGuided(TwoLegModel):
                  sigma_press_velo=0.1,
                  sigma_press_acc=1000.0,
                  factor_H=1.0,
-                 factor_kalman=1.0):
+                 factor_proposal=1.0):
         super().__init__(dt=dt, dim_states=dim_states, dim_observations=dim_observations, leg_constants=leg_constants,
                          imu_position=imu_position, a=a, P=P, cov_step=cov_step, scale_x=scale_x, scale_y=scale_y,
                          scale_phi=scale_phi, factor_Q=factor_Q, diag_Q=diag_Q, sigma_imu_acc=sigma_imu_acc,
@@ -192,7 +192,7 @@ class TwoLegModelGuided(TwoLegModel):
         self.H_inv = np.linalg.inv(self.H)
         self.Q_inv = np.linalg.inv(self.Q)
         self.kalman_covs = np.empty((1, self.dim_states, self.dim_states))
-        self.factor_kalman = factor_kalman
+        self.factor_proposal = factor_proposal
 
     def compute_observation_derivatives(self, x):
         return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.legs, self.cst)
@@ -253,7 +253,7 @@ class TwoLegModelGuided(TwoLegModel):
         sigma = np.zeros((self.dim_states, self.dim_states))
         x_hats, kalman_covs = self.compute_ekf_proposal(xp, data[t], sigma)
         mean = x_hats
-        covar = self.factor_kalman * np.mean(kalman_covs, axis=0)  # covar = self.factor_kalman * kalman_covs
+        covar = self.factor_proposal * np.mean(kalman_covs, axis=0)  # covar = self.factor_kalman * kalman_covs
         # return MyMvNormal(loc=mean, cov=kalman_covs)
         return dists.MvNormal(loc=mean, cov=covar)
         # return MvStudent(loc=mean, shape=covar)
@@ -281,14 +281,14 @@ class TwoLegModelAux(TwoLegModelGuided):
                  sigma_press_velo=0.1,
                  sigma_press_acc=1000.0,
                  factor_H=1.0,
-                 factor_kalman=1.0):
+                 factor_proposal=1.0):
         super().__init__(dt=dt, dim_states=dim_states, dim_observations=dim_observations, leg_constants=leg_constants,
                          imu_position=imu_position, a=a, P=P, cov_step=cov_step, scale_x=scale_x, scale_y=scale_y,
                          scale_phi=scale_phi, factor_Q=factor_Q, diag_Q=diag_Q, sigma_imu_acc=sigma_imu_acc,
                          sigma_imu_gyro=sigma_imu_gyro, sigma_press_velo=sigma_press_velo,
                          sigma_press_acc=sigma_press_acc, factor_H=factor_H)
         self.kalman_covs = np.empty((1, self.dim_states, self.dim_states))
-        self.factor_kalman = factor_kalman
+        self.factor_kalman = factor_proposal
 
     def logeta(self, t, x, data):
         pass

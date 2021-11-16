@@ -28,9 +28,9 @@ if __name__ == '__main__':
     P = 0.01 * np.eye(dim_states)
 
     cov_step = 0.01  # 0.01
-    scale_x = 0.01   # 0.01
+    scale_x = 0.1   # 0.01
     scale_y = 1.0   # 1.0
-    scale_phi = 100.0     # 100.0
+    scale_phi = 1.0     # 100.0
     factor_Q = 1.0  # 1.0
     diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     sigma_press_acc = 1000.0   # 1000.0
     factor_H = 0.1  # 1.0
 
-    factor_kalman = 1.5
+    factor_proposal = 1.1
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -79,7 +79,7 @@ if __name__ == '__main__':
                                       sigma_press_velo=sigma_press_velo,
                                       sigma_press_acc=sigma_press_acc,
                                       factor_H=factor_H,
-                                      factor_kalman=factor_kalman
+                                      factor_proposal=factor_proposal
                                       )
 
     # simulated data from weto
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 1000
+    nb_particles = 100
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model_prop, data=y)
     pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.1, store_history=True, collect=[Moments()], verbose=True)

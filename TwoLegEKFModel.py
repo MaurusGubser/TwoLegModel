@@ -80,10 +80,10 @@ def generate_process_covar(dt, sx, sy, sphi):
                    0.0, 0.0, 0.0, 0.0, 0.0, sphi * dt]])
     try:
         np.linalg.cholesky(Q)
-        print('A is positive definite.')
+        print('Q is positive definite.')
         return Q
     except np.linalg.LinAlgError:
-        print('A is NOT positive definite.')
+        print('Q is NOT positive definite.')
         return None
 
 
@@ -139,14 +139,14 @@ a = np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
               0.57, 0.10, 2.54, -3.8, -0.08, -0.82,
               -0.00, 0.01, -1.78, 3.32, -0.30, 0.54])
 # dt already defined for model
-scale_x = 0.01
-scale_y = 1.0
-scale_phi = 100.0
+scale_x = 100.01
+scale_y = 100.0
+scale_phi = 250.0
 Q = generate_process_covar(dt=dt, sx=scale_x, sy=scale_y, sphi=scale_phi)
 sigma_imu_acc = 0.1
 sigma_imu_gyro = 0.01
 sigma_press_velo = 0.1
-sigma_press_acc = 10.0
+sigma_press_acc = 1000.0
 H = generate_observation_covar(s_imu_acc=sigma_imu_acc, s_imu_gyro=sigma_imu_gyro, s_press_velo=sigma_press_velo,
                                s_press_acc=sigma_press_acc, dim_observations=DIM_OBSERVATIONS)
 
