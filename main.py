@@ -29,9 +29,9 @@ if __name__ == '__main__':
 
     cov_step = 0.01  # 0.01
     scale_x = 0.1   # 0.01
-    scale_y = 1.0   # 1.0
+    scale_y = 0.1   # 1.0
     scale_phi = 1.0     # 100.0
-    factor_Q = 1.0  # 1.0
+    factor_Q = 10.0  # 1.0
     diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
     sigma_imu_gyro = 0.01   # 0.01
