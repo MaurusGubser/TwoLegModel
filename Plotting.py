@@ -199,14 +199,14 @@ class Plotter:
         for i in range(0, nb_samples):
             obs[:, i, :] = model.state_to_observation(samples[:, i, :])
 
-        if self.dim_observations==20:
+        if self.dim_observations == 20:
             obs_names = ['$\ddot x^0$', '$\ddot y^0$', '$\omega_z^0$',
                          '$\ddot x^1$', '$\ddot y^1$', '$\omega_z^1$',
                          '$\ddot x^2$', '$\ddot y^2$', '$\omega_z^2$',
                          '$\ddot x^3$', '$\ddot y^3$', '$\omega_z^3$',
                          '$\dot x^4$', '$\dot y^4$', '$\ddot x^4$', '$\ddot y^4$',
                          '$\dot x^5$', '$\dot y^5$', '$\ddot x^5$', '$\ddot y^5$']
-        elif self.dim_observations==36:
+        elif self.dim_observations == 36:
             obs_names = ['$\ddot x^0$', '$\ddot y^0$', '$\ddot z^0$', '$\omega_x^0$', '$\omega_y^0$', '$\omega_z^0$',
                          '$\ddot x^1$', '$\ddot y^1$', '$\ddot z^1$', '$\omega_x^1$', '$\omega_y^1$', '$\omega_z^1$',
                          '$\ddot x^2$', '$\ddot y^2$', '$\ddot z^2$', '$\omega_x^2$', '$\omega_y^2$', '$\omega_z^2$',
@@ -242,7 +242,11 @@ class Plotter:
 
     def plot_ESS(self, ESS):
         t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
+        window_avg = np.ones(10) / 10.0
+        moving_avg = np.convolve(ESS, window_avg, 'same')
+        fig = plt.figure(figsize=(12, 8))
         plt.plot(t_vals, ESS, label='ESS')
+        plt.plot(t_vals, moving_avg, label='Moving Avg')
         plt.legend()
         plt.show()
         return None
