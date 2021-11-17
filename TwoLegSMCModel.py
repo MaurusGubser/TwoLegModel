@@ -19,7 +19,7 @@ class TwoLegModel(ssm.StateSpaceModel):
     def __init__(self,
                  dt=0.01,
                  dim_states=18,
-                 dim_observations=36,
+                 dim_observations=20,
                  leg_constants=np.array([0.5, 0.6, 0.5, 0.6]),
                  imu_position=np.array([0.34, 0.29, 0.315, 0.33]),
                  a=np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
@@ -27,17 +27,18 @@ class TwoLegModel(ssm.StateSpaceModel):
                              -0.00, 0.01, -1.78, 3.32, -0.30, 0.54]),
                  P=0.01 * np.eye(18),
                  cov_step=0.01,
-                 scale_x=1.0,
-                 scale_y=1.0,
-                 scale_phi=1.0,
-                 factor_Q=1.0,
+                 scale_x=100.0,
+                 scale_y=100.0,
+                 scale_phi=250.0,
+                 factor_Q=10.0,
                  diag_Q=False,
                  sigma_imu_acc=0.1,
                  sigma_imu_gyro=0.01,
                  sigma_press_velo=0.1,
                  sigma_press_acc=1000.0,
-                 factor_H=1.0
+                 factor_H=0.1
                  ):
+        super().__init__()
         self.dt = dt
         self.dim_states = dim_states
         self.dim_observations = dim_observations
@@ -59,7 +60,9 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.sigma_press_velo = sigma_press_velo
         self.sigma_press_acc = sigma_press_acc
         self.factor_H = factor_H
+        self.Q = np.zeros((self.dim_states, self.dim_states))
         self.set_process_covariance()
+        self.H = np.zeros((self.dim_observations, self.dim_observations))
         self.set_observation_covariance()
 
     def set_process_transition_matrix(self):
@@ -73,7 +76,6 @@ class TwoLegModel(ssm.StateSpaceModel):
         return None
 
     def set_process_covariance(self):
-        self.Q = np.zeros((self.dim_states, self.dim_states))
         block_size = self.dim_states // 3
         for row in range(0, self.dim_states):
             for col in range(0, self.dim_states):
@@ -101,7 +103,6 @@ class TwoLegModel(ssm.StateSpaceModel):
             for row, col in itertools.product(idxs, idxs):
                 self.Q[row, col] *= factor
         self.Q *= self.factor_Q
-        print('Determinant process cov det(Q)={}'.format(np.linalg.det(self.Q)))
         return None
 
     def set_observation_covariance(self):
@@ -129,7 +130,6 @@ class TwoLegModel(ssm.StateSpaceModel):
             raise AssertionError(
                 'Observation dimension must be 20 or 36; got {} instead.'.format(self.dim_observations))
         self.H *= self.factor_H
-        print('Determinant observation cov det(H)={}'.format(np.linalg.det(self.H)))
         return None
 
     def state_transition(self, xp):
@@ -148,14 +148,6 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=self.state_transition(xp), cov=self.Q)
 
     def PY(self, t, xp, x):
-        ############### remove after debug ################
-        """
-        y_nonlin = self.state_to_observation(x)
-        y_lin = self.state_to_observation_linear(x, xp)
-        y_res = np.abs(y_nonlin - y_lin)
-        y_res_mean = np.mean(y_res, axis=0)
-        """
-        ###################################################
         return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
         # mu = self.state_to_observation(x)
         # return dists.IndepProd(*[dists.Normal(loc=mu[:, i], scale=self.H[i, i]) for i in range(0, self.dim_observations)])
@@ -165,7 +157,7 @@ class TwoLegModelGuided(TwoLegModel):
     def __init__(self,
                  dt=0.01,
                  dim_states=18,
-                 dim_observations=36,
+                 dim_observations=20,
                  leg_constants=np.array([0.5, 0.6, 0.5, 0.6]),
                  imu_position=np.array([0.34, 0.29, 0.315, 0.33]),
                  a=np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
@@ -173,17 +165,17 @@ class TwoLegModelGuided(TwoLegModel):
                              -0.00, 0.01, -1.78, 3.32, -0.30, 0.54]),
                  P=0.01 * np.eye(18),
                  cov_step=0.01,
-                 scale_x=1.0,
-                 scale_y=1.0,
-                 scale_phi=1.0,
-                 factor_Q=1.0,
+                 scale_x=100.0,
+                 scale_y=100.0,
+                 scale_phi=250.0,
+                 factor_Q=10.0,
                  diag_Q=False,
                  sigma_imu_acc=0.1,
                  sigma_imu_gyro=0.01,
                  sigma_press_velo=0.1,
                  sigma_press_acc=1000.0,
-                 factor_H=1.0,
-                 factor_proposal=1.0):
+                 factor_H=0.1,
+                 factor_proposal=1.1):
         super().__init__(dt=dt, dim_states=dim_states, dim_observations=dim_observations, leg_constants=leg_constants,
                          imu_position=imu_position, a=a, P=P, cov_step=cov_step, scale_x=scale_x, scale_y=scale_y,
                          scale_phi=scale_phi, factor_Q=factor_Q, diag_Q=diag_Q, sigma_imu_acc=sigma_imu_acc,
@@ -238,22 +230,10 @@ class TwoLegModelGuided(TwoLegModel):
         return self.PX0()
 
     def proposal(self, t, xp, data):
-        ############### remove after debug ################
-        """
-        xpp = self.state_transition(xp)
-        y_nonlin = self.state_to_observation(xpp)
-        y_lin = self.state_to_observation_linear(xpp, xp)
-        y_res = np.mean(np.abs(y_nonlin - y_lin), axis=0)
-        y_res_nonlin = np.mean(np.abs(data[t] - y_nonlin), axis=0)
-        err_rel_nonlin = y_res_nonlin/np.abs(data[t])
-        y_res_lin = np.mean(np.abs(data[t] - y_lin), axis=0)
-        err_rel_lin = y_res_lin/np.abs(data[t])
-        """
-        ###################################################
         sigma = np.zeros((self.dim_states, self.dim_states))
         x_hats, kalman_covs = self.compute_ekf_proposal(xp, data[t], sigma)
         mean = x_hats
-        covar = self.factor_proposal * np.mean(kalman_covs, axis=0)  # covar = self.factor_kalman * kalman_covs
+        covar = self.factor_proposal * np.mean(kalman_covs, axis=0)
         # return MyMvNormal(loc=mean, cov=kalman_covs)
         return dists.MvNormal(loc=mean, cov=covar)
         # return MvStudent(loc=mean, shape=covar)
