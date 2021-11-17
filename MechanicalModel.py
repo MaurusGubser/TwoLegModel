@@ -73,8 +73,14 @@ def state_to_obs(x, dim_observations, g, legs, cst):
     y[:, 35] = 0.0
 
     if dim_observations == 20:
+        """
+        y20 = np.empty((nb_steps, 20))
+        idxs = [0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34]
+        for i in range(0, 20):
+            y20[:, i] = y[:, idxs[i]]
+        return y20
+        """
         y = y[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
-
     return y
 
 
@@ -93,7 +99,8 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, cst):
     df[:, 5, 8] = 1
 
     # left fibula
-    df[:, 6, 2] = -x[:, 12] * np.sin(x[:, 2] + x[:, 3]) + x[:, 13] * np.cos(x[:, 2] + x[:, 3]) + g * np.cos(x[:, 2] + x[:, 3])
+    df[:, 6, 2] = -x[:, 12] * np.sin(x[:, 2] + x[:, 3]) + x[:, 13] * np.cos(x[:, 2] + x[:, 3]) + g * np.cos(
+        x[:, 2] + x[:, 3])
     df[:, 6, 3] = -x[:, 14] * legs[0] * np.sin(x[:, 3]) - x[:, 12] * np.sin(x[:, 2] + x[:, 3]) + x[:, 13] * np.cos(
         x[:, 2] + x[:, 3]) + legs[0] * x[:, 8] ** 2 * np.cos(x[:, 3]) + g * np.cos(x[:, 2] + x[:, 3])
     df[:, 6, 8] = 2 * legs[0] * x[:, 8] * np.sin(x[:, 3])
@@ -101,7 +108,8 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, cst):
     df[:, 6, 13] = np.sin(x[:, 2] + x[:, 3])
     df[:, 6, 14] = cst[1] + legs[0] * np.cos(x[:, 3])
     df[:, 6, 15] = cst[1]
-    df[:, 7, 2] = -x[:, 12] * np.cos(x[:, 2] + x[:, 3]) - x[:, 13] * np.sin(x[:, 2] + x[:, 3]) - g * np.sin(x[:, 2] + x[:, 3])
+    df[:, 7, 2] = -x[:, 12] * np.cos(x[:, 2] + x[:, 3]) - x[:, 13] * np.sin(x[:, 2] + x[:, 3]) - g * np.sin(
+        x[:, 2] + x[:, 3])
     df[:, 7, 3] = -x[:, 14] * legs[0] * np.cos(x[:, 3]) - x[:, 12] * np.cos(x[:, 2] + x[:, 3]) - x[:, 13] * np.sin(
         x[:, 2] + x[:, 3]) - legs[0] * x[:, 8] ** 2 * np.sin(x[:, 3]) - g * np.sin(x[:, 2] + x[:, 3])
     df[:, 7, 8] = 2 * legs[0] * x[:, 8] * np.cos(x[:, 3]) + 2 * cst[1] * (x[:, 8] + x[:, 9])
@@ -124,7 +132,8 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, cst):
     df[:, 17, 10] = 1
 
     # right fibula
-    df[:, 18, 4] = -x[:, 12] * np.sin(x[:, 4] + x[:, 5]) + x[:, 13] * np.cos(x[:, 4] + x[:, 5]) + g * np.cos(x[:, 4] + x[:, 5])
+    df[:, 18, 4] = -x[:, 12] * np.sin(x[:, 4] + x[:, 5]) + x[:, 13] * np.cos(x[:, 4] + x[:, 5]) + g * np.cos(
+        x[:, 4] + x[:, 5])
     df[:, 18, 5] = -x[:, 16] * legs[2] * np.sin(x[:, 5]) - x[:, 12] * np.sin(x[:, 4] + x[:, 5]) + x[:, 13] * np.cos(
         x[:, 4] + x[:, 5]) + legs[2] * x[:, 10] ** 2 * np.cos(x[:, 5]) + g * np.cos(x[:, 4] + x[:, 5])
     df[:, 18, 10] = 2 * legs[2] * x[:, 10] * np.sin(x[:, 5])
@@ -132,7 +141,8 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, cst):
     df[:, 18, 13] = np.sin(x[:, 4] + x[:, 5])
     df[:, 18, 16] = cst[3] + legs[2] * np.cos(x[:, 5])
     df[:, 18, 17] = cst[3]
-    df[:, 19, 4] = -x[:, 12] * np.cos(x[:, 4] + x[:, 5]) - x[:, 13] * np.sin(x[:, 4] + x[:, 5]) - g * np.sin(x[:, 4] + x[:, 5])
+    df[:, 19, 4] = -x[:, 12] * np.cos(x[:, 4] + x[:, 5]) - x[:, 13] * np.sin(x[:, 4] + x[:, 5]) - g * np.sin(
+        x[:, 4] + x[:, 5])
     df[:, 19, 5] = -x[:, 16] * legs[2] * np.cos(x[:, 5]) - x[:, 12] * np.cos(x[:, 4] + x[:, 5]) - x[:, 13] * np.sin(
         x[:, 4] + x[:, 5]) - legs[2] * x[:, 10] ** 2 * np.sin(x[:, 5]) - g * np.sin(x[:, 4] + x[:, 5])
     df[:, 19, 10] = 2 * legs[2] * x[:, 10] * np.cos(x[:, 5]) + 2 * cst[3] * (x[:, 10] + x[:, 11])
@@ -154,18 +164,24 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, cst):
     df[:, 25, 7] = 1
     df[:, 25, 8] = legs[0] * np.sin(x[:, 2]) + legs[1] * np.sin(x[:, 2] + x[:, 3])
     df[:, 25, 9] = legs[1] * np.sin(x[:, 2] + x[:, 3])
-    df[:, 27, 2] = -legs[0] * (x[:, 14] * np.sin(x[:, 2]) + x[:, 8] ** 2 * np.cos(x[:, 2])) - legs[1] * (x[:, 14] + x[:, 15]) * np.sin(
+    df[:, 27, 2] = -legs[0] * (x[:, 14] * np.sin(x[:, 2]) + x[:, 8] ** 2 * np.cos(x[:, 2])) - legs[1] * (
+                x[:, 14] + x[:, 15]) * np.sin(
         x[:, 2] + x[:, 3]) - legs[1] * (x[:, 8] + x[:, 9]) ** 2 * np.cos(x[:, 2] + x[:, 3])
-    df[:, 27, 3] = -legs[1] * (x[:, 14] + x[:, 15]) * np.sin(x[:, 2] + x[:, 3]) - legs[1] * (x[:, 8] + x[:, 9]) ** 2 * np.cos(x[:, 2] + x[:, 3])
-    df[:, 27, 8] = -2 * legs[0] * x[:, 8] * np.sin(x[:, 2]) - 2 * legs[1] * (x[:, 8] + x[:, 9]) * np.sin(x[:, 2] + x[:, 3])
+    df[:, 27, 3] = -legs[1] * (x[:, 14] + x[:, 15]) * np.sin(x[:, 2] + x[:, 3]) - legs[1] * (
+                x[:, 8] + x[:, 9]) ** 2 * np.cos(x[:, 2] + x[:, 3])
+    df[:, 27, 8] = -2 * legs[0] * x[:, 8] * np.sin(x[:, 2]) - 2 * legs[1] * (x[:, 8] + x[:, 9]) * np.sin(
+        x[:, 2] + x[:, 3])
     df[:, 27, 9] = -2 * legs[1] * (x[:, 8] + x[:, 9]) * np.sin(x[:, 2] + x[:, 3])
     df[:, 27, 12] = 1
     df[:, 27, 14] = legs[0] * np.cos(x[:, 2]) + legs[1] * np.cos(x[:, 2] + x[:, 3])
     df[:, 27, 15] = legs[1] * np.cos(x[:, 2] + x[:, 3])
-    df[:, 28, 2] = -legs[0] * (-x[:, 14] * np.cos(x[:, 2]) + x[:, 8] ** 2 * np.sin(x[:, 2])) + legs[1] * (x[:, 14] + x[:, 15]) * np.cos(
+    df[:, 28, 2] = -legs[0] * (-x[:, 14] * np.cos(x[:, 2]) + x[:, 8] ** 2 * np.sin(x[:, 2])) + legs[1] * (
+                x[:, 14] + x[:, 15]) * np.cos(
         x[:, 2] + x[:, 3]) - legs[1] * (x[:, 8] + x[:, 9]) ** 2 * np.sin(x[:, 2] + x[:, 3])
-    df[:, 28, 3] = legs[1] * (x[:, 14] + x[:, 15]) * np.cos(x[:, 2] + x[:, 3]) - legs[1] * (x[:, 8] + x[:, 9]) ** 2 * np.sin(x[:, 2] + x[:, 3])
-    df[:, 28, 8] = 2 * legs[0] * x[:, 8] * np.cos(x[:, 2]) + 2 * legs[1] * (x[:, 8] + x[:, 9]) * np.cos(x[:, 2] + x[:, 3])
+    df[:, 28, 3] = legs[1] * (x[:, 14] + x[:, 15]) * np.cos(x[:, 2] + x[:, 3]) - legs[1] * (
+                x[:, 8] + x[:, 9]) ** 2 * np.sin(x[:, 2] + x[:, 3])
+    df[:, 28, 8] = 2 * legs[0] * x[:, 8] * np.cos(x[:, 2]) + 2 * legs[1] * (x[:, 8] + x[:, 9]) * np.cos(
+        x[:, 2] + x[:, 3])
     df[:, 28, 9] = 2 * legs[1] * (x[:, 8] + x[:, 9]) * np.cos(x[:, 2] + x[:, 3])
     df[:, 28, 13] = 1
     df[:, 28, 14] = legs[0] * np.sin(x[:, 2]) + legs[1] * np.sin(x[:, 2] + x[:, 3])
@@ -182,18 +198,24 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, cst):
     df[:, 31, 7] = 1
     df[:, 31, 10] = legs[2] * np.sin(x[:, 4]) + legs[3] * np.sin(x[:, 4] + x[:, 5])
     df[:, 31, 11] = legs[3] * np.sin(x[:, 4] + x[:, 5])
-    df[:, 33, 4] = -legs[2] * (x[:, 16] * np.sin(x[:, 4]) + x[:, 10] ** 2 * np.cos(x[:, 4])) - legs[3] * (x[:, 16] + x[:, 17]) * np.sin(
+    df[:, 33, 4] = -legs[2] * (x[:, 16] * np.sin(x[:, 4]) + x[:, 10] ** 2 * np.cos(x[:, 4])) - legs[3] * (
+                x[:, 16] + x[:, 17]) * np.sin(
         x[:, 4] + x[:, 5]) - legs[3] * (x[:, 10] + x[:, 11]) ** 2 * np.cos(x[:, 4] + x[:, 5])
-    df[:, 33, 5] = -legs[3] * (x[:, 16] + x[:, 17]) * np.sin(x[:, 4] + x[:, 5]) - legs[3] * (x[:, 10] + x[:, 11]) ** 2 * np.cos(x[:, 4] + x[:, 5])
-    df[:, 33, 10] = -2 * legs[2] * x[:, 10] * np.sin(x[:, 4]) - 2 * legs[3] * (x[:, 10] + x[:, 11]) * np.sin(x[:, 4] + x[:, 5])
+    df[:, 33, 5] = -legs[3] * (x[:, 16] + x[:, 17]) * np.sin(x[:, 4] + x[:, 5]) - legs[3] * (
+                x[:, 10] + x[:, 11]) ** 2 * np.cos(x[:, 4] + x[:, 5])
+    df[:, 33, 10] = -2 * legs[2] * x[:, 10] * np.sin(x[:, 4]) - 2 * legs[3] * (x[:, 10] + x[:, 11]) * np.sin(
+        x[:, 4] + x[:, 5])
     df[:, 33, 11] = -2 * legs[3] * (x[:, 10] + x[:, 11]) * np.sin(x[:, 4] + x[:, 5])
     df[:, 33, 12] = 1
     df[:, 33, 16] = legs[2] * np.cos(x[:, 4]) + legs[3] * np.cos(x[:, 4] + x[:, 5])
     df[:, 33, 17] = legs[3] * np.cos(x[:, 4] + x[:, 5])
-    df[:, 34, 4] = -legs[2] * (-x[:, 16] * np.cos(x[:, 4]) + x[:, 10] ** 2 * np.sin(x[:, 4])) + legs[3] * (x[:, 16] + x[:, 17]) * np.cos(
+    df[:, 34, 4] = -legs[2] * (-x[:, 16] * np.cos(x[:, 4]) + x[:, 10] ** 2 * np.sin(x[:, 4])) + legs[3] * (
+                x[:, 16] + x[:, 17]) * np.cos(
         x[:, 4] + x[:, 5]) - legs[3] * (x[:, 10] + x[:, 11]) ** 2 * np.sin(x[:, 4] + x[:, 5])
-    df[:, 34, 5] = legs[3] * (x[:, 16] + x[:, 17]) * np.cos(x[:, 4] + x[:, 5]) - legs[3] * (x[:, 10] + x[:, 11]) ** 2 * np.sin(x[:, 4] + x[:, 5])
-    df[:, 34, 10] = 2 * legs[2] * x[:, 10] * np.cos(x[:, 4]) + 2 * legs[3] * (x[:, 10] + x[:, 11]) * np.cos(x[:, 4] + x[:, 5])
+    df[:, 34, 5] = legs[3] * (x[:, 16] + x[:, 17]) * np.cos(x[:, 4] + x[:, 5]) - legs[3] * (
+                x[:, 10] + x[:, 11]) ** 2 * np.sin(x[:, 4] + x[:, 5])
+    df[:, 34, 10] = 2 * legs[2] * x[:, 10] * np.cos(x[:, 4]) + 2 * legs[3] * (x[:, 10] + x[:, 11]) * np.cos(
+        x[:, 4] + x[:, 5])
     df[:, 34, 11] = 2 * legs[3] * (x[:, 10] + x[:, 11]) * np.cos(x[:, 4] + x[:, 5])
     df[:, 34, 13] = 1
     df[:, 34, 16] = legs[2] * np.sin(x[:, 4]) + legs[3] * np.sin(x[:, 4] + x[:, 5])
@@ -201,7 +223,13 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, cst):
 
     if dim_observations == 20:
         df = df[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), :]
-
+        """
+        df20 = np.empty((nb_particles, 20, dim_states))
+        idxs = [0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34]
+        for i in range(0, 20):
+            df20[:, i, :] = df[:, idxs[i], :]
+        return df20
+        """
     return df
 
 
@@ -209,13 +237,8 @@ def state_to_obs_linear(x, xp, dim_states, dim_observations, g, legs, cst):
     if xp is None:
         xp = np.zeros(x.shape)
     nb_steps, _ = x.shape
-    y = np.empty(shape=(nb_steps, dim_observations))
     df = compute_jacobian_obs(xp, dim_states, dim_observations, g, legs, cst)
     y = state_to_obs(xp, dim_observations, g, legs, cst) + np.einsum('ijk, ik -> ij', df, x - xp)
-    """
-    for i in range(0, nb_steps):
-        y[i, :] = state_to_obs(np.reshape(xp[i], (1, -1)), dim_observations, g, legs, cst) + np.matmul(df[i], x[i] - xp[i])
-    """
     return y
 
 

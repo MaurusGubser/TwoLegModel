@@ -1,13 +1,12 @@
 from __future__ import division, print_function
 
 import warnings
-
 from particles.distributions import ProbDist
 from collections import OrderedDict  # see prior
 import numpy as np
 import numpy.random as random
 import scipy.stats as stats
-from scipy.linalg import cholesky, solve_triangular, inv
+from scipy.linalg import solve_triangular, inv
 
 HALFLOG2PI = 0.5 * np.log(2. * np.pi)
 
@@ -126,13 +125,9 @@ class MyMvNormal(ProbDist):
         Siginv = inv(Sigma)
         Qpost = inv(self.cov) + n * Siginv
         Sigpost = inv(Qpost)
-        """
-        # gubm: suggestion for correct application
+
         mupost = (np.matmul(Siginv, self.loc) +
                   np.matmul(Siginv, np.sum(x, axis=0)))
-        """
-        mupost = (np.matmul(Siginv, self.mean) +
-                  np.matmu(Siginv, np.sum(x, axis=0)))
 
         return MyMvNormal(loc=mupost, cov=Sigpost)
 
