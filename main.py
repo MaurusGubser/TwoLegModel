@@ -23,7 +23,7 @@ if __name__ == '__main__':
     a = np.array([5.6790e-03, 1.0575e+00, -1.2846e-01, -2.4793e-01, 3.6639e-01, -1.8980e-01,
                   5.6790e-01, 9.6320e-02, 2.5362e+00, -3.7986e+00, -7.8163e-02, -8.1819e-01,
                   -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
-    P = 0.1 * np.eye(dim_states)
+    P = 0.01 * np.eye(dim_states)
 
     cov_step = 0.01  # 0.01
     scale_x = 100.0  # 0.01
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     start = time.time()
     pf.run()
     end = time.time()
-    print('Time used: {}'.format(end - start))
+    print('Time used: {:.1f}s'.format(end - start))
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
 
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
@@ -136,13 +136,16 @@ if __name__ == '__main__':
                   'scale_y': dists.Uniform(20.0, 200.0),
                   'scale_phi': dists.Uniform(50.0, 500.0)}
     my_prior = dists.StructDist(prior_dict)
-    pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, data=y, Nx=50, niter=150, verbose=True)
+    pmmh = mcmc.PMMH(ssm_cls=TwoLegModelGuided, prior=my_prior, data=y, Nx=100, niter=150, verbose=10)
+    start = time.time()
     pmmh.run()  # Warning: takes a few seconds
+    end = time.time()
+    print('Time used: {:.1f}s'.format(end - start))
 
     burnin = 50  # discard the 100 first iterations
     for i, param in enumerate(prior_dict.keys()):
         plt.subplot(2, 2, i + 1)
-        sb.distplot(pmmh.chain.theta[param][burnin:], 40)
+        sb.distplot(pmmh.chain.theta[param][burnin:], 10)
         plt.title(param)
     plt.show()
 

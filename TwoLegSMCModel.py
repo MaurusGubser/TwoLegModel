@@ -30,13 +30,13 @@ class TwoLegModel(ssm.StateSpaceModel):
                  scale_x=100.0,
                  scale_y=100.0,
                  scale_phi=250.0,
-                 factor_Q=10.0,
+                 factor_Q=1000.0,
                  diag_Q=False,
                  sigma_imu_acc=0.1,
                  sigma_imu_gyro=0.01,
                  sigma_press_velo=0.1,
                  sigma_press_acc=1000.0,
-                 factor_H=0.1
+                 factor_H=0.01
                  ):
         super().__init__()
         self.dt = dt
@@ -168,13 +168,13 @@ class TwoLegModelGuided(TwoLegModel):
                  scale_x=100.0,
                  scale_y=100.0,
                  scale_phi=250.0,
-                 factor_Q=10.0,
+                 factor_Q=1000.0,
                  diag_Q=False,
                  sigma_imu_acc=0.1,
                  sigma_imu_gyro=0.01,
                  sigma_press_velo=0.1,
                  sigma_press_acc=1000.0,
-                 factor_H=0.1,
+                 factor_H=0.01,
                  factor_proposal=1.1):
         super().__init__(dt=dt, dim_states=dim_states, dim_observations=dim_observations, leg_constants=leg_constants,
                          imu_position=imu_position, a=a, P=P, cov_step=cov_step, scale_x=scale_x, scale_y=scale_y,
