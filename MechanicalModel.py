@@ -73,13 +73,6 @@ def state_to_obs(x, dim_observations, g, legs, cst):
     y[:, 35] = 0.0
 
     if dim_observations == 20:
-        """
-        y20 = np.empty((nb_steps, 20))
-        idxs = [0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34]
-        for i in range(0, 20):
-            y20[:, i] = y[:, idxs[i]]
-        return y20
-        """
         y = y[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
     return y
 
@@ -223,14 +216,11 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, cst):
 
     if dim_observations == 20:
         df = df[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), :]
-        """
-        df20 = np.empty((nb_particles, 20, dim_states))
-        idxs = [0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34]
-        for i in range(0, 20):
-            df20[:, i, :] = df[:, idxs[i], :]
-        return df20
-        """
     return df
+
+
+def rotate_obs(y, R):
+    return np.matmul(R, y)
 
 
 def state_to_obs_linear(x, xp, dim_states, dim_observations, g, legs, cst):

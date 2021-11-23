@@ -29,7 +29,7 @@ if __name__ == '__main__':
     scale_x = 100.0  # 0.01
     scale_y = 100.0  # 1.0
     scale_phi = 250.0  # 100.0
-    factor_Q = 1000.0  # 1.0
+    factor_Q = 100.0  # 1.0
     diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
     sigma_imu_gyro = 0.01  # 0.01
@@ -81,10 +81,10 @@ if __name__ == '__main__':
                                       )
 
     # simulated data from weto
-    path_truth = 'GeneratedData/Normal/truth_normal.dat'  # GeneratedData/Normal/truth_normal.dat
-    path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'  # GeneratedData/Normal/noised_observations_normal.dat
+    path_truth = 'GeneratedData/Normal_long/truth_long.dat'  # GeneratedData/Normal/truth_normal.dat
+    path_obs = 'GeneratedData/Normal_long/noised_observations_long.dat'  # GeneratedData/Normal/noised_observations_normal.dat
     data_reader = DataReader()
-    max_timesteps = 1000
+    max_timesteps = 2000
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -96,20 +96,20 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 200
+    nb_particles = 100
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model_prop, data=y)
-    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.2, store_history=True, collect=[Moments()], verbose=True)
-    """
-    # filter and plot
-    start = time.time()
-    pf.run()
-    end = time.time()
-    print('Time used: {:.1f}s'.format(end - start))
-    print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
+    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.5, store_history=True, collect=[Moments()], verbose=True)
 
+    # filter and plot
+    start_user, start_process = time.time(), time.process_time()
+    pf.run()
+    end_user, end_process = time.time(), time.process_time()
+    print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
+    print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
+    print('Log likelihood: {}'.format(pf.summaries.logLts))
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
-    export_name = 'GF_'
+    export_name = 'GF_long_100particles'
     plotter.plot_observations(np.array(pf.hist.X), model=my_model, export_name=export_name)
     plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name=export_name)
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     plotter.plot_ESS(pf.summaries.ESSs)
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var,
                                   X_hist=None, export_name=export_name)  # X_hist = np.array(pf.hist.X)
-    """
+
     """
     # compare MC and QMC method
     results = particles.multiSMC(fk=fk_guided, N=100, nruns=30, qmc={'SMC': False, 'SQMC': True})
@@ -125,27 +125,40 @@ if __name__ == '__main__':
     sb.boxplot(x=[r['output'].logLt for r in results], y=[r['qmc'] for r in results])
     plt.show()
     """
-    """
+
     # smoothing
     smooth_trajectories = pf.hist.backward_sampling(5, linear_cost=False)
     plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories), export_name=export_name)
-    """
 
+    """
     # learning parameters
     prior_dict = {'scale_x': dists.Uniform(20.0, 200.0),
                   'scale_y': dists.Uniform(20.0, 200.0),
                   'scale_phi': dists.Uniform(50.0, 500.0)}
-    my_prior = dists.StructDist(prior_dict)
-    pmmh = mcmc.PMMH(ssm_cls=TwoLegModelGuided, prior=my_prior, data=y, Nx=100, niter=150, verbose=10)
-    start = time.time()
-    pmmh.run()  # Warning: takes a few seconds
-    end = time.time()
-    print('Time used: {:.1f}s'.format(end - start))
+    prior_dict = {'sigma_imu_acc': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.1, b=0.0),
+                  'sigma_imu_gyro': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.01, b=0.0),
+                  'sigma_press_velo': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.1, b=0.0),
+                  'sigma_press_acc': dists.LinearD(dists.InvGamma(3.0, 2.0), a=1000.0, b=0.0)}
 
-    burnin = 50  # discard the 100 first iterations
+    my_prior = dists.StructDist(prior_dict)
+    pmmh = mcmc.PMMH(ssm_cls=TwoLegModelGuided, prior=my_prior, fk_cls=ssm.Bootstrap, data=y, Nx=100, niter=200,
+                     verbose=10)
+    start_user, start_process = time.time(), time.process_time()
+    pmmh.run()  # Warning: takes a few seconds
+    end_user, end_process = time.time(), time.process_time()
+    print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
+
+    burnin = 0  # discard the __ first iterations
     for i, param in enumerate(prior_dict.keys()):
         plt.subplot(2, 2, i + 1)
         sb.distplot(pmmh.chain.theta[param][burnin:], 10)
         plt.title(param)
     plt.show()
 
+    for i, param in enumerate(prior_dict.keys()):  # loop over mu, theta, rho
+        plt.subplot(2, 2, i + 1)
+        plt.plot(pmmh.chain.theta[param])
+        plt.xlabel('iter')
+        plt.ylabel(param)
+    plt.show()
+    """
