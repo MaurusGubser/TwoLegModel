@@ -1,9 +1,11 @@
+import os
+
 import numpy as np
 import pandas as pd
 from more_itertools import pairwise
 
 
-class DataReader:
+class DataReaderWriter:
 
     def __init__(self):
         self.observations = np.empty(0)
@@ -52,4 +54,32 @@ class DataReader:
         for time_step in range(0, nb_timesteps):
             self.states_list.append(np.reshape(self.true_states[time_step, :], (1, -1)))
             self.observations_list.append(np.reshape(self.observations[time_step, :], (1, -1)))
+        return None
+
+    def export_trajectory(self, data_states, dt, file_name):
+        nb_timesteps, nb_samples, _ = data_states.shape
+        time_arr = dt * np.arange(1, nb_timesteps + 1)
+        header = '\nnb_samples: {}\n'.format(nb_timesteps) + 4*'nb_times: {}\n'.format(nb_timesteps)
+        header = header + '# time,x_0,x_1,phi femur_l,phi fibula_l,phi femur_r,phi fibula_r,dx_0,dx_1,dphi femur_l,dphi fibula_l,dphi femur_r,dphi fibula_r,ddx_0,ddx_1,ddphi femur_l,ddphi fibula_l,ddphi femur_r,ddphi fibula_r\n'
+
+        if not os.path.exists('AnimationSamples'):
+            os.mkdir('AnimationSamples')
+        if not os.path.exists('AnimationSamples/{}'.format(file_name)):
+            os.mkdir('AnimationSamples/{}'.format(file_name))
+
+        for i in range(0, nb_samples):
+            export_name = 'AnimationSamples/{}/sample_{}.dat'.format(file_name, i)
+            with open(export_name, 'w') as f_write:
+                f_write.write(header)
+            sample = data_states[:, i, :]
+            for j in range(0, nb_timesteps):
+                data_list = [str(time_arr[j])] + [str(state) for state in sample[j, :]]
+                data_str = ','.join(data_list) + ',\n'
+                with open(export_name, 'a') as f_write:
+                    f_write.write(data_str)
+            time_list = 4 * [str(time) for time in time_arr]
+            time_str = '\n'.join(time_list)
+            with open(export_name, 'a') as f_write:
+                f_write.write(time_str)
+        print('Sampled states exported to AnimationSamples/{}'.format(file_name))
         return None
