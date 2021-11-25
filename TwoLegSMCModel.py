@@ -155,24 +155,21 @@ class TwoLegModel(ssm.StateSpaceModel):
     def compute_observation_derivatives(self, x):
         return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.legs, self.cst)
 
-    def compute_ekf_proposal(self, xp, data_t, sigma):
+    def compute_ekf_proposal(self, xp, data_t):
         x_hat = self.state_transition(xp)
-        sigma = np.matmul(self.A, np.matmul(sigma, self.A.T)) + self.Q
         df = self.compute_observation_derivatives(x_hat)
 
-        innovation_inv = np.linalg.inv(np.matmul(df, np.matmul(sigma, np.transpose(df, (0, 2, 1)))) + self.H)
-        kalman_gain = np.matmul(sigma, np.matmul(np.transpose(df, (0, 2, 1)), innovation_inv))
+        innovation_inv = np.linalg.inv(np.matmul(df, np.matmul(self.Q, np.transpose(df, (0, 2, 1)))) + self.H)
+        kalman_gain = np.matmul(self.Q, np.matmul(np.transpose(df, (0, 2, 1)), innovation_inv))
 
         mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, data_t - self.state_to_observation(x_hat))
-        sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), sigma)
+        sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), self.Q)
         return mu, sigma
 
     def proposal0(self, data):
         return self.PX0()
 
     def proposal(self, t, xp, data):
-        sigma = np.zeros((self.dim_states, self.dim_states))
-        x_hats, kalman_covs = self.compute_ekf_proposal(xp, data[t], sigma)
-        mean = x_hats
+        mean, kalman_covs = self.compute_ekf_proposal(xp, data[t])
         covar = self.factor_proposal * np.mean(kalman_covs, axis=0)
         return dists.MvNormal(loc=mean, cov=covar)
