@@ -152,6 +152,7 @@ class TwoLegModel(ssm.StateSpaceModel):
     def PY(self, t, xp, x):
         return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
 
+
     def compute_observation_derivatives(self, x):
         return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.legs, self.cst)
 
@@ -161,8 +162,9 @@ class TwoLegModel(ssm.StateSpaceModel):
 
         innovation_inv = np.linalg.inv(np.matmul(df, np.matmul(self.Q, np.transpose(df, (0, 2, 1)))) + self.H)
         kalman_gain = np.matmul(self.Q, np.matmul(np.transpose(df, (0, 2, 1)), innovation_inv))
+        prediction_err = np.nan_to_num(data_t - self.state_to_observation(x_hat), nan=0.0)
 
-        mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, data_t - self.state_to_observation(x_hat))
+        mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, prediction_err)
         sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), self.Q)
         return mu, sigma
 
