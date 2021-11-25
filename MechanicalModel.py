@@ -220,7 +220,7 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, cst):
 
 
 def rotate_obs(y, R):
-    return np.matmul(R, y)
+    return np.matmul(R, y.T).T
 
 
 def state_to_obs_linear(x, xp, dim_states, dim_observations, g, legs, cst):
