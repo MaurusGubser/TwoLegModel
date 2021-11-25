@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from MechanicalModel import MechanicalModel
-from ReadData import DataReader
+from ReadData import DataReaderWriter
 
 
 def plot_observations(model, x, y_true, supress_zeros, export_name=None):
@@ -53,7 +53,7 @@ def plot_observations(model, x, y_true, supress_zeros, export_name=None):
 # ---------- data -----------------
 path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
 path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations_normal.dat'
-data_reader = DataReader()
+data_reader = DataReaderWriter()
 max_timesteps = 1000
 data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
 data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
