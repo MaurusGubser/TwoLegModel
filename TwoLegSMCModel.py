@@ -20,8 +20,8 @@ class TwoLegModel(ssm.StateSpaceModel):
                  dt=0.01,
                  dim_states=18,
                  dim_observations=20,
-                 leg_constants=np.array([0.5, 0.6, 0.5, 0.6]),
-                 imu_position=np.array([0.34, 0.29, 0.315, 0.33]),
+                 len_legs=np.array([0.5, 0.6, 0.5, 0.6]),
+                 pos_imus=np.array([0.34, 0.29, 0.315, 0.33]),
                  a=np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
                              0.57, 0.10, 2.54, -3.8, -0.08, -0.82,
                              -0.00, 0.01, -1.78, 3.32, -0.30, 0.54]),
@@ -45,8 +45,8 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.A = np.zeros((dim_states, dim_states))
         self.set_process_transition_matrix()
         self.g = CONST_GRAVITATION
-        self.cst = imu_position
-        self.legs = leg_constants
+        self.pos_imus = pos_imus
+        self.len_legs = len_legs
         self.a = a
         self.P = P
         self.cov_step = cov_step
@@ -138,10 +138,10 @@ class TwoLegModel(ssm.StateSpaceModel):
         return np.matmul(self.A, xp.T).T
 
     def state_to_observation(self, x):
-        return state_to_obs(x, self.dim_observations, self.g, self.legs, self.cst)
+        return state_to_obs(x, self.dim_observations, self.g, self.len_legs, self.pos_imus)
 
     def state_to_observation_linear(self, x, xp):
-        return state_to_obs_linear(x, xp, self.dim_states, self.dim_observations, self.g, self.legs, self.cst)
+        return state_to_obs_linear(x, xp, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus)
 
     def PX0(self):
         return dists.MvNormal(loc=self.a, cov=self.P)
@@ -152,9 +152,8 @@ class TwoLegModel(ssm.StateSpaceModel):
     def PY(self, t, xp, x):
         return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
 
-
     def compute_observation_derivatives(self, x):
-        return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.legs, self.cst)
+        return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus)
 
     def compute_ekf_proposal(self, xp, data_t):
         x_hat = self.state_transition(xp)
