@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from more_itertools import pairwise
 
 
 class DataReader:
@@ -21,22 +23,26 @@ class DataReader:
         return None
 
     def read_observations_as_arr(self, path_observations, max_timesteps):
-        obs = np.genfromtxt(path_observations,
-                            dtype=np.float32,
-                            comments='#',
-                            delimiter=',',
-                            skip_header=1,
-                            usecols=tuple(range(1, 7)))
-        if obs.shape[0] % 6 != 0:
-            raise ArithmeticError('Data array should have 6 measurement series; number of entries {} was not divisible'
-                                  'by 6.'.format(obs.shape[0]))
-        # reshape observations
-        nb_timesteps = obs.shape[0] // 6
-        observations_array = np.empty((nb_timesteps, 36))
-        for i in range(0, 6):
-            observations_array[:, 6 * i:6 * (i + 1)] = obs[nb_timesteps * i: nb_timesteps * (i + 1), :]
-        observations_array = observations_array[0:max_timesteps, :]
-        self.observations = observations_array
+        col_names = ['time', 'obs1', 'obs2', 'obs3', 'obs4', 'obs5', 'obs6']
+        df = pd.read_csv(path_observations, index_col=None, names=col_names)
+        df = df[df['time'] != '#time'].reset_index(drop=True)
+
+        pattern_obs = '[#] Observations'
+        sensor_idxs = df[df['time'].str.contains(pattern_obs)].index
+        sensors_measurements = []
+        for i, j in pairwise(sensor_idxs):
+            df_sensor = df.iloc[i + 1:j]
+            sensors_measurements.append(df_sensor)
+        last_idx = sensor_idxs[-1] + 1
+        sensors_measurements.append(df[last_idx:])
+
+        observation_df = sensors_measurements[0]
+        for df_obs in sensors_measurements[1:]:
+            observation_df = pd.merge(observation_df, df_obs, how='left', on='time')
+
+        measurement_arr = observation_df.drop('time', axis=1).to_numpy(dtype=float)
+        self.observations = measurement_arr[0:max_timesteps, :]
+        return None
 
     def prepare_lists(self):
         if self.observations.shape[0] != self.true_states.shape[0]:
