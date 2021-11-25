@@ -21,6 +21,9 @@ def set_prior(add_Q, add_H, add_legs, add_imus):
         prior_Q = {'scale_x': dists.Uniform(40.0, 200.0),
                    'scale_y': dists.Uniform(40.0, 200.0),
                    'scale_phi': dists.Uniform(50.0, 500.0)}
+        prior_Q = {'scale_x': dists.LinearD(dists.InvGamma(3.0, 2.0), a=100.0, b=0.0),
+                   'scale_y': dists.LinearD(dists.InvGamma(3.0, 2.0), a=100.0, b=0.0),
+                   'scale_phi': dists.LinearD(dists.InvGamma(3.0, 2.0), a=250.0, b=0.0)}
         prior.update(prior_Q)
     if add_H:
         prior_H = {'sigma_imu_acc': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.1, b=0.0),
