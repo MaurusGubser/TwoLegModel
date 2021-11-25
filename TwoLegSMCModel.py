@@ -36,8 +36,8 @@ class TwoLegModel(ssm.StateSpaceModel):
                  sigma_imu_gyro=0.01,
                  sigma_press_velo=0.1,
                  sigma_press_acc=1000.0,
-                 factor_H=0.01
-                 ):
+                 factor_H=0.01,
+                 factor_proposal=1.1):
         super().__init__()
         self.dt = dt
         self.dim_states = dim_states
@@ -64,6 +64,8 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.set_process_covariance()
         self.H = np.zeros((self.dim_observations, self.dim_observations))
         self.set_observation_covariance()
+        self.factor_proposal = factor_proposal
+        self.kalman_covs = np.empty((1, self.dim_states, self.dim_states))
 
     def set_process_transition_matrix(self):
         self.A = np.eye(self.dim_states)
@@ -150,46 +152,8 @@ class TwoLegModel(ssm.StateSpaceModel):
     def PY(self, t, xp, x):
         return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
 
-
-class TwoLegModelGuided(TwoLegModel):
-    def __init__(self,
-                 dt=0.01,
-                 dim_states=18,
-                 dim_observations=20,
-                 leg_constants=np.array([0.5, 0.6, 0.5, 0.6]),
-                 imu_position=np.array([0.34, 0.29, 0.315, 0.33]),
-                 a=np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
-                             0.57, 0.10, 2.54, -3.8, -0.08, -0.82,
-                             -0.00, 0.01, -1.78, 3.32, -0.30, 0.54]),
-                 P=0.01 * np.eye(18),
-                 cov_step=0.01,
-                 scale_x=100.0,
-                 scale_y=100.0,
-                 scale_phi=250.0,
-                 factor_Q=1000.0,
-                 diag_Q=False,
-                 sigma_imu_acc=0.1,
-                 sigma_imu_gyro=0.01,
-                 sigma_press_velo=0.1,
-                 sigma_press_acc=1000.0,
-                 factor_H=0.01,
-                 factor_proposal=1.1):
-        super().__init__(dt=dt, dim_states=dim_states, dim_observations=dim_observations, leg_constants=leg_constants,
-                         imu_position=imu_position, a=a, P=P, cov_step=cov_step, scale_x=scale_x, scale_y=scale_y,
-                         scale_phi=scale_phi, factor_Q=factor_Q, diag_Q=diag_Q, sigma_imu_acc=sigma_imu_acc,
-                         sigma_imu_gyro=sigma_imu_gyro, sigma_press_velo=sigma_press_velo,
-                         sigma_press_acc=sigma_press_acc, factor_H=factor_H)
-        self.H_inv = np.linalg.inv(self.H)
-        self.Q_inv = np.linalg.inv(self.Q)
-        self.kalman_covs = np.empty((1, self.dim_states, self.dim_states))
-        self.factor_proposal = factor_proposal
-
     def compute_observation_derivatives(self, x):
         return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.legs, self.cst)
-
-    def init_kalman_covs(self, nb_particles):
-        self.kalman_covs = np.array([self.P for _ in range(0, nb_particles)])
-        return None
 
     def compute_ekf_proposal(self, xp, data_t, sigma):
         x_hat = self.state_transition(xp)
@@ -203,27 +167,6 @@ class TwoLegModelGuided(TwoLegModel):
         sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), sigma)
         return mu, sigma
 
-    def compute_tom_proposal(self, xp, data_t):
-        x_hat = np.reshape(self.state_transition(xp), (1, self.dim_states))
-        df = self.compute_observation_derivatives(x_hat)
-
-        sigma = np.linalg.inv(np.matmul(df.T, np.matmul(self.H_inv, df)) + self.Q_inv)
-        x_hat = np.matmul(np.matmul(df.T, self.H_inv), (data_t - self.state_to_observation(x_hat)).T).T + np.matmul(
-            self.Q_inv, x_hat.T).T
-        mu = np.matmul(sigma, x_hat.T).T
-
-        return mu, sigma
-
-    def compute_cappe_proposal(self, xp, data_t):
-        df = self.compute_observation_derivatives(xp)
-        innovation_inv = np.linalg.inv(np.matmul(df, np.matmul(self.Q, df.T)) + self.H)
-        kalman_gain = np.matmul(self.Q, np.matmul(df.T, innovation_inv))
-
-        x_hat = np.reshape(self.state_transition(xp), (1, self.dim_states))
-        mean = x_hat + np.matmul(kalman_gain, (data_t - self.state_to_observation(x_hat)).T).T
-        cov = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), self.Q)
-        return mean, cov
-
     def proposal0(self, data):
         return self.PX0()
 
@@ -232,6 +175,4 @@ class TwoLegModelGuided(TwoLegModel):
         x_hats, kalman_covs = self.compute_ekf_proposal(xp, data[t], sigma)
         mean = x_hats
         covar = self.factor_proposal * np.mean(kalman_covs, axis=0)
-        # return MyMvNormal(loc=mean, cov=kalman_covs)
         return dists.MvNormal(loc=mean, cov=covar)
-        # return MvStudent(loc=mean, shape=covar)
