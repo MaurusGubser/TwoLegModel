@@ -147,7 +147,7 @@ if __name__ == '__main__':
     add_imu = False
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu)
     pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.Bootstrap, data=y, Nx=100, niter=200,
-                     verbose=0)
+                     verbose=10)
     start_user, start_process = time.time(), time.process_time()
     pmmh.run()  # Warning: takes a few seconds
     end_user, end_process = time.time(), time.process_time()
