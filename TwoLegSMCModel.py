@@ -149,8 +149,6 @@ class TwoLegModel(ssm.StateSpaceModel):
 
     def PY(self, t, xp, x):
         return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
-        # mu = self.state_to_observation(x)
-        # return dists.IndepProd(*[dists.Normal(loc=mu[:, i], scale=self.H[i, i]) for i in range(0, self.dim_observations)])
 
 
 class TwoLegModelGuided(TwoLegModel):
@@ -237,38 +235,3 @@ class TwoLegModelGuided(TwoLegModel):
         # return MyMvNormal(loc=mean, cov=kalman_covs)
         return dists.MvNormal(loc=mean, cov=covar)
         # return MvStudent(loc=mean, shape=covar)
-
-
-class TwoLegModelAux(TwoLegModelGuided):
-    def __init__(self,
-                 dt=0.01,
-                 dim_states=18,
-                 dim_observations=36,
-                 leg_constants=np.array([0.5, 0.6, 0.5, 0.6]),
-                 imu_position=np.array([0.34, 0.29, 0.315, 0.33]),
-                 a=np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
-                             0.57, 0.10, 2.54, -3.8, -0.08, -0.82,
-                             -0.00, 0.01, -1.78, 3.32, -0.30, 0.54]),
-                 P=0.01 * np.eye(18),
-                 cov_step=0.01,
-                 scale_x=1.0,
-                 scale_y=1.0,
-                 scale_phi=1.0,
-                 factor_Q=1.0,
-                 diag_Q=False,
-                 sigma_imu_acc=0.1,
-                 sigma_imu_gyro=0.01,
-                 sigma_press_velo=0.1,
-                 sigma_press_acc=1000.0,
-                 factor_H=1.0,
-                 factor_proposal=1.0):
-        super().__init__(dt=dt, dim_states=dim_states, dim_observations=dim_observations, leg_constants=leg_constants,
-                         imu_position=imu_position, a=a, P=P, cov_step=cov_step, scale_x=scale_x, scale_y=scale_y,
-                         scale_phi=scale_phi, factor_Q=factor_Q, diag_Q=diag_Q, sigma_imu_acc=sigma_imu_acc,
-                         sigma_imu_gyro=sigma_imu_gyro, sigma_press_velo=sigma_press_velo,
-                         sigma_press_acc=sigma_press_acc, factor_H=factor_H)
-        self.kalman_covs = np.empty((1, self.dim_states, self.dim_states))
-        self.factor_kalman = factor_proposal
-
-    def logeta(self, t, x, data):
-        pass
