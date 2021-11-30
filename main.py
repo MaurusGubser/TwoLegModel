@@ -59,18 +59,23 @@ if __name__ == '__main__':
     dt = 0.01
     dim_states = 18
     dim_observations = 20
-    length_legs = np.array([0.5, 0.6, 0.5, 0.6])
-    position_imus = np.array([0.34, 0.29, 0.315, 0.33])
+    length_legs = np.array([0.5, 0.6, 0.5, 0.6])  # [0.5, 0.6, 0.5, 0.6]
+    position_imus = np.array([0.34, 0.29, 0.315, 0.33])  # [0.34, 0.29, 0.315, 0.33]
     a = np.array([5.6790e-03, 1.0575e+00, -1.2846e-01, -2.4793e-01, 3.6639e-01, -1.8980e-01,
                   5.6790e-01, 9.6320e-02, 2.5362e+00, -3.7986e+00, -7.8163e-02, -8.1819e-01,
                   -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
-    P = 0.01 * np.eye(dim_states)
+    """
+    a = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 3.0, -3.0, 0.0, 0.0,
+                  0.0, 0.0, -3.0, 3.0, 0.0, 0.0])
+    """
+    P = 0.1 * np.eye(dim_states)
 
     cov_step = dt  # 0.01
     scale_x = 100.0  # 100.0
     scale_y = 100.0  # 100.0
     scale_phi = 250.0  # 250.0
-    factor_Q = 100.0  # 1000.0
+    factor_Q = 10000.0  # 1000.0
     diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
     sigma_imu_gyro = 0.01  # 0.01
@@ -102,8 +107,8 @@ if __name__ == '__main__':
                            )
 
     # simulated data from weto
-    path_truth = 'GeneratedData/Normal/truth_normal.dat'  # 'GeneratedData/Missingdata/truth_missingdata.dat'
-    path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'  # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
+    path_truth = 'GeneratedData/Normal/truth_normal.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
+    path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
     max_timesteps = 1000
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
@@ -117,7 +122,7 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 100
+    nb_particles = 200
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.5, store_history=True, collect=[Moments()], verbose=True)
