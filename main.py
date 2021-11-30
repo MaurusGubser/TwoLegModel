@@ -110,7 +110,7 @@ if __name__ == '__main__':
     path_truth = 'GeneratedData/Normal/truth_normal.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
     path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 1000
+    max_timesteps = 200
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()

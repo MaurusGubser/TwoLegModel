@@ -189,14 +189,15 @@ class Plotter:
 
     def plot_observations(self, samples, model, export_name=None):
         nb_steps, nb_samples, dim_states = samples.shape
+        nb_graphs = min(nb_samples, 5)
         if nb_steps != self.nb_steps or dim_states != self.dim_states:
             raise AssertionError(
                 'Truth and states are not compatible: shape truth is {}; shape samples is {}'.format(
                     self.true_states.shape,
                     samples.shape))
         true_obs = self.true_obs
-        obs = np.empty((nb_steps, nb_samples, self.dim_observations))
-        for i in range(0, nb_samples):
+        obs = np.empty((nb_steps, nb_graphs, self.dim_observations))
+        for i in range(0, nb_graphs):
             obs[:, i, :] = model.state_to_observation(samples[:, i, :])
 
         if self.dim_observations == 20:
@@ -218,7 +219,6 @@ class Plotter:
         residuals = self.compute_residuals(obs)
         _, _, nb_observations = obs.shape
         t_vals = np.linspace(0.0, nb_steps * self.delta_t, nb_steps)
-        nb_graphs = min(nb_samples, 5)
         nb_axes = 3
         nb_figures = int(np.ceil(nb_observations / nb_axes))
         for i in range(0, nb_figures):
