@@ -77,7 +77,7 @@ class Plotter:
             fig_list.append(fig)
             axs_list.append(axs)
             if export_name is not None:
-                export_path = set_export_path('State_Plots', export_name)
+                export_path = set_export_path('Smoothed_Trajectories', export_name)
                 plt.savefig(export_path + '_' + str(i) + '.pdf')
         plt.show()
         return None
@@ -131,7 +131,7 @@ class Plotter:
             fig_list.append(fig)
             axs_list.append(axs)
             if export_name is not None:
-                export_path = set_export_path('ParticlesStats_Plots', export_name)
+                export_path = set_export_path('Mean_Trajectories', export_name)
                 plt.savefig(export_path + '_' + str(i) + '.pdf')
         plt.show()
 
@@ -182,7 +182,7 @@ class Plotter:
             fig_list.append(fig)
             axs_list.append(axs)
             if export_name is not None:
-                export_path = set_export_path('Particles_Plots', export_name)
+                export_path = set_export_path('State_Trajectories', export_name)
                 plt.savefig(export_path + '_' + str(i) + '.pdf')
         plt.show()
         return None
@@ -235,7 +235,7 @@ class Plotter:
                 axs[j].set_title(obs_names[i * nb_axes + j])
             fig.tight_layout()
             if export_name is not None:
-                export_path = set_export_path('Observation_Plots', export_name)
+                export_path = set_export_path('Observations_Trajectories', export_name)
                 plt.savefig(export_path + '_' + str(i) + '.pdf')
         plt.show()
         return None

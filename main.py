@@ -58,7 +58,7 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_a):
 if __name__ == '__main__':
     dt = 0.01
     dim_states = 18
-    dim_observations = 36
+    dim_observations = 20
     length_legs = np.array([0.5, 0.6, 0.5, 0.6])
     position_imus = np.array([0.34, 0.29, 0.315, 0.33])
     a = np.array([5.6790e-03, 1.0575e+00, -1.2846e-01, -2.4793e-01, 3.6639e-01, -1.8980e-01,
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     scale_x = 100.0  # 100.0
     scale_y = 100.0  # 100.0
     scale_phi = 250.0  # 250.0
-    factor_Q = 1000.0  # 1000.0
+    factor_Q = 100.0  # 1000.0
     diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
     sigma_imu_gyro = 0.01  # 0.01
@@ -102,8 +102,8 @@ if __name__ == '__main__':
                            )
 
     # simulated data from weto
-    path_truth = 'GeneratedData/Missingdata/truth_missingdata.dat'  # 'GeneratedData/Normal/truth_normal.dat'
-    path_obs = 'GeneratedData/Missingdata/noised_observations_missingdata.dat'  # 'GeneratedData/Normal/noised_observations_normal.dat'
+    path_truth = 'GeneratedData/Normal/truth_normal.dat'  # 'GeneratedData/Missingdata/truth_missingdata.dat'
+    path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'  # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
     max_timesteps = 1000
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
@@ -114,10 +114,10 @@ if __name__ == '__main__':
     if dim_observations == 20:
         y = [obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)] for obs in y]
     # simulate data from this model
-    x_sim, y_sim = my_model.simulate(max_timesteps)
+    # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 200
+    nb_particles = 100
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.5, store_history=True, collect=[Moments()], verbose=True)
@@ -130,9 +130,10 @@ if __name__ == '__main__':
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
     print('Log likelihood: {}'.format(pf.summaries.logLts))
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
-    export_name = 'GF_MvNormal_{}steps_{}particles'.format(max_timesteps, nb_particles)
+    export_name = 'GF_AllData_{}steps_{}particles_{}init_factorQ{}_factorH{}'.format(max_timesteps, nb_particles,
+                                                                                     P[0, 0], factor_Q, factor_H)
     plotter.plot_observations(np.array(pf.hist.X), model=my_model, export_name=export_name)
-    plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name=export_name)
+    # plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name=export_name)
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
     plotter.plot_ESS(pf.summaries.ESSs)
@@ -151,6 +152,7 @@ if __name__ == '__main__':
     smooth_trajectories = pf.hist.backward_sampling(5, linear_cost=False)
     data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
     plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories), export_name=export_name)
+
     """
     # learning parameters
     add_Q = False
