@@ -69,13 +69,13 @@ if __name__ == '__main__':
                   0.0, 0.0, 3.0, -3.0, 0.0, 0.0,
                   0.0, 0.0, -3.0, 3.0, 0.0, 0.0])
     """
-    P = 0.1 * np.eye(dim_states)
+    P = 0.01 * np.eye(dim_states)
 
     cov_step = dt  # 0.01
     scale_x = 100.0  # 100.0
     scale_y = 100.0  # 100.0
     scale_phi = 250.0  # 250.0
-    factor_Q = 10000.0  # 1000.0
+    factor_Q = 1000.0  # 1000.0
     diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
     sigma_imu_gyro = 0.01  # 0.01
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     path_truth = 'GeneratedData/Normal/truth_normal.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
     path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 200
+    max_timesteps = 1000
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -122,10 +122,10 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 200
+    nb_particles = 500
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.5, store_history=True, collect=[Moments()], verbose=True)
+    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.1, store_history=True, collect=[Moments()], verbose=True)
 
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
