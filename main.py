@@ -30,6 +30,10 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_a):
                    'sigma_imu_gyro': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.01, b=0.0),
                    'sigma_press_velo': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.1, b=0.0),
                    'sigma_press_acc': dists.LinearD(dists.InvGamma(3.0, 2.0), a=1000.0, b=0.0)}
+        prior_H = {'sigma_imu_acc': dists.Uniform(0.01, 1.0),
+                   'sigma_imu_gyro': dists.Uniform(0.0001, 0.1),
+                   'sigma_press_velo': dists.Uniform(0.01, 1.0),
+                   'sigma_press_acc': dists.Uniform(100.0, 1000.0)}
         prior.update(prior_H)
     if add_legs:
         dist_femur = dists.Uniform(0.3, 0.7)
@@ -161,7 +165,7 @@ if __name__ == '__main__':
 
     # learning parameters
     add_Q = True
-    add_H = False
+    add_H = True
     add_legs = False
     add_imu = False
     add_a = False
