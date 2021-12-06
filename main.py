@@ -128,7 +128,7 @@ if __name__ == '__main__':
     path_truth = 'GeneratedData/Normal/truth_normal.dat'    # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
     path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'    # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 1000
+    max_timesteps = 500
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -185,7 +185,7 @@ if __name__ == '__main__':
     add_a = False
     add_alphas = True
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_a, add_alphas)
-    pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=100, verbose=20)
+    pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10, verbose=5)
     pg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.Bootstrap, data=y, Nx=100, niter=200,
                             verbose=40)
     start_user, start_process = time.time(), time.process_time()
@@ -196,7 +196,7 @@ if __name__ == '__main__':
     burnin = 0  # discard the __ first iterations
     for i, param in enumerate(prior_dict.keys()):
         plt.subplot(2, 2, i + 1)
-        sb.distplot(pmmh.chain.theta[param][burnin:], 10)
+        sb.histplot(pmmh.chain.theta[param][burnin:], bins=10)
         plt.title(param)
     plt.show()
 
