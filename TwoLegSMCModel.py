@@ -5,8 +5,7 @@ from particles import distributions as dists
 from MyDists import MvNormalMultiDimCov, MvStudent, MvNormalMissingObservations
 from scipy.linalg import block_diag
 
-from MechanicalModel import state_to_obs, compute_jacobian_obs, state_to_obs_linear, rotate_obs, \
-    create_rotation_matrix_z
+from MechanicalModel import state_to_obs, compute_jacobian_obs, state_to_obs_linear, create_rotation_matrix_z
 
 CONST_GRAVITATION = 9.81
 
@@ -157,8 +156,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         return np.matmul(self.A, xp.T).T
 
     def state_to_observation(self, x):
-        y = state_to_obs(x, self.dim_observations, self.g, self.len_legs, self.pos_imus)
-        return rotate_obs(y, self.R)
+        return state_to_obs(x, self.dim_observations, self.g, self.len_legs, self.pos_imus, self.R)
 
     def state_to_observation_linear(self, x, xp):
         return state_to_obs_linear(x, xp, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus)
@@ -174,7 +172,8 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
 
     def compute_observation_derivatives(self, x):
-        return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus)
+        return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus,
+                                    self.R)
 
     def compute_ekf_proposal(self, xp, data_t):
         x_hat = self.state_transition(xp)

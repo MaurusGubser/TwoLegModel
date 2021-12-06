@@ -15,7 +15,7 @@ from TwoLegSMCModel import TwoLegModel
 from Plotting import Plotter
 
 
-def set_prior(add_Q, add_H, add_legs, add_imus, add_a):
+def set_prior(add_Q, add_H, add_legs, add_imus, add_a, add_alphas):
     prior = {}
     if add_Q:
         prior_Q = {'scale_x': dists.LinearD(dists.InvGamma(3.0, 2.0), a=100.0, b=0.0),
@@ -56,6 +56,12 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_a):
                          0.01, 0.01, 0.01, 0.01, 0.01, 0.01])
         prior_a = {'a': dists.MvNormal(loc=mean, cov=covar)}
         prior.update(prior_a)
+    if add_alphas:
+        prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.2),
+                        'alpha_1': dists.Normal(loc=0.0, scale=0.2),
+                        'alpha_2': dists.Normal(loc=0.0, scale=0.2),
+                        'alpha_3': dists.Normal(loc=0.0, scale=0.2)}
+        prior.update(prior_alphas)
     return prior, dists.StructDist(prior)
 
 
@@ -65,15 +71,19 @@ if __name__ == '__main__':
     dim_observations = 20
     length_legs = np.array([0.5, 0.6, 0.5, 0.6])  # [0.5, 0.6, 0.5, 0.6]
     position_imus = np.array([0.34, 0.29, 0.315, 0.33])  # [0.34, 0.29, 0.315, 0.33]
+    alpha_0 = 0.0
+    alpha_1 = 0.0
+    alpha_2 = 0.0
+    alpha_3 = 0.0
     a = np.array([5.6790e-03, 1.0575e+00, -1.2846e-01, -2.4793e-01, 3.6639e-01, -1.8980e-01,
                   5.6790e-01, 9.6320e-02, 2.5362e+00, -3.7986e+00, -7.8163e-02, -8.1819e-01,
                   -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
-
-    a = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+    """
+    a = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-
-    P = 1.0 * np.eye(dim_states)
+    """
+    P = 0.01 * np.eye(dim_states)
 
     cov_step = dt  # 0.01
     scale_x = 100.0  # 100.0
@@ -84,7 +94,7 @@ if __name__ == '__main__':
     sigma_imu_acc = 0.1  # 0.1
     sigma_imu_gyro = 0.01  # 0.01
     sigma_press_velo = 0.1  # 0.1
-    sigma_press_acc = 100.0  # 1000.0
+    sigma_press_acc = 1000.0  # 1000.0
     factor_H = 0.01  # 0.01
 
     factor_proposal = 1.1
@@ -94,6 +104,10 @@ if __name__ == '__main__':
                            dim_observations=dim_observations,
                            len_legs=length_legs,
                            pos_imus=position_imus,
+                           alpha_0=alpha_0,
+                           alpha_1=alpha_1,
+                           alpha_2=alpha_2,
+                           alpha_3=alpha_3,
                            a=a,
                            P=P,
                            cov_step=cov_step,
@@ -111,10 +125,10 @@ if __name__ == '__main__':
                            )
 
     # simulated data from weto
-    path_truth = 'GeneratedData/Normal/truth_normal.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
-    path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
+    path_truth = 'GeneratedData/Normal/truth_normal.dat'    # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
+    path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'    # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 200
+    max_timesteps = 1000
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -164,13 +178,14 @@ if __name__ == '__main__':
     """
 
     # learning parameters
-    add_Q = True
-    add_H = True
+    add_Q = False
+    add_H = False
     add_legs = False
     add_imu = False
     add_a = False
-    prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_a)
-    pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=20, niter=100, verbose=20)
+    add_alphas = True
+    prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_a, add_alphas)
+    pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=100, verbose=20)
     pg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.Bootstrap, data=y, Nx=100, niter=200,
                             verbose=40)
     start_user, start_process = time.time(), time.process_time()
