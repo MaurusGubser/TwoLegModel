@@ -1,14 +1,15 @@
 import time
-
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sb
 import particles
 from collections import OrderedDict
+
 from particles import distributions as dists
 from particles.collectors import Moments
 from particles import state_space_models as ssm
 from particles import mcmc
+from particles import smc_samplers as ssp
 
 from ReadData import DataReaderWriter
 from TwoLegSMCModel import TwoLegModel
@@ -78,17 +79,17 @@ if __name__ == '__main__':
     a = np.array([5.6790e-03, 1.0575e+00, -1.2846e-01, -2.4793e-01, 3.6639e-01, -1.8980e-01,
                   5.6790e-01, 9.6320e-02, 2.5362e+00, -3.7986e+00, -7.8163e-02, -8.1819e-01,
                   -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
-    """
-    a = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+
+    a = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-    """
+
     P = 0.01 * np.eye(dim_states)
 
     cov_step = dt  # 0.01
     scale_x = 100.0  # 100.0
     scale_y = 100.0  # 100.0
-    scale_phi = 250.0  # 250.0
+    scale_phi = 1000.0  # 250.0
     factor_Q = 1000.0  # 1000.0
     diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
@@ -125,10 +126,10 @@ if __name__ == '__main__':
                            )
 
     # simulated data from weto
-    path_truth = 'GeneratedData/Normal/truth_normal.dat'    # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
-    path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'    # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
+    path_truth = 'GeneratedData/Normal/truth_normal.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
+    path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 500
+    max_timesteps = 1500
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -140,11 +141,11 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 100
+    nb_particles = 200
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.1, store_history=True, collect=[Moments()], verbose=True)
-    """
+    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.25, store_history=True, collect=[Moments()], verbose=True)
+
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
     pf.run()
@@ -153,7 +154,7 @@ if __name__ == '__main__':
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
     print('Log likelihood: {}'.format(pf.summaries.logLts))
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
-    export_name = 'GF_AllData_{}steps_{}particles_{}init_factorQ{}_factorH{}'.format(max_timesteps, nb_particles,
+    export_name = 'GF_AllData_steps{}_particles{}_init{}_factorQ{}_factorH{}'.format(max_timesteps, nb_particles,
                                                                                      P[0, 0], factor_Q, factor_H)
     plotter.plot_observations(np.array(pf.hist.X), model=my_model, export_name=export_name)
     # plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name=export_name)
@@ -162,7 +163,7 @@ if __name__ == '__main__':
     plotter.plot_ESS(pf.summaries.ESSs)
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var,
                                   X_hist=None, export_name=export_name)  # X_hist = np.array(pf.hist.X)
-    """
+
     """
     # compare MC and QMC method
     results = particles.multiSMC(fk=fk_guided, N=100, nruns=30, qmc={'SMC': False, 'SQMC': True})
@@ -170,13 +171,13 @@ if __name__ == '__main__':
     sb.boxplot(x=[r['output'].logLt for r in results], y=[r['qmc'] for r in results])
     plt.show()
     """
-    """
+
     # smoothing
     smooth_trajectories = pf.hist.backward_sampling(5, linear_cost=False)
     data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
     plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories), export_name=export_name)
-    """
 
+    """
     # learning parameters
     add_Q = False
     add_H = False
@@ -186,10 +187,16 @@ if __name__ == '__main__':
     add_alphas = True
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_a, add_alphas)
     pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10, verbose=5)
-    pg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.Bootstrap, data=y, Nx=100, niter=200,
-                            verbose=40)
+    pg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.Bootstrap, data=y, Nx=100, niter=10,
+                            verbose=5)
+    fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=100,
+                       ar_to_increase_Nx=0.1)
+    smc2 = particles.SMC(fk=fk_smc2, N=200)
+
     start_user, start_process = time.time(), time.process_time()
-    pmmh.run()  # Warning: takes a few seconds
+    # pmmh.run()  # Warning: takes a few seconds
+    # pg.run() need to define update_theta method for a mcmc.ParticleGibbs subclass
+    smc2.run()
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
 
@@ -199,4 +206,4 @@ if __name__ == '__main__':
         sb.histplot(pmmh.chain.theta[param][burnin:], bins=10)
         plt.title(param)
     plt.show()
-
+    """
