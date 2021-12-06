@@ -1,7 +1,14 @@
+import warnings
+
 import numpy as np
 
 
-def state_to_obs(x, dim_observations, g, legs, imus):
+def create_rotation_matrix_z(alpha):
+    R = np.array([[np.cos(alpha), np.sin(alpha), 0.0], [-np.sin(alpha), np.cos(alpha), 0.0], [0.0, 0.0, 1.0]])
+    return R
+
+
+def state_to_obs(x, dim_observations, g, legs, imus, R):
     nb_steps, _ = x.shape
     y = np.empty((nb_steps, 36))
     # left femur
@@ -70,12 +77,15 @@ def state_to_obs(x, dim_observations, g, legs, imus):
         x[:, 4] + x[:, 5]) + x[:, 13]
     y[:, 35] = 0.0
 
+    y = np.matmul(R, y.T).T
+
     if dim_observations == 20:
+        warnings.warn('Using dim_observations=20 is not fully supported.')
         y = y[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
     return y
 
 
-def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, imus):
+def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, imus, R):
     nb_particles, _ = x.shape
     df = np.zeros((nb_particles, 36, dim_states))
     # left femur
@@ -212,26 +222,24 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, imus):
     df[:, 34, 16] = legs[2] * np.sin(x[:, 4]) + legs[3] * np.sin(x[:, 4] + x[:, 5])
     df[:, 34, 17] = legs[3] * np.sin(x[:, 4] + x[:, 5])
 
+    df = np.matmul(R, df)
+
     if dim_observations == 20:
         df = df[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), :]
     return df
 
 
-def rotate_obs(y, R):
-    return np.matmul(R, y.T).T
-
-
-def state_to_obs_linear(x, xp, dim_states, dim_observations, g, legs, cst):
+def state_to_obs_linear(x, xp, dim_states, dim_observations, g, legs, cst, R):
     if xp is None:
         xp = np.zeros(x.shape)
     nb_steps, _ = x.shape
-    df = compute_jacobian_obs(xp, dim_states, dim_observations, g, legs, cst)
-    y = state_to_obs(xp, dim_observations, g, legs, cst) + np.einsum('ijk, ik -> ij', df, x - xp)
+    df = compute_jacobian_obs(xp, dim_states, dim_observations, g, legs, cst, R)
+    y = state_to_obs(xp, dim_observations, g, legs, cst, R) + np.einsum('ijk, ik -> ij', df, x - xp)
     return y
 
 
 class MechanicalModel:
-    def __init__(self, dt, dim_states, dim_observations, imu_position, leg_constants):
+    def __init__(self, dt, dim_states, dim_observations, imu_position, leg_constants, R):
         self.dt = dt
         self.dim_states = dim_states
         self.dim_observations = dim_observations
@@ -240,6 +248,7 @@ class MechanicalModel:
         self.g = 9.81
         self.cst = imu_position
         self.legs = leg_constants
+        self.R = R
 
     def set_process_transition_matrix(self):
         self.A = np.eye(self.dim_states)
@@ -255,10 +264,10 @@ class MechanicalModel:
         return np.matmul(self.A, x.T).T
 
     def state_to_observation(self, x):
-        return state_to_obs(x, self.dim_observations, self.g, self.legs, self.cst)
+        return state_to_obs(x, self.dim_observations, self.g, self.legs, self.cst, self.R)
 
     def compute_jacobian_observation(self, x):
-        return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.legs, self.cst)
+        return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.legs, self.cst, self.R)
 
     def compute_jacobian_observation_numeric(self, x, delta_x=0.01):
         df = np.empty((self.dim_observations, self.dim_states))
@@ -273,4 +282,4 @@ class MechanicalModel:
         return df
 
     def state_to_observation_linear(self, x, xp):
-        return state_to_obs_linear(x, xp, self.dim_states, self.dim_observations, self.g, self.legs, self.cst)
+        return state_to_obs_linear(x, xp, self.dim_states, self.dim_observations, self.g, self.legs, self.cst, self.R)

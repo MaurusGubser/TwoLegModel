@@ -1,12 +1,12 @@
 import itertools
-
 import numpy as np
 from particles import state_space_models as ssm
 from particles import distributions as dists
 from MyDists import MvNormalMultiDimCov, MvStudent, MvNormalMissingObservations
 from scipy.linalg import block_diag
 
-from MechanicalModel import state_to_obs, compute_jacobian_obs, state_to_obs_linear
+from MechanicalModel import state_to_obs, compute_jacobian_obs, state_to_obs_linear, rotate_obs, \
+    create_rotation_matrix_z
 
 CONST_GRAVITATION = 9.81
 
@@ -24,7 +24,12 @@ class TwoLegModel(ssm.StateSpaceModel):
                  pos_imus=np.array([0.34, 0.29, 0.315, 0.33]),
                  a=np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                             0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),    #a=np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19, 0.57, 0.10, 2.54, -3.8, -0.08, -0.82, -0.00, 0.01, -1.78, 3.32, -0.30, 0.54]),
+                             0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+                 # a=np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19, 0.57, 0.10, 2.54, -3.8, -0.08, -0.82, -0.00, 0.01, -1.78, 3.32, -0.30, 0.54]),
+                 alpha_0=0.0,
+                 alpha_1=0.0,
+                 alpha_2=0.0,
+                 alpha_3=0.0,
                  P=0.1 * np.eye(18),
                  cov_step=0.01,
                  scale_x=100.0,
@@ -47,6 +52,12 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.g = CONST_GRAVITATION
         self.pos_imus = pos_imus
         self.len_legs = len_legs
+        self.alpha_0 = alpha_0
+        self.alpha_1 = alpha_1
+        self.alpha_2 = alpha_2
+        self.alpha_3 = alpha_3
+        self.R = np.eye(self.dim_observations)
+        self.set_rotation_matrix()
         self.a = a
         self.P = P
         self.cov_step = cov_step
@@ -134,11 +145,20 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.H *= self.factor_H
         return None
 
+    def set_rotation_matrix(self):
+        R0 = create_rotation_matrix_z(self.alpha_0)
+        R1 = create_rotation_matrix_z(self.alpha_1)
+        R2 = create_rotation_matrix_z(self.alpha_2)
+        R3 = create_rotation_matrix_z(self.alpha_3)
+        R = block_diag(R0, R0, R1, R1, R2, R2, R3, R3, np.eye(12))
+        self.R = R
+
     def state_transition(self, xp):
         return np.matmul(self.A, xp.T).T
 
     def state_to_observation(self, x):
-        return state_to_obs(x, self.dim_observations, self.g, self.len_legs, self.pos_imus)
+        y = state_to_obs(x, self.dim_observations, self.g, self.len_legs, self.pos_imus)
+        return rotate_obs(y, self.R)
 
     def state_to_observation_linear(self, x, xp):
         return state_to_obs_linear(x, xp, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus)
@@ -150,8 +170,8 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=self.state_transition(xp), cov=self.Q)
 
     def PY(self, t, xp, x):
-        return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.H)
-        # return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
+        # return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.H)
+        return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
 
     def compute_observation_derivatives(self, x):
         return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus)

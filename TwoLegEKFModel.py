@@ -117,6 +117,7 @@ my_model = MechanicalModel(dt=dt,
                            dim_observations=DIM_OBSERVATIONS,
                            imu_position=imu_position,
                            leg_constants=leg_constants,
+                           R=np.eye(36)
                            )
 
 # -------- Data -----------
@@ -150,7 +151,7 @@ sigma_press_acc = 1000.0
 H = generate_observation_covar(s_imu_acc=sigma_imu_acc, s_imu_gyro=sigma_imu_gyro, s_press_velo=sigma_press_velo,
                                s_press_acc=sigma_press_acc, dim_observations=DIM_OBSERVATIONS)
 
-my_ekf = TwoLegEKF(model=my_model, x0=a, Q=Q, H=H, numeric_jacobian=True)
+my_ekf = TwoLegEKF(model=my_model, x0=a, Q=Q, H=H, numeric_jacobian=False)
 
 # -------- Simulation -----------
 x_vals = []

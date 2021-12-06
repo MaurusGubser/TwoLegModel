@@ -73,8 +73,8 @@ my_model = MechanicalModel(dt=dt,
                            dim_observations=dim_observations,
                            imu_position=imu_position,
                            leg_constants=leg_constants,
-                           )
+                           R=np.eye(dim_observations))
 
 # ---------- plotting -----------------
 supress_zeros = True
-plot_observations(my_model, x, y, supress_zeros=supress_zeros, export_name='Model_Predictions')
+plot_observations(my_model, x, y, supress_zeros=supress_zeros, export_name=None)
