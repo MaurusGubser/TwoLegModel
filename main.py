@@ -84,7 +84,7 @@ if __name__ == '__main__':
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     """
-    P = 0.1 * np.eye(dim_states)
+    P = 0.01 * np.eye(dim_states)
 
     cov_step = dt  # 0.01
     scale_x = 100.0  # 100.0
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     sigma_press_acc = 1000.0  # 1000.0
     factor_H = 0.01  # 0.01
 
-    factor_proposal = 1.2
+    factor_proposal = 1.1
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -126,10 +126,10 @@ if __name__ == '__main__':
                            )
 
     # simulated data from weto
-    path_truth = 'GeneratedData/Normal/truth_normal.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
-    path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
+    path_truth = 'GeneratedData/Missingdata/truth_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
+    path_obs = 'GeneratedData/Missingdata/noised_observations_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 1500
+    max_timesteps = 2000
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -141,10 +141,10 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 400
+    nb_particles = 500
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = particles.SMC(fk=fk_boot, N=nb_particles, ESSrmin=0.25, store_history=True, collect=[Moments()], verbose=True)
+    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.2, store_history=True, collect=[Moments()], verbose=True)
 
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
