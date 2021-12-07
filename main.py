@@ -79,17 +79,17 @@ if __name__ == '__main__':
     a = np.array([5.6790e-03, 1.0575e+00, -1.2846e-01, -2.4793e-01, 3.6639e-01, -1.8980e-01,
                   5.6790e-01, 9.6320e-02, 2.5362e+00, -3.7986e+00, -7.8163e-02, -8.1819e-01,
                   -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
-
+    """
     a = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-
-    P = 0.01 * np.eye(dim_states)
+    """
+    P = 0.1 * np.eye(dim_states)
 
     cov_step = dt  # 0.01
     scale_x = 100.0  # 100.0
     scale_y = 100.0  # 100.0
-    scale_phi = 1000.0  # 250.0
+    scale_phi = 10000.0  # 250.0
     factor_Q = 1000.0  # 1000.0
     diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     sigma_press_acc = 1000.0  # 1000.0
     factor_H = 0.01  # 0.01
 
-    factor_proposal = 1.1
+    factor_proposal = 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -141,10 +141,10 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 200
+    nb_particles = 400
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.25, store_history=True, collect=[Moments()], verbose=True)
+    pf = particles.SMC(fk=fk_boot, N=nb_particles, ESSrmin=0.25, store_history=True, collect=[Moments()], verbose=True)
 
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
