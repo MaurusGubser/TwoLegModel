@@ -1,7 +1,7 @@
 from __future__ import division, print_function
 
 import warnings
-from particles.distributions import ProbDist
+from particles.distributions import ProbDist, MvNormal
 from collections import OrderedDict  # see prior
 import numpy as np
 import numpy.random as random
@@ -157,6 +157,27 @@ class MvStudent(ProbDist):
     def ppf(self, u):
         warnings.warn('Using ppf of MvStudent', UserWarning)
         pass
+
+
+class MyMv(MvNormal):
+    def logpdf(self, x):
+        nb_part, _ = x.shape
+        assert nb_part == 1, 'x is expected to be 2-dimensional, got {} array instead'.format(x.shape)
+        mask_not_nan = np.invert(np.isnan(x))[0]
+        x_not_nan = x[:, mask_not_nan]
+        loc_not_nan = self.loc[:, mask_not_nan]
+        mask_2d = np.outer(mask_not_nan, mask_not_nan)
+        nb_non_nan = np.sum(mask_not_nan)
+        L_not_nan = np.reshape(self.L[mask_2d], (nb_non_nan, nb_non_nan))
+
+        z = solve_triangular(L_not_nan, np.transpose((x_not_nan - loc_not_nan) / self.scale), lower=True)
+        # z is dxN, not Nxd
+        if np.asarray(self.scale).ndim == 0:
+            logdet = self.dim * np.log(self.scale)
+        else:
+            logdet = np.sum(np.log(self.scale), axis=-1)
+        logdet += self.halflogdetcor
+        return - 0.5 * np.sum(z * z, axis=0) - logdet - self.dim * HALFLOG2PI
 
 
 class MvNormalMissingObservations(ProbDist):

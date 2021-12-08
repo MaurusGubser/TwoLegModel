@@ -80,7 +80,6 @@ def state_to_obs(x, dim_observations, g, legs, imus, R):
     y = np.matmul(R, y.T).T
 
     if dim_observations == 20:
-        warnings.warn('Using dim_observations=20 is not fully supported.')
         y = y[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
     return y
 

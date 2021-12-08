@@ -84,7 +84,7 @@ if __name__ == '__main__':
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    P = 1.0 * np.eye(dim_states)
+    P = 0.1 * np.eye(dim_states)
 
     cov_step = dt  # 0.01
     scale_x = 100.0  # 100.0
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     path_truth = 'GeneratedData/Normal/truth_normal.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
     path_obs = 'GeneratedData/Normal/noised_observations_normal.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 2000
+    max_timesteps = 1000
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -145,7 +145,7 @@ if __name__ == '__main__':
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.2, store_history=True, collect=[Moments()], verbose=True)
-    """
+
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
     pf.run()
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
     print('Log likelihood: {}'.format(pf.summaries.logLts))
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
-    export_name = 'GF_AllData_steps{}_particles{}_init{}_factorQ{}_factorH{}'.format(max_timesteps, nb_particles,
+    export_name = 'GF_MissingData_steps{}_particles{}_init{}_factorQ{}_factorH{}'.format(max_timesteps, nb_particles,
                                                                                      P[0, 0], factor_Q, factor_H)
     plotter.plot_observations(np.array(pf.hist.X), model=my_model, export_name=export_name)
     # plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name=export_name)
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     plotter.plot_ESS(pf.summaries.ESSs)
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var,
                                   X_hist=None, export_name=export_name)  # X_hist = np.array(pf.hist.X)
-    """
+
     """
     # compare MC and QMC method
     results = particles.multiSMC(fk=fk_guided, N=100, nruns=30, qmc={'SMC': False, 'SQMC': True})
@@ -171,13 +171,13 @@ if __name__ == '__main__':
     sb.boxplot(x=[r['output'].logLt for r in results], y=[r['qmc'] for r in results])
     plt.show()
     """
-    """
+
     # smoothing
     smooth_trajectories = pf.hist.backward_sampling(5, linear_cost=False)
     data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
     plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories), export_name=export_name)
-    """
 
+    """
     # learning parameters
     add_Q = False
     add_H = False
@@ -207,3 +207,4 @@ if __name__ == '__main__':
         sb.histplot(pmmh.chain.theta[param][burnin:], bins=10)
         plt.title(param)
     plt.show()
+    """

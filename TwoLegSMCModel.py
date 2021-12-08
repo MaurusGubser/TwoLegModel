@@ -2,7 +2,7 @@ import itertools
 import numpy as np
 from particles import state_space_models as ssm
 from particles import distributions as dists
-from MyDists import MvNormalMultiDimCov, MvStudent, MvNormalMissingObservations
+from MyDists import MvNormalMultiDimCov, MvStudent, MvNormalMissingObservations, MyMv
 from scipy.linalg import block_diag
 
 from MechanicalModel import state_to_obs, compute_jacobian_obs, state_to_obs_linear, create_rotation_matrix_z
@@ -168,7 +168,8 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=self.state_transition(xp), cov=self.Q)
 
     def PY(self, t, xp, x):
-        return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.H)
+        return MyMv(loc=self.state_to_observation(x), cov=self.H)
+        # return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.H)
         # return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
 
     def compute_observation_derivatives(self, x):
