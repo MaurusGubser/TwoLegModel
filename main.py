@@ -154,12 +154,12 @@ if __name__ == '__main__':
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
     print('Log likelihood: {}'.format(pf.summaries.logLts[0:10]))
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
-    export_name = 'GF_AllData_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp'.format(max_timesteps,
-                                                                                                   nb_particles,
-                                                                                                   factor_init,
-                                                                                                   factor_Q,
-                                                                                                   factor_H,
-                                                                                                   factor_proposal)
+    export_name = 'GF_AllData_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(max_timesteps,
+                                                                                                     nb_particles,
+                                                                                                     factor_init,
+                                                                                                     factor_Q,
+                                                                                                     factor_H,
+                                                                                                     factor_proposal)
     plotter.plot_observations(np.array(pf.hist.X), model=my_model, export_name=export_name)
     # plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name=export_name)
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
