@@ -152,7 +152,7 @@ if __name__ == '__main__':
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
-    print('Log likelihood: {}'.format(pf.summaries.logLts))
+    print('Log likelihood: {}'.format(pf.summaries.logLts[0:10]))
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
     export_name = 'GF_AllData_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp'.format(max_timesteps,
                                                                                                    nb_particles,
