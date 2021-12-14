@@ -84,7 +84,7 @@ if __name__ == '__main__':
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    P = 1.0 * np.eye(dim_states)
+    factor_init = 1.0
 
     cov_step = dt  # 0.01
     scale_x = 10000.0  # 100.0
@@ -110,7 +110,7 @@ if __name__ == '__main__':
                            alpha_2=alpha_2,
                            alpha_3=alpha_3,
                            a=a,
-                           P=P,
+                           factor_init=factor_init,
                            cov_step=cov_step,
                            scale_x=scale_x,
                            scale_y=scale_y,
@@ -156,7 +156,7 @@ if __name__ == '__main__':
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
     export_name = 'GF_AllData_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp'.format(max_timesteps,
                                                                                                    nb_particles,
-                                                                                                   P[0, 0], factor_Q,
+                                                                                                   factor_init[0, 0], factor_Q,
                                                                                                    factor_H,
                                                                                                    factor_proposal)
     plotter.plot_observations(np.array(pf.hist.X), model=my_model, export_name=export_name)
