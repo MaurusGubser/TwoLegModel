@@ -84,13 +84,13 @@ if __name__ == '__main__':
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    P = 0.1 * np.eye(dim_states)
+    P = 1.0 * np.eye(dim_states)
 
     cov_step = dt  # 0.01
-    scale_x = 100.0  # 100.0
-    scale_y = 100.0  # 100.0
-    scale_phi = 10000.0  # 250.0
-    factor_Q = 1000.0  # 1000.0
+    scale_x = 10000.0  # 100.0
+    scale_y = 1000.0  # 100.0
+    scale_phi = 10000000.0  # 250.0
+    factor_Q = 1.0  # 1000.0
     diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
     sigma_imu_gyro = 0.01  # 0.01
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     sigma_press_acc = 1000.0  # 1000.0
     factor_H = 0.01  # 0.01
 
-    factor_proposal = 1.1
+    factor_proposal = 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -154,8 +154,11 @@ if __name__ == '__main__':
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
     print('Log likelihood: {}'.format(pf.summaries.logLts))
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
-    export_name = 'GF_MissingData_steps{}_particles{}_init{}_factorQ{}_factorH{}'.format(max_timesteps, nb_particles,
-                                                                                     P[0, 0], factor_Q, factor_H)
+    export_name = 'GF_AllData_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp'.format(max_timesteps,
+                                                                                                   nb_particles,
+                                                                                                   P[0, 0], factor_Q,
+                                                                                                   factor_H,
+                                                                                                   factor_proposal)
     plotter.plot_observations(np.array(pf.hist.X), model=my_model, export_name=export_name)
     # plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name=export_name)
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])

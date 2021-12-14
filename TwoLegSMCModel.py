@@ -29,7 +29,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                  alpha_1=0.0,
                  alpha_2=0.0,
                  alpha_3=0.0,
-                 P=1.0 * np.eye(18),
+                 factor_init=1.0,
                  cov_step=0.01,
                  scale_x=100.0,
                  scale_y=100.0,
@@ -58,7 +58,9 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.R = np.eye(self.dim_observations)
         self.set_rotation_matrix()
         self.a = a
-        self.P = P
+        self.factor_init = factor_init
+        self.P = np.eye(self.dim_states)
+        self.set_init_covariance()
         self.cov_step = cov_step
         self.scale_x = scale_x
         self.scale_y = scale_y
@@ -76,6 +78,28 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.set_observation_covariance()
         self.factor_proposal = factor_proposal
         self.kalman_covs = np.empty((1, self.dim_states, self.dim_states))
+
+    def set_init_covariance(self):
+        self.P[0, 0] = 0.1
+        self.P[1, 1] = 0.1
+        self.P[2, 2] = 0.2
+        self.P[3, 3] = 0.2
+        self.P[4, 4] = 0.2
+        self.P[5, 5] = 0.2
+        self.P[6, 6] = 0.1
+        self.P[7, 7] = 0.1
+        self.P[8, 8] = 1.0
+        self.P[9, 9] = 1.0
+        self.P[10, 10] = 1.0
+        self.P[11, 11] = 1.0
+        self.P[12, 12] = 1.0
+        self.P[13, 13] = 1.0
+        self.P[14, 14] = 5.0
+        self.P[15, 15] = 5.0
+        self.P[16, 16] = 5.0
+        self.P[17, 17] = 5.0
+        self.P = self.factor_init * self.P
+        return None
 
     def set_process_transition_matrix(self):
         self.A = np.eye(self.dim_states)
@@ -114,7 +138,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         for factor, idxs in zip(scale_factors, idx_groups):
             for row, col in itertools.product(idxs, idxs):
                 self.Q[row, col] *= factor
-        self.Q *= self.factor_Q
+        self.Q = self.factor_Q * self.Q
         return None
 
     def set_observation_covariance(self):
@@ -141,7 +165,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         else:
             raise AssertionError(
                 'Observation dimension must be 20 or 36; got {} instead.'.format(self.dim_observations))
-        self.H *= self.factor_H
+        self.H = self.factor_H * self.H
         return None
 
     def set_rotation_matrix(self):
