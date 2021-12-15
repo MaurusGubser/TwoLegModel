@@ -21,7 +21,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                  dim_observations=20,
                  len_legs=np.array([0.5, 0.6, 0.5, 0.6]),
                  pos_imus=np.array([0.34, 0.29, 0.315, 0.33]),
-                 a=np.array([0.0, 0.1, 0.0, 0.0, 0.0, 0.0,
+                 a=np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
                  # a=np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19, 0.57, 0.10, 2.54, -3.8, -0.08, -0.82, -0.00, 0.01, -1.78, 3.32, -0.30, 0.54]),
@@ -31,17 +31,17 @@ class TwoLegModel(ssm.StateSpaceModel):
                  alpha_3=0.0,
                  factor_init=1.0,
                  cov_step=0.01,
-                 scale_x=100.0,
-                 scale_y=100.0,
-                 scale_phi=10000.0,
-                 factor_Q=1000.0,
+                 scale_x=10000.0,
+                 scale_y=1000.0,
+                 scale_phi=10000000.0,
+                 factor_Q=1.0,
                  diag_Q=False,
-                 sigma_imu_acc=0.1,
-                 sigma_imu_gyro=0.01,
-                 sigma_press_velo=0.1,
-                 sigma_press_acc=1000.0,
-                 factor_H=0.01,
-                 factor_proposal=1.1):
+                 sigma_imu_acc=0.001,
+                 sigma_imu_gyro=0.0001,
+                 sigma_press_velo=0.001,
+                 sigma_press_acc=0.01,
+                 factor_H=1.0,
+                 factor_proposal=1.2):
         super().__init__()
         self.dt = dt
         self.dim_states = dim_states
