@@ -255,6 +255,8 @@ class Plotter:
         fig = plt.figure(figsize=(12, 8))
         plt.plot(t_vals, ESS, label='ESS')
         plt.plot(t_vals, moving_avg, label='Moving Avg')
+        plt.plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+        plt.plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
         plt.legend()
         plt.show()
         return None

@@ -87,7 +87,7 @@ if __name__ == '__main__':
     factor_init = 1.0
 
     cov_step = dt  # 0.01
-    scale_x = 1000.0  # 10000.0
+    scale_x = 10000.0  # 10000.0
     scale_y = 1000.0  # 1000.0
     scale_phi = 10000000.0  # 10000000.0
     factor_Q = 1.0  # 1.0
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     sigma_press_acc = 0.01  # 0.01
     factor_H = 1.0  # 1.0
 
-    factor_proposal = 1.2  # 1.2
+    factor_proposal = 1.3  # 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -141,10 +141,10 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 100
+    nb_particles = 500
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.5, store_history=True, collect=[Moments()], verbose=True)
+    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.2, store_history=True, collect=[Moments()], verbose=True)
 
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
