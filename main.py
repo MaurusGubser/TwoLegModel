@@ -84,7 +84,7 @@ if __name__ == '__main__':
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    factor_init = 1.0
+    factor_init = 0.5
 
     cov_step = dt  # 0.01
     scale_x = 10000.0  # 10000.0
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     sigma_press_acc = 0.01  # 0.01
     factor_H = 1.0  # 1.0
 
-    factor_proposal = 1.3  # 1.2
+    factor_proposal = 1.2  # 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -126,8 +126,8 @@ if __name__ == '__main__':
                            )
 
     # simulated data from weto
-    path_truth = 'GeneratedData/Missingdata001/truth_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
-    path_obs = 'GeneratedData/Missingdata001/noised_observations_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
+    path_truth = 'GeneratedData/Missingdata005/truth_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
+    path_obs = 'GeneratedData/Missingdata005/noised_observations_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
     max_timesteps = 1000
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
@@ -141,10 +141,10 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 500
+    nb_particles = 200
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.2, store_history=True, collect=[Moments()], verbose=True)
+    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.25, store_history=True, collect=[Moments()], verbose=True)
 
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
@@ -190,8 +190,8 @@ if __name__ == '__main__':
     add_a = False
     add_alphas = False
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_a, add_alphas)
-    pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.2},
-                     data=y, Nx=10, niter=100, verbose=20, adaptive=True, scale=1.0)
+    pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
+                     data=y, Nx=50, niter=200, verbose=40, adaptive=True, scale=1.0)
     pg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                             verbose=5)
     fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.Bootstrap, data=y, init_Nx=100,

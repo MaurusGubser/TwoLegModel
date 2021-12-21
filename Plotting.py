@@ -253,6 +253,7 @@ class Plotter:
         window_avg = np.ones(10) / 10.0
         moving_avg = np.convolve(ESS, window_avg, 'same')
         fig = plt.figure(figsize=(12, 8))
+        plt.grid(axis='both')
         plt.plot(t_vals, ESS, label='ESS')
         plt.plot(t_vals, moving_avg, label='Moving Avg')
         plt.plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
