@@ -29,7 +29,21 @@ class Plotter:
         self.dim_observations = dim_observations
         self.true_states = true_states
         self.true_obs = true_obs
+        self.contact_left = np.zeros((nb_steps_obs, 1))
+        self.contact_right = np.zeros((nb_steps_obs, 1))
+        self.set_contacts()
         self.delta_t = delta_t
+
+    def set_contacts(self):
+        assert self.dim_observations == 36 or self.dim_observations == 20, 'Observation dimension should be 20 or 36; got {} instead'.format(
+            self.dim_observations)
+        if self.dim_observations == 36:
+            self.contact_left = self.true_obs[:, :, 24]
+            self.contact_right = self.true_obs[:, :, 30]
+        else:
+            self.contact_left = self.true_obs[:, :, 13]
+            self.contact_right = self.true_obs[:, :, 17]
+        return None
 
     def plot_smoothed_trajectories(self, samples, export_name=None):
         nb_steps, nb_samples, dim_states = samples.shape
@@ -70,6 +84,8 @@ class Plotter:
                                           linewidth=1)
                 axs[j % nb_axes].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', linewidth=1.5,
                                       color='green')
+                axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
                 axs[j % nb_axes].set_title(state_names[nb_axes * i + j])
                 axs[j % nb_axes].legend()
             fig.suptitle('Smoothed samples')
@@ -82,7 +98,7 @@ class Plotter:
         plt.show()
         return None
 
-    def plot_particle_moments(self, particles_mean, particles_var, X_hist=None, export_name=None):
+    def plot_particle_moments(self, particles_mean, particles_var, export_name=None):
         nb_axes = 3
         nb_figures = int(np.ceil(self.dim_states / nb_axes))
         t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
@@ -101,9 +117,6 @@ class Plotter:
             self.true_states = self.true_states[:, (0, 1, 2, 3, 6, 7, 8, 9, 12, 13, 14, 15)]
         else:
             raise AssertionError('Dimension of state vector expected to be 12 or 18; got {}'.format(self.dim_states))
-        if X_hist is not None:
-            hist_mean, hist_var = compute_hist_stats(X_hist)
-            hist_sd = np.sqrt(hist_var)
         fig_list = []
         axs_list = []
         for i in range(0, nb_figures):
@@ -116,13 +129,9 @@ class Plotter:
                 axs[j].fill_between(t_vals, particles_mean[:, nb_axes * i + j] - particles_sd[:, nb_axes * i + j],
                                     particles_mean[:, nb_axes * i + j] + particles_sd[:, nb_axes * i + j], alpha=0.2,
                                     color='blue')
-                axs[j].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='Truth', color='green',
-                            linewidth=1.5)
-                if X_hist is not None:
-                    axs[j].plot(t_vals, hist_mean[:, nb_axes * i + j], label='History mean', color='orange')
-                    axs[j].fill_between(t_vals, hist_mean[:, nb_axes * i + j] - hist_sd[:, nb_axes * i + j],
-                                        hist_mean[:, nb_axes * i + j] + hist_sd[:, nb_axes * i + j], alpha=0.6,
-                                        color='orange')
+                axs[j].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='Truth', color='green', linewidth=1.5)
+                axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
                 axs[j].set_title(state_names[nb_axes * i + j])
                 axs[j].legend()
 
@@ -173,10 +182,11 @@ class Plotter:
                 axs[j].grid(axis='both')
                 for k in range(0, nb_graphs):
                     axs[j].plot(t_vals, X_hist[:, k, nb_axes * i + j], label='Sample {}'.format(k), linewidth=1)
-                axs[j].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', linewidth=1.5,
-                            color='green')
+                axs[j].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', linewidth=1.5, color='green')
                 axs[j].set_title(state_names[nb_axes * i + j])
                 axs[j].legend()
+                axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
             fig.suptitle('{} particle trajectories'.format(nb_graphs))
             fig.tight_layout()
             fig_list.append(fig)
@@ -216,7 +226,6 @@ class Plotter:
                          '$\dot x^5$', '$\dot y^5$', '$\dot z^5$', '$\ddot x^5$', '$\ddot y^5$', '$\ddot z^5$']
         else:
             raise ValueError('Observation dimension has to be 20 or 36; got {} instead.'.format(self.dim_observations))
-        residuals = self.compute_residuals(obs)
         _, _, nb_observations = obs.shape
         t_vals = np.linspace(0.0, nb_steps * self.delta_t, nb_steps)
         nb_axes = 3
@@ -229,8 +238,7 @@ class Plotter:
                 axs[j].grid(axis='both')
                 for k in range(0, nb_graphs):
                     axs[j].plot(t_vals, obs[:, k, i * nb_axes + j], label='Sample {}'.format(k), lw=1)
-                    # axs[j].plot(t_vals, residuals[:, k, i*nb_axes+j], ls='--')
-                axs[j].plot(t_vals, true_obs[:, :, i * nb_axes + j], label='True observation', lw=1.5)
+                axs[j].plot(t_vals, true_obs[:, :, i * nb_axes + j], label='True observation', color='green', lw=1.5)
                 axs[j].legend()
                 axs[j].set_title(obs_names[i * nb_axes + j])
             fig.tight_layout()
