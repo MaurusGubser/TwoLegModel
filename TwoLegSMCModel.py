@@ -29,19 +29,19 @@ class TwoLegModel(ssm.StateSpaceModel):
                  alpha_1=0.0,
                  alpha_2=0.0,
                  alpha_3=0.0,
-                 factor_init=1.0,
+                 factor_init=0.25,
                  cov_step=0.01,
                  scale_x=10000.0,
                  scale_y=1000.0,
                  scale_phi=10000000.0,
-                 factor_Q=1.0,     # 1.0
+                 factor_Q=0.1,     # 1.0
                  diag_Q=False,
                  sigma_imu_acc=0.001,
                  sigma_imu_gyro=0.0001,
                  sigma_press_velo=0.001,
                  sigma_press_acc=0.01,
                  factor_H=1.0,  # 1.0
-                 factor_proposal=1.2):
+                 factor_proposal=1.2):  # 1.2
         super().__init__()
         self.dt = dt
         self.dim_states = dim_states
