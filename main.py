@@ -87,7 +87,7 @@ if __name__ == '__main__':
     factor_init = 1.0
 
     cov_step = dt  # 0.01
-    scale_x = 10000.0  # 10000.0
+    scale_x = 1000.0  # 10000.0
     scale_y = 1000.0  # 1000.0
     scale_phi = 10000000.0  # 10000000.0
     factor_Q = 1.0  # 1.0
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     sigma_press_acc = 0.01  # 0.01
     factor_H = 1.0  # 1.0
 
-    factor_proposal = 1.2   # 1.2
+    factor_proposal = 1.2  # 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -152,21 +152,21 @@ if __name__ == '__main__':
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
-    print('Log likelihood small: {}; Log likelihood large: {}'.format(np.sort(pf.summaries.logLts)[0:3], np.sort(pf.summaries.logLts)[-4:-1]))
+    print('Log likelihood small: {}; Log likelihood large: {}'.format(np.sort(pf.summaries.logLts)[0:3],
+                                                                      np.sort(pf.summaries.logLts)[-4:-1]))
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
     export_name = 'GF_Missingdata_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(max_timesteps,
-                                                                                                     nb_particles,
-                                                                                                     factor_init,
-                                                                                                     factor_Q,
-                                                                                                     factor_H,
-                                                                                                     factor_proposal)
+                                                                                                         nb_particles,
+                                                                                                         factor_init,
+                                                                                                         factor_Q,
+                                                                                                         factor_H,
+                                                                                                         factor_proposal)
     plotter.plot_observations(np.array(pf.hist.X), model=my_model, export_name=export_name)
     # plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name=export_name)
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
     plotter.plot_ESS(pf.summaries.ESSs)
-    plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var,
-                                  X_hist=None, export_name=export_name)  # X_hist = np.array(pf.hist.X)
+    plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var, export_name=export_name)
 
     """
     # compare MC and QMC method
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
     plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories), export_name=export_name)
     """
-
+    """
     # learning parameters
     add_Q = False
     add_H = False
@@ -211,4 +211,4 @@ if __name__ == '__main__':
         sb.histplot(pmmh.chain.theta[param][burnin:], bins=10)
         plt.title(param)
     plt.show()
-
+    """

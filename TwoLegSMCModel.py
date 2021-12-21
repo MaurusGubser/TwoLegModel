@@ -200,6 +200,24 @@ class TwoLegModel(ssm.StateSpaceModel):
                                     self.R)
 
     def compute_ekf_proposal(self, xp, data_t):
+        mask_not_nan = np.invert(np.isnan(data_t))
+        mask_2d = np.outer(mask_not_nan, mask_not_nan)
+        nb_non_nan = np.sum(mask_not_nan)
+
+        x_hat = self.state_transition(xp)
+        y_t = data_t[mask_not_nan]
+        df = self.compute_observation_derivatives(x_hat)
+        df = df[:, mask_not_nan.flatten(), :]
+        H_masked = np.reshape(self.H[mask_2d], (nb_non_nan, nb_non_nan))
+
+        innovation_inv = np.linalg.inv(np.matmul(df, np.matmul(self.Q, np.transpose(df, (0, 2, 1)))) + H_masked)
+        kalman_gain = np.matmul(self.Q, np.matmul(np.transpose(df, (0, 2, 1)), innovation_inv))
+        prediction_err = y_t - self.state_to_observation(x_hat)[:, mask_not_nan.flatten()]
+
+        mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, prediction_err)
+        sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), self.Q)
+        """
+        # old stuff
         x_hat = self.state_transition(xp)
         df = self.compute_observation_derivatives(x_hat)
 
@@ -209,6 +227,7 @@ class TwoLegModel(ssm.StateSpaceModel):
 
         mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, prediction_err)
         sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), self.Q)
+        """
         return mu, sigma
 
     def proposal0(self, data):
