@@ -80,12 +80,15 @@ class Plotter:
                     break
                 axs[j].grid(axis='both')
                 for k in range(0, nb_graphs):
-                    axs[j % nb_axes].plot(t_vals, samples[:, k, nb_axes * i + j], label='Sample {}'.format(k),
-                                          linewidth=1)
-                axs[j % nb_axes].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', linewidth=1.5,
+                    axs[j % nb_axes].plot(t_vals, samples[:, k, nb_axes * i + j], label='Sample {}'.format(k), lw=1)
+                axs[j % nb_axes].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5,
                                       color='green')
-                axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
-                axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
+                if state_names[nb_axes * i + j] == 'y_H':
+                    axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
+                else:
+                    axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
                 axs[j % nb_axes].set_title(state_names[nb_axes * i + j])
                 axs[j % nb_axes].legend()
             fig.suptitle('Smoothed samples')
@@ -129,9 +132,14 @@ class Plotter:
                 axs[j].fill_between(t_vals, particles_mean[:, nb_axes * i + j] - particles_sd[:, nb_axes * i + j],
                                     particles_mean[:, nb_axes * i + j] + particles_sd[:, nb_axes * i + j], alpha=0.2,
                                     color='blue')
-                axs[j].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='Truth', color='green', linewidth=1.5)
-                axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
-                axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
+                axs[j].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='Truth', color='green', lw=1.5)
+                if state_names[nb_axes * i + j] == r'$y_H$':
+                    axs[j % nb_axes].plot(t_vals, self.contact_left + 1.0, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right + 1.0, label='Contact right', color='orange',
+                                          lw=1.5)
+                else:
+                    axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
                 axs[j].set_title(state_names[nb_axes * i + j])
                 axs[j].legend()
 
@@ -181,12 +189,16 @@ class Plotter:
                     break
                 axs[j].grid(axis='both')
                 for k in range(0, nb_graphs):
-                    axs[j].plot(t_vals, X_hist[:, k, nb_axes * i + j], label='Sample {}'.format(k), linewidth=1)
-                axs[j].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', linewidth=1.5, color='green')
+                    axs[j].plot(t_vals, X_hist[:, k, nb_axes * i + j], label='Sample {}'.format(k), lw=1)
+                axs[j].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5, color='green')
                 axs[j].set_title(state_names[nb_axes * i + j])
                 axs[j].legend()
-                axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
-                axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
+                if state_names[nb_axes * i + j] == 'y_H':
+                    axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
+                else:
+                    axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
             fig.suptitle('{} particle trajectories'.format(nb_graphs))
             fig.tight_layout()
             fig_list.append(fig)

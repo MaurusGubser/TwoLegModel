@@ -84,13 +84,13 @@ if __name__ == '__main__':
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    factor_init = 0.5
+    factor_init = 0.1
 
     cov_step = dt  # 0.01
     scale_x = 10000.0  # 10000.0
     scale_y = 1000.0  # 1000.0
     scale_phi = 10000000.0  # 10000000.0
-    factor_Q = 0.1  # 1.0
+    factor_Q = 1.0  # 1.0
     diag_Q = False
     sigma_imu_acc = 0.001  # 0.001
     sigma_imu_gyro = 0.0001  # 0.0001
@@ -126,10 +126,10 @@ if __name__ == '__main__':
                            )
 
     # simulated data from weto
-    path_truth = 'GeneratedData/Missingdata005/truth_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
-    path_obs = 'GeneratedData/Missingdata005/noised_observations_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
+    path_truth = 'GeneratedData/Missingdata001/truth_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
+    path_obs = 'GeneratedData/Missingdata001/noised_observations_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 1000
+    max_timesteps = 1200
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -145,7 +145,7 @@ if __name__ == '__main__':
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.25, store_history=True, collect=[Moments()], verbose=True)
-    """
+
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
     pf.run()
@@ -155,7 +155,7 @@ if __name__ == '__main__':
     print('Log likelihood small: {}; Log likelihood large: {}'.format(np.sort(pf.summaries.logLts)[0:3],
                                                                       np.sort(pf.summaries.logLts)[-4:-1]))
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
-    export_name = 'GF_Missingdata_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(max_timesteps,
+    export_name = 'GF_Missingdata001_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(max_timesteps,
                                                                                                          nb_particles,
                                                                                                          factor_init,
                                                                                                          factor_Q,
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
     plotter.plot_ESS(pf.summaries.ESSs)
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var, export_name=export_name)
-    """
+
     """
     # compare MC and QMC method
     results = particles.multiSMC(fk=fk_guided, N=500, nruns=20, nprocs=6, qmc={'SMC': False, 'SQMC': True})
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
     plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories), export_name=export_name)
     """
-
+    """
     # learning parameters
     add_Q = False
     add_H = False
@@ -211,4 +211,4 @@ if __name__ == '__main__':
         sb.histplot(pmmh.chain.theta[param][burnin:], bins=10)
         plt.title(param)
     plt.show()
-
+    """
