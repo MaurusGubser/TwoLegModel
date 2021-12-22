@@ -83,9 +83,14 @@ class Plotter:
                     axs[j % nb_axes].plot(t_vals, samples[:, k, nb_axes * i + j], label='Sample {}'.format(k), lw=1)
                 axs[j % nb_axes].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5,
                                       color='green')
-                if state_names[nb_axes * i + j] == 'y_H':
-                    axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
-                    axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
+                if state_names[nb_axes * i + j] == r'$y_H$':
+                    axs[j % nb_axes].plot(t_vals, self.contact_left + 1.0, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right + 1.0, label='Contact right', color='orange',
+                                          lw=1.5)
+                elif state_names[nb_axes * i + j] == r'$\dot x_H$':
+                    axs[j % nb_axes].plot(t_vals, self.contact_left + 0.6, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right + 0.6, label='Contact right', color='orange',
+                                          lw=1.5)
                 else:
                     axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
                     axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
@@ -136,6 +141,10 @@ class Plotter:
                 if state_names[nb_axes * i + j] == r'$y_H$':
                     axs[j % nb_axes].plot(t_vals, self.contact_left + 1.0, label='Contact left', color='red', lw=1.5)
                     axs[j % nb_axes].plot(t_vals, self.contact_right + 1.0, label='Contact right', color='orange',
+                                          lw=1.5)
+                elif state_names[nb_axes * i + j] == r'$\dot x_H$':
+                    axs[j % nb_axes].plot(t_vals, self.contact_left + 0.6, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right + 0.6, label='Contact right', color='orange',
                                           lw=1.5)
                 else:
                     axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
@@ -193,9 +202,14 @@ class Plotter:
                 axs[j].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5, color='green')
                 axs[j].set_title(state_names[nb_axes * i + j])
                 axs[j].legend()
-                if state_names[nb_axes * i + j] == 'y_H':
-                    axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
-                    axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
+                if state_names[nb_axes * i + j] == r'$y_H$':
+                    axs[j % nb_axes].plot(t_vals, self.contact_left + 1.0, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right + 1.0, label='Contact right', color='orange',
+                                          lw=1.5)
+                elif state_names[nb_axes * i + j] == r'$\dot x_H$':
+                    axs[j % nb_axes].plot(t_vals, self.contact_left + 0.6, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right + 0.6, label='Contact right', color='orange',
+                                          lw=1.5)
                 else:
                     axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
                     axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
