@@ -95,7 +95,7 @@ if __name__ == '__main__':
     sigma_imu_acc = 0.001  # 0.001
     sigma_imu_gyro = 0.0001  # 0.0001
     sigma_press_velo = 0.001  # 0.001
-    sigma_press_acc = 0.01  # 0.01
+    sigma_press_acc = 0.05  # 0.01
     factor_H = 1.0  # 1.0
 
     factor_proposal = 1.2  # 1.2
@@ -126,10 +126,10 @@ if __name__ == '__main__':
                            )
 
     # simulated data from weto
-    path_truth = 'GeneratedData/Missingdata001/truth_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
-    path_obs = 'GeneratedData/Missingdata001/noised_observations_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
+    path_truth = 'GeneratedData/Missingdata005/truth_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
+    path_obs = 'GeneratedData/Missingdata005/noised_observations_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 1200
+    max_timesteps = 700
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -141,10 +141,11 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 200
+    nb_particles = 100
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.25, store_history=True, collect=[Moments()], verbose=True)
+    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.25, store_history=True, collect=[Moments()],
+                       verbose=True)
 
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
@@ -155,12 +156,13 @@ if __name__ == '__main__':
     print('Log likelihood small: {}; Log likelihood large: {}'.format(np.sort(pf.summaries.logLts)[0:3],
                                                                       np.sort(pf.summaries.logLts)[-4:-1]))
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt)
-    export_name = 'GF_Missingdata001_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(max_timesteps,
-                                                                                                         nb_particles,
-                                                                                                         factor_init,
-                                                                                                         factor_Q,
-                                                                                                         factor_H,
-                                                                                                         factor_proposal)
+    export_name = 'GF_Missingdata005_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
+        max_timesteps,
+        nb_particles,
+        factor_init,
+        factor_Q,
+        factor_H,
+        factor_proposal)
     plotter.plot_observations(np.array(pf.hist.X), model=my_model, export_name=export_name)
     # plotter.plot_particles_trajectories(np.array(pf.hist.X), export_name=export_name)
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
