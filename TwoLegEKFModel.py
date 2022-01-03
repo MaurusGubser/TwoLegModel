@@ -1,8 +1,8 @@
 import numpy as np
 
 from MechanicalModel import MechanicalModel
-from ReadData import DataReaderWriter
-from Plotting import Plotter
+from DataReaderWriter import DataReaderWriter
+from Plotter import Plotter
 
 
 class TwoLegEKF:

@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from MechanicalModel import MechanicalModel
-from ReadData import DataReaderWriter
+from DataReaderWriter import DataReaderWriter
 
 
 def plot_observations(model, x, y_true, supress_zeros, export_name=None):
