@@ -42,10 +42,10 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_a, add_alphas):
         prior_legs = {'len_legs': dists.IndepProd(*[dist_femur, dist_fibula, dist_femur, dist_fibula])}
         prior.update(prior_legs)
     if add_imus:
-        dist_imu0 = dists.Uniform(0.0, 0.5)
-        dist_imu1 = dists.Uniform(0.0, 0.6)
-        dist_imu2 = dists.Uniform(0.0, 0.5)
-        dist_imu3 = dists.Uniform(0.0, 0.6)
+        dist_imu0 = dists.Normal(loc=0.25, scale=0.1)    # dists.Uniform(0.0, 0.5)
+        dist_imu1 = dists.Normal(loc=0.3, scale=0.1)   # dists.Uniform(0.0, 0.6)
+        dist_imu2 = dists.Normal(loc=0.25, scale=0.1)   # dists.Uniform(0.0, 0.5)
+        dist_imu3 = dists.Normal(loc=0.3, scale=0.1)   # dists.Uniform(0.0, 0.6)
         prior_imus = {'pos_imus': dists.IndepProd(*[dist_imu0, dist_imu1, dist_imu2, dist_imu3])}
         prior.update(prior_imus)
     if add_a:
