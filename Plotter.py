@@ -3,13 +3,6 @@ import matplotlib.pyplot as plt
 import os
 
 
-def set_export_path(folder_name, export_name):
-    if not os.path.exists(folder_name):
-        os.mkdir(folder_name)
-    path = folder_name + '/' + export_name
-    return path
-
-
 def compute_hist_stats(X_hist):
     hist_mean = np.mean(X_hist, axis=1)
     hist_var = np.var(X_hist, axis=1)
@@ -17,7 +10,7 @@ def compute_hist_stats(X_hist):
 
 
 class Plotter:
-    def __init__(self, true_states, true_obs, delta_t):
+    def __init__(self, true_states, true_obs, delta_t, export_name):
         nb_steps_states, _, dim_states = true_states.shape
         nb_steps_obs, _, dim_observations = true_obs.shape
         if nb_steps_states != nb_steps_obs:
@@ -29,10 +22,23 @@ class Plotter:
         self.dim_observations = dim_observations
         self.true_states = true_states
         self.true_obs = true_obs
+        self.export_name = export_name
+        self.export_path = self.set_export_path()
         self.contact_left = np.zeros((nb_steps_obs, 1))
         self.contact_right = np.zeros((nb_steps_obs, 1))
         self.set_contacts()
         self.delta_t = delta_t
+
+    def set_export_path(self):
+        if self.export_name:
+            if not os.path.exists('Plots'):
+                os.mkdir('Plots')
+            export_dir = 'Plots/' + self.export_name
+            if not os.path.exists(export_dir):
+                os.mkdir(export_dir)
+            return export_dir
+        else:
+            return None
 
     def set_contacts(self):
         assert self.dim_observations == 36 or self.dim_observations == 20, 'Observation dimension should be 20 or 36; got {} instead'.format(
@@ -45,7 +51,66 @@ class Plotter:
             self.contact_right = self.true_obs[:, :, 17]
         return None
 
-    def plot_smoothed_trajectories(self, samples, export_name=None):
+    def plot_particles_trajectories(self, X_hist):
+        nb_steps, nb_particles, dim_states = X_hist.shape
+        if nb_steps != self.nb_steps or dim_states != self.dim_states:
+            raise AssertionError(
+                'Truth and particles are not compatible: shape truth is {}; shape particles is {}'.format(
+                    self.true_states.shape, X_hist.shape))
+
+        nb_graphs = min(nb_particles, 5)
+        nb_axes = 3
+        nb_figures = int(np.ceil(self.dim_states / nb_axes))
+        t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
+        if self.dim_states == 18:
+            state_names = ['$x_H$', '$y_H$', r'$\varphi_0$', r'$\varphi_1$', r'$\varphi_2$', r'$\varphi_3$',
+                           r'$\dot x_H$', r'$\dot y_H$', r'$\dot \varphi_0$', r'$\dot \varphi_1$', r'$\dot \varphi_2$',
+                           r'$\dot \varphi_3$',
+                           r'$\ddot x_H$', r'$\ddot y_H$', r'$\ddot \varphi_0$', r'$\ddot \varphi_1$',
+                           r'$\ddot \varphi_2$',
+                           r'$\ddot \varphi_3$']
+        elif self.dim_states == 12:
+            state_names = ['$x_H$', '$y_H$', r'$\varphi_0$', r'$\varphi_1$',
+                           r'$\dot x_H$', r'$\dot y_H$', r'$\dot \varphi_0$', r'$\dot \varphi_1$',
+                           r'$\ddot x_H$', r'$\ddot y_H$', r'$\ddot \varphi_0$', r'$\ddot \varphi_1$']
+            self.true_states = self.true_states[:, (0, 1, 2, 3, 6, 7, 8, 9, 12, 13, 14, 15)]
+        else:
+            raise AssertionError('Dimension of state vector expected to be 12 or 18; got {}'.format(self.dim_states))
+
+        fig_list = []
+        axs_list = []
+        for i in range(0, nb_figures):
+            fig, axs = plt.subplots(ncols=1, nrows=nb_axes, figsize=(12, 8))
+            for j in range(0, nb_axes):
+                if i * nb_axes + j > self.dim_states - 1:
+                    break
+                axs[j].grid(axis='both')
+                for k in range(0, nb_graphs):
+                    axs[j].plot(t_vals, X_hist[:, k, nb_axes * i + j], label='Sample {}'.format(k), lw=1)
+                axs[j].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5, color='green')
+                axs[j].set_title(state_names[nb_axes * i + j])
+                axs[j].legend()
+                if state_names[nb_axes * i + j] == r'$y_H$':
+                    axs[j % nb_axes].plot(t_vals, self.contact_left + 1.0, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right + 1.0, label='Contact right', color='orange',
+                                          lw=1.5)
+                elif state_names[nb_axes * i + j] == r'$\dot x_H$':
+                    axs[j % nb_axes].plot(t_vals, self.contact_left + 0.6, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right + 0.6, label='Contact right', color='orange',
+                                          lw=1.5)
+                else:
+                    axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                    axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
+            fig.suptitle('{} particle trajectories'.format(nb_graphs))
+            fig.tight_layout()
+            fig_list.append(fig)
+            axs_list.append(axs)
+            if self.export_path is not None:
+                plt.savefig(self.export_path + '/ParticleTrajectories_' + str(i) + '.pdf')
+        plt.show()
+        return None
+
+    def plot_smoothed_trajectories(self, samples):
         nb_steps, nb_samples, dim_states = samples.shape
         if nb_steps != self.nb_steps or dim_states != self.dim_states:
             raise AssertionError(
@@ -100,13 +165,12 @@ class Plotter:
             fig.tight_layout()
             fig_list.append(fig)
             axs_list.append(axs)
-            if export_name is not None:
-                export_path = set_export_path('Smoothed_Trajectories', export_name)
-                plt.savefig(export_path + '_' + str(i) + '.pdf')
+            if self.export_path is not None:
+                plt.savefig(self.export_path + '/SmoothedTrajectories_' + str(i) + '.pdf')
         plt.show()
         return None
 
-    def plot_particle_moments(self, particles_mean, particles_var, export_name=None):
+    def plot_particle_moments(self, particles_mean, particles_var):
         nb_axes = 3
         nb_figures = int(np.ceil(self.dim_states / nb_axes))
         t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
@@ -156,74 +220,13 @@ class Plotter:
             fig.tight_layout()
             fig_list.append(fig)
             axs_list.append(axs)
-            if export_name is not None:
-                export_path = set_export_path('Mean_Trajectories', export_name)
-                plt.savefig(export_path + '_' + str(i) + '.pdf')
+            if self.export_path is not None:
+                plt.savefig(self.export_path + '/MomentsTrajectories_' + str(i) + '.pdf')
         plt.show()
 
         return None
 
-    def plot_particles_trajectories(self, X_hist, export_name=None):
-        nb_steps, nb_particles, dim_states = X_hist.shape
-        if nb_steps != self.nb_steps or dim_states != self.dim_states:
-            raise AssertionError(
-                'Truth and particles are not compatible: shape truth is {}; shape particles is {}'.format(
-                    self.true_states.shape, X_hist.shape))
-
-        nb_graphs = min(nb_particles, 5)
-        nb_axes = 3
-        nb_figures = int(np.ceil(self.dim_states / nb_axes))
-        t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
-        if self.dim_states == 18:
-            state_names = ['$x_H$', '$y_H$', r'$\varphi_0$', r'$\varphi_1$', r'$\varphi_2$', r'$\varphi_3$',
-                           r'$\dot x_H$', r'$\dot y_H$', r'$\dot \varphi_0$', r'$\dot \varphi_1$', r'$\dot \varphi_2$',
-                           r'$\dot \varphi_3$',
-                           r'$\ddot x_H$', r'$\ddot y_H$', r'$\ddot \varphi_0$', r'$\ddot \varphi_1$',
-                           r'$\ddot \varphi_2$',
-                           r'$\ddot \varphi_3$']
-        elif self.dim_states == 12:
-            state_names = ['$x_H$', '$y_H$', r'$\varphi_0$', r'$\varphi_1$',
-                           r'$\dot x_H$', r'$\dot y_H$', r'$\dot \varphi_0$', r'$\dot \varphi_1$',
-                           r'$\ddot x_H$', r'$\ddot y_H$', r'$\ddot \varphi_0$', r'$\ddot \varphi_1$']
-            self.true_states = self.true_states[:, (0, 1, 2, 3, 6, 7, 8, 9, 12, 13, 14, 15)]
-        else:
-            raise AssertionError('Dimension of state vector expected to be 12 or 18; got {}'.format(self.dim_states))
-
-        fig_list = []
-        axs_list = []
-        for i in range(0, nb_figures):
-            fig, axs = plt.subplots(ncols=1, nrows=nb_axes, figsize=(12, 8))
-            for j in range(0, nb_axes):
-                if i * nb_axes + j > self.dim_states - 1:
-                    break
-                axs[j].grid(axis='both')
-                for k in range(0, nb_graphs):
-                    axs[j].plot(t_vals, X_hist[:, k, nb_axes * i + j], label='Sample {}'.format(k), lw=1)
-                axs[j].plot(t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5, color='green')
-                axs[j].set_title(state_names[nb_axes * i + j])
-                axs[j].legend()
-                if state_names[nb_axes * i + j] == r'$y_H$':
-                    axs[j % nb_axes].plot(t_vals, self.contact_left + 1.0, label='Contact left', color='red', lw=1.5)
-                    axs[j % nb_axes].plot(t_vals, self.contact_right + 1.0, label='Contact right', color='orange',
-                                          lw=1.5)
-                elif state_names[nb_axes * i + j] == r'$\dot x_H$':
-                    axs[j % nb_axes].plot(t_vals, self.contact_left + 0.6, label='Contact left', color='red', lw=1.5)
-                    axs[j % nb_axes].plot(t_vals, self.contact_right + 0.6, label='Contact right', color='orange',
-                                          lw=1.5)
-                else:
-                    axs[j % nb_axes].plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
-                    axs[j % nb_axes].plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
-            fig.suptitle('{} particle trajectories'.format(nb_graphs))
-            fig.tight_layout()
-            fig_list.append(fig)
-            axs_list.append(axs)
-            if export_name is not None:
-                export_path = set_export_path('State_Trajectories', export_name)
-                plt.savefig(export_path + '_' + str(i) + '.pdf')
-        plt.show()
-        return None
-
-    def plot_observations(self, samples, model, export_name=None):
+    def plot_observations(self, samples, model):
         nb_steps, nb_samples, dim_states = samples.shape
         nb_graphs = min(nb_samples, 5)
         if nb_steps != self.nb_steps or dim_states != self.dim_states:
@@ -268,9 +271,8 @@ class Plotter:
                 axs[j].legend()
                 axs[j].set_title(obs_names[i * nb_axes + j])
             fig.tight_layout()
-            if export_name is not None:
-                export_path = set_export_path('Observations_Trajectories', export_name)
-                plt.savefig(export_path + '_' + str(i) + '.pdf')
+            if self.export_path is not None:
+                plt.savefig(self.export_path + '/ObservationTrajectories_' + str(i) + '.pdf')
         plt.show()
         return None
 
@@ -285,6 +287,8 @@ class Plotter:
         plt.plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
         plt.plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
         plt.legend()
+        if self.export_path is not None:
+            plt.savefig(self.export_path + '/ESSTrajectories.pdf')
         plt.show()
         return None
 
