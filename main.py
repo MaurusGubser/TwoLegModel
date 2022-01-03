@@ -84,7 +84,7 @@ if __name__ == '__main__':
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    factor_init = 0.1
+    factor_init = 0.5
 
     cov_step = dt  # 0.01
     scale_x = 10000.0  # 10000.0
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     sigma_imu_acc = 0.001  # 0.001
     sigma_imu_gyro = 0.0001  # 0.0001
     sigma_press_velo = 0.001  # 0.001
-    sigma_press_acc = 0.05  # 0.01
+    sigma_press_acc = 0.01  # 0.01
     factor_H = 1.0  # 1.0
 
     factor_proposal = 1.2  # 1.2
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 200
+    nb_particles = 1000
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.25, store_history=True, collect=[Moments()],

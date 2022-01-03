@@ -29,7 +29,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                  alpha_1=0.0,
                  alpha_2=0.0,
                  alpha_3=0.0,
-                 factor_init=0.25,
+                 factor_init=0.5,
                  cov_step=0.01,
                  scale_x=10000.0,
                  scale_y=1000.0,
@@ -203,7 +203,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         mask_not_nan = np.invert(np.isnan(data_t))
         mask_2d = np.outer(mask_not_nan, mask_not_nan)
         nb_non_nan = np.sum(mask_not_nan)
-        # covariance not masked
+        # covariance not masked (particles collapse when no pressure sensor information)
         """
         x_hat = self.state_transition(xp)
         df = self.compute_observation_derivatives(x_hat)
@@ -238,7 +238,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         innovation_inv = np.linalg.inv(np.matmul(df, np.matmul(self.Q, np.transpose(df, (0, 2, 1)))) + self.H)
         kalman_gain = np.matmul(self.Q, np.matmul(np.transpose(df, (0, 2, 1)), innovation_inv))
         prediction_err = np.nan_to_num(data_t - self.state_to_observation(x_hat), nan=0.0)
-
+        
         mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, prediction_err)
         sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), self.Q)
         """
