@@ -58,10 +58,10 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_a, add_alphas):
         prior_a = {'a': dists.MvNormal(loc=mean, cov=covar)}
         prior.update(prior_a)
     if add_alphas:
-        prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.2),
-                        'alpha_1': dists.Normal(loc=0.0, scale=0.2),
-                        'alpha_2': dists.Normal(loc=0.0, scale=0.2),
-                        'alpha_3': dists.Normal(loc=0.0, scale=0.2)}
+        prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.3),
+                        'alpha_1': dists.Normal(loc=0.0, scale=0.3),
+                        'alpha_2': dists.Normal(loc=0.0, scale=0.3),
+                        'alpha_3': dists.Normal(loc=0.0, scale=0.3)}
         prior.update(prior_alphas)
     return prior, dists.StructDist(prior)
 
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     sigma_imu_gyro = 0.0001  # 0.0001
     sigma_press_velo = 0.001  # 0.001
     sigma_press_acc = 0.01  # 0.01
-    factor_H = 1.0  # 1.0
+    factor_H = 10.0  # 1.0
 
     factor_proposal = 1.2  # 1.2
 
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     path_truth = 'GeneratedData/Missingdata005/truth_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
     path_obs = 'GeneratedData/Missingdata005/noised_observations_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 200
+    max_timesteps = 1500
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -141,12 +141,12 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 100
+    nb_particles = 1000
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.25, store_history=True, collect=[Moments()],
                        verbose=True)
-    """
+
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
     pf.run()
@@ -171,7 +171,7 @@ if __name__ == '__main__':
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
     plotter.plot_ESS(pf.summaries.ESSs)
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
-    """
+
     """
     # compare MC and QMC method
     results = particles.multiSMC(fk=fk_guided, N=500, nruns=20, nprocs=6, qmc={'SMC': False, 'SQMC': True})
@@ -185,7 +185,7 @@ if __name__ == '__main__':
     data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
     plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
     """
-
+    """
     # learning parameters
     add_Q = False
     add_H = False
@@ -215,4 +215,4 @@ if __name__ == '__main__':
         sb.histplot(pmmh.chain.theta[param][burnin:], bins=10)
         plt.title(param)
     plt.show()
-
+    """
