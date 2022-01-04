@@ -56,7 +56,8 @@ class DataReaderWriter:
             self.observations_list.append(np.reshape(self.observations[time_step, :], (1, -1)))
         return None
 
-    def export_trajectory(self, data_states, dt, file_name):
+    @staticmethod
+    def export_trajectory(data_states, dt, file_name):
         nb_timesteps, nb_samples, _ = data_states.shape
         time_arr = dt * np.arange(1, nb_timesteps + 1)
         header = '\nnb_samples: {}\n'.format(nb_timesteps) + 4*'nb_times: {}\n'.format(nb_timesteps)
