@@ -297,7 +297,7 @@ class Plotter:
         t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
         fig = plt.figure(figsize=(12, 8))
         plt.grid(axis='both')
-        plt.plot(t_vals, logLts, label=r'$\log(p(y_{0:T}))$')
+        plt.plot(t_vals, logLts, label=r'$\log(p(y_{0:t}))$')
         fig.suptitle('Log likelihoods')
         plt.legend()
         if self.export_path is not None:
