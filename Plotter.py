@@ -292,6 +292,17 @@ class Plotter:
         plt.show()
         return None
 
+    def plot_logLts(self, logLts):
+        t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
+        fig = plt.figure(figsize=(12, 8))
+        plt.grid(axis='both')
+        plt.plot(t_vals, logLts, label=r'$\log(p(y_{0:T}))$')
+        fig.suptitle('Log likelihoods')
+        plt.legend()
+        if self.export_path is not None:
+            plt.savefig(self.export_path + '/LogLikelihoods.pdf')
+        return None
+
     def compute_residuals(self, observations):
         residuals = np.empty_like(observations)
         residuals = np.abs(self.true_obs - observations)
