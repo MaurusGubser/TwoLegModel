@@ -29,7 +29,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                  alpha_1=0.0,
                  alpha_2=0.0,
                  alpha_3=0.0,
-                 factor_init=0.5,
+                 factor_init=1.0,
                  cov_step=0.01,
                  scale_x=10000.0,
                  scale_y=1000.0,
@@ -37,7 +37,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                  factor_Q=1.0,     # 1.0
                  diag_Q=False,
                  sigma_imu_acc=0.001,
-                 sigma_imu_gyro=0.0001,
+                 sigma_imu_gyro=0.001,
                  sigma_press_velo=0.001,
                  sigma_press_acc=0.01,
                  factor_H=10.0,  # 1.0

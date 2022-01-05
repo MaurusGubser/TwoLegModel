@@ -42,10 +42,10 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_a, add_alphas):
         prior_legs = {'len_legs': dists.IndepProd(*[dist_femur, dist_fibula, dist_femur, dist_fibula])}
         prior.update(prior_legs)
     if add_imus:
-        dist_imu0 = dists.Normal(loc=0.25, scale=0.1)    # dists.Uniform(0.0, 0.5)
-        dist_imu1 = dists.Normal(loc=0.3, scale=0.1)   # dists.Uniform(0.0, 0.6)
-        dist_imu2 = dists.Normal(loc=0.25, scale=0.1)   # dists.Uniform(0.0, 0.5)
-        dist_imu3 = dists.Normal(loc=0.3, scale=0.1)   # dists.Uniform(0.0, 0.6)
+        dist_imu0 = dists.Normal(loc=0.25, scale=0.01)    # dists.Uniform(0.0, 0.5)
+        dist_imu1 = dists.Normal(loc=0.3, scale=0.01)   # dists.Uniform(0.0, 0.6)
+        dist_imu2 = dists.Normal(loc=0.25, scale=0.01)   # dists.Uniform(0.0, 0.5)
+        dist_imu3 = dists.Normal(loc=0.3, scale=0.01)   # dists.Uniform(0.0, 0.6)
         prior_imus = {'pos_imus': dists.IndepProd(*[dist_imu0, dist_imu1, dist_imu2, dist_imu3])}
         prior.update(prior_imus)
     if add_a:
@@ -84,7 +84,7 @@ if __name__ == '__main__':
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    factor_init = 0.5
+    factor_init = 1.0
 
     cov_step = dt  # 0.01
     scale_x = 10000.0  # 10000.0
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     path_truth = 'GeneratedData/Missingdata005/truth_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
     path_obs = 'GeneratedData/Missingdata005/noised_observations_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 1200
+    max_timesteps = 300
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.5, store_history=True, collect=[Moments()],
                        verbose=True)
-
+    """
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
     pf.run()
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     plotter.plot_ESS(pf.summaries.ESSs)
     plotter.plot_logLts(pf.summaries.logLts)
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
-
+    """
     """
     # compare MC and QMC method
     results = particles.multiSMC(fk=fk_guided, N=500, nruns=20, nprocs=6, qmc={'SMC': False, 'SQMC': True})
@@ -186,7 +186,7 @@ if __name__ == '__main__':
     data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
     plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
     """
-    """
+
     # learning parameters
     add_Q = False
     add_H = False
@@ -196,7 +196,7 @@ if __name__ == '__main__':
     add_alphas = False
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_a, add_alphas)
     pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
-                     data=y, Nx=50, niter=200, verbose=40, adaptive=True, scale=1.0)
+                     data=y, Nx=10, niter=50, verbose=25, adaptive=True, scale=1.0)
     pg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                             verbose=5)
     fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.Bootstrap, data=y, init_Nx=100,
@@ -216,4 +216,4 @@ if __name__ == '__main__':
         sb.histplot(pmmh.chain.theta[param][burnin:], bins=10)
         plt.title(param)
     plt.show()
-    """
+
