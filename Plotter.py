@@ -283,9 +283,10 @@ class Plotter:
         fig = plt.figure(figsize=(12, 8))
         plt.grid(axis='both')
         plt.plot(t_vals, ESS, label='ESS')
-        plt.plot(t_vals, moving_avg, label='Moving Avg')
+        plt.plot(t_vals, moving_avg, label='ESS Moving Avg')
         plt.plot(t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
         plt.plot(t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
+        fig.suptitle('Essential sample size')
         plt.legend()
         if self.export_path is not None:
             plt.savefig(self.export_path + '/ESSTrajectories.pdf')
@@ -301,6 +302,7 @@ class Plotter:
         plt.legend()
         if self.export_path is not None:
             plt.savefig(self.export_path + '/LogLikelihoods.pdf')
+        plt.show()
         return None
 
     def compute_residuals(self, observations):
