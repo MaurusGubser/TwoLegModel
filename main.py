@@ -17,7 +17,7 @@ from Plotter import Plotter
 
 
 def set_prior(add_Q, add_H, add_legs, add_imus, add_a, add_alphas):
-    prior = {}
+    prior_dict = {}
     if add_Q:
         prior_Q = {'scale_x': dists.LinearD(dists.InvGamma(3.0, 2.0), a=100.0, b=0.0),
                    'scale_y': dists.LinearD(dists.InvGamma(3.0, 2.0), a=100.0, b=0.0),
@@ -25,29 +25,29 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_a, add_alphas):
         prior_Q = {'scale_x': dists.Uniform(20.0, 200.0),
                    'scale_y': dists.Uniform(20.0, 200.0),
                    'scale_phi': dists.Uniform(50.0, 500.0)}
-        prior.update(prior_Q)
+        prior_dict.update(prior_Q)
     if add_H:
         prior_H = {'sigma_imu_acc': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.1, b=0.0),
                    'sigma_imu_gyro': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.01, b=0.0),
                    'sigma_press_velo': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.1, b=0.0),
                    'sigma_press_acc': dists.LinearD(dists.InvGamma(3.0, 2.0), a=1000.0, b=0.0)}
-        prior_H = {'sigma_imu_acc': dists.Uniform(0.01, 1.0),
-                   'sigma_imu_gyro': dists.Uniform(0.0001, 0.1),
-                   'sigma_press_velo': dists.Uniform(0.01, 1.0),
-                   'sigma_press_acc': dists.Uniform(100.0, 1000.0)}
-        prior.update(prior_H)
+        prior_H = {'sigma_imu_acc': dists.Uniform(0.0001, 0.01),
+                   'sigma_imu_gyro': dists.Uniform(0.0001, 0.01),
+                   'sigma_press_velo': dists.Uniform(0.0001, 0.01),
+                   'sigma_press_acc': dists.Uniform(0.001, 0.1)}
+        prior_dict.update(prior_H)
     if add_legs:
         dist_femur = dists.Uniform(0.3, 0.7)
         dist_fibula = dists.Uniform(0.4, 0.8)
         prior_legs = {'len_legs': dists.IndepProd(*[dist_femur, dist_fibula, dist_femur, dist_fibula])}
-        prior.update(prior_legs)
+        prior_dict.update(prior_legs)
     if add_imus:
-        dist_imu0 = dists.Normal(loc=0.25, scale=0.01)    # dists.Uniform(0.0, 0.5)
-        dist_imu1 = dists.Normal(loc=0.3, scale=0.01)   # dists.Uniform(0.0, 0.6)
-        dist_imu2 = dists.Normal(loc=0.25, scale=0.01)   # dists.Uniform(0.0, 0.5)
-        dist_imu3 = dists.Normal(loc=0.3, scale=0.01)   # dists.Uniform(0.0, 0.6)
+        dist_imu0 = dists.Normal(loc=0.25, scale=0.3)    # dists.Uniform(0.0, 0.5)
+        dist_imu1 = dists.Normal(loc=0.3, scale=0.3)   # dists.Uniform(0.0, 0.6)
+        dist_imu2 = dists.Normal(loc=0.25, scale=0.3)   # dists.Uniform(0.0, 0.5)
+        dist_imu3 = dists.Normal(loc=0.3, scale=0.3)   # dists.Uniform(0.0, 0.6)
         prior_imus = {'pos_imus': dists.IndepProd(*[dist_imu0, dist_imu1, dist_imu2, dist_imu3])}
-        prior.update(prior_imus)
+        prior_dict.update(prior_imus)
     if add_a:
         mean = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                          0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -56,14 +56,14 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_a, add_alphas):
                          0.01, 0.01, 0.01, 0.01, 0.01, 0.01,
                          0.01, 0.01, 0.01, 0.01, 0.01, 0.01])
         prior_a = {'a': dists.MvNormal(loc=mean, cov=covar)}
-        prior.update(prior_a)
+        prior_dict.update(prior_a)
     if add_alphas:
         prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.3),
                         'alpha_1': dists.Normal(loc=0.0, scale=0.3),
                         'alpha_2': dists.Normal(loc=0.0, scale=0.3),
                         'alpha_3': dists.Normal(loc=0.0, scale=0.3)}
-        prior.update(prior_alphas)
-    return prior, dists.StructDist(prior)
+        prior_dict.update(prior_alphas)
+    return prior_dict, dists.StructDist(prior_dict)
 
 
 if __name__ == '__main__':
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     dim_states = 18
     dim_observations = 20
     length_legs = np.array([0.5, 0.6, 0.5, 0.6])  # [0.5, 0.6, 0.5, 0.6]
-    position_imus = np.array([0.12, 0.30, 0.19, 0.59])  # [0.34, 0.29, 0.315, 0.33]
+    position_imus = np.array([0.30, 0.31, 0.26, 0.23])  # [0.34, 0.29, 0.315, 0.33]
     alpha_0 = 0.0
     alpha_1 = 0.0
     alpha_2 = 0.0
@@ -84,7 +84,7 @@ if __name__ == '__main__':
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    factor_init = 0.1
+    factor_init = 1.0   # 1.0
 
     cov_step = dt  # 0.01
     scale_x = 10000.0  # 10000.0
@@ -92,11 +92,11 @@ if __name__ == '__main__':
     scale_phi = 10000000.0  # 10000000.0
     factor_Q = 1.0  # 1.0
     diag_Q = False
-    sigma_imu_acc = 0.001  # 0.001
-    sigma_imu_gyro = 0.001  # 0.0001
-    sigma_press_velo = 0.001  # 0.001
-    sigma_press_acc = 0.01  # 0.01
-    factor_H = 10.0  # 1.0
+    sigma_imu_acc = 0.01  # 0.01
+    sigma_imu_gyro = 0.01  # 0.01
+    sigma_press_velo = 0.01  # 0.01
+    sigma_press_acc = 0.1  # 0.1
+    factor_H = 1.0  # 1.0
 
     factor_proposal = 1.2  # 1.2
 
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     path_truth = 'GeneratedData/Missingdata005/truth_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
     path_obs = 'GeneratedData/Missingdata005/noised_observations_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 200
+    max_timesteps = 1200
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -141,12 +141,12 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 500
+    nb_particles = 2000
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.5, store_history=True, collect=[Moments()],
                        verbose=True)
-    """
+
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
     pf.run()
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     plotter.plot_ESS(pf.summaries.ESSs)
     plotter.plot_logLts(pf.summaries.logLts)
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
-    """
+
     """
     # compare MC and QMC method
     results = particles.multiSMC(fk=fk_guided, N=500, nruns=20, nprocs=6, qmc={'SMC': False, 'SQMC': True})
@@ -180,14 +180,14 @@ if __name__ == '__main__':
     sb.boxplot(x=[r['output'].logLt for r in results], y=[r['qmc'] for r in results])
     plt.show()
     """
-
+    """
     # smoothing
     smooth_trajectories, acc_rate = pf.hist.backward_sampling(5, linear_cost=False, return_ar=True)
     print('Acceptance rate smoothing: {}'.format(acc_rate))
     data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
     plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
-
-
+    """
+    """
     # learning parameters
     add_Q = False
     add_H = False
@@ -197,7 +197,7 @@ if __name__ == '__main__':
     add_alphas = False
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_a, add_alphas)
     pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
-                     data=y, Nx=10, niter=50, verbose=25, adaptive=True, scale=1.0)
+                     data=y, Nx=100, niter=50, verbose=50, adaptive=True, scale=1.41)
     pg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                             verbose=5)
     fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=20,
@@ -205,9 +205,9 @@ if __name__ == '__main__':
     smc2 = particles.SMC(fk=fk_smc2, N=10)
 
     start_user, start_process = time.time(), time.process_time()
-    # pmmh.run()  # Warning: takes a few seconds
+    pmmh.run()  # Warning: takes a few seconds
     # pg.run() need to define update_theta method for a mcmc.ParticleGibbs subclass
-    smc2.run()
+    # smc2.run()
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
 
@@ -217,4 +217,4 @@ if __name__ == '__main__':
         sb.histplot(pmmh.chain.theta[param][burnin:], bins=10)
         plt.title(param)
     plt.show()
-
+    """
