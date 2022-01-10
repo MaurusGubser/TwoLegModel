@@ -71,7 +71,7 @@ if __name__ == '__main__':
     dim_states = 18
     dim_observations = 20
     length_legs = np.array([0.5, 0.6, 0.5, 0.6])  # [0.5, 0.6, 0.5, 0.6]
-    position_imus = np.array([0.34, 0.29, 0.315, 0.33])  # [0.34, 0.29, 0.315, 0.33]
+    position_imus = np.array([0.12, 0.30, 0.19, 0.59])  # [0.34, 0.29, 0.315, 0.33]
     alpha_0 = 0.0
     alpha_1 = 0.0
     alpha_2 = 0.0
@@ -84,7 +84,7 @@ if __name__ == '__main__':
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    factor_init = 1.0
+    factor_init = 0.1
 
     cov_step = dt  # 0.01
     scale_x = 10000.0  # 10000.0
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     factor_Q = 1.0  # 1.0
     diag_Q = False
     sigma_imu_acc = 0.001  # 0.001
-    sigma_imu_gyro = 0.0001  # 0.0001
+    sigma_imu_gyro = 0.001  # 0.0001
     sigma_press_velo = 0.001  # 0.001
     sigma_press_acc = 0.01  # 0.01
     factor_H = 10.0  # 1.0
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     path_truth = 'GeneratedData/Missingdata005/truth_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
     path_obs = 'GeneratedData/Missingdata005/noised_observations_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
     data_reader = DataReaderWriter()
-    max_timesteps = 300
+    max_timesteps = 200
     data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
     data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
     data_reader.prepare_lists()
@@ -180,12 +180,13 @@ if __name__ == '__main__':
     sb.boxplot(x=[r['output'].logLt for r in results], y=[r['qmc'] for r in results])
     plt.show()
     """
-    """
+
     # smoothing
-    smooth_trajectories = pf.hist.backward_sampling(5, linear_cost=False)
+    smooth_trajectories, acc_rate = pf.hist.backward_sampling(5, linear_cost=False, return_ar=True)
+    print('Acceptance rate smoothing: {}'.format(acc_rate))
     data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
     plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
-    """
+
 
     # learning parameters
     add_Q = False
@@ -199,14 +200,14 @@ if __name__ == '__main__':
                      data=y, Nx=10, niter=50, verbose=25, adaptive=True, scale=1.0)
     pg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                             verbose=5)
-    fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.Bootstrap, data=y, init_Nx=100,
-                       ar_to_increase_Nx=0.1)
-    smc2 = particles.SMC(fk=fk_smc2, N=200)
+    fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=20,
+                       ar_to_increase_Nx=0.1, smc_options={'verbose': True})
+    smc2 = particles.SMC(fk=fk_smc2, N=10)
 
     start_user, start_process = time.time(), time.process_time()
-    pmmh.run()  # Warning: takes a few seconds
+    # pmmh.run()  # Warning: takes a few seconds
     # pg.run() need to define update_theta method for a mcmc.ParticleGibbs subclass
-    # smc2.run()
+    smc2.run()
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
 
