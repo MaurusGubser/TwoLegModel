@@ -129,13 +129,13 @@ def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs):
 def learn_model_parameters(prior_dict, my_prior, learning_alg):
     if learning_alg == 'pmmh':
         alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
-                     data=y, Nx=50, niter=100, verbose=50, adaptive=True, scale=1.0)
+                        data=y, Nx=50, niter=100, verbose=50, adaptive=True, scale=1.0)
     elif learning_alg == 'gibbs':
         alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
-                            verbose=5)
+                                 verbose=5)
     elif learning_alg == 'smc2':
         fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=20,
-                       ar_to_increase_Nx=0.1, smc_options={'verbose': True})
+                           ar_to_increase_Nx=0.1, smc_options={'verbose': True})
         alg = particles.SMC(fk=fk_smc2, N=10)
     else:
         raise ValueError("learning_alg has to be one of 'pmmh', 'gibbs', 'smc2'; got {} instead.".format(learning_alg))
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
     nb_timesteps = 200
-    dim_obs = 20    # 20 or 36
+    dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
     # ---------------------------- model ----------------------------
@@ -221,7 +221,7 @@ if __name__ == '__main__':
     nb_particles = 500
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = run_particle_filter(fk_model=fk_guided)
+    # pf = run_particle_filter(fk_model=fk_guided)
 
     # ---------------------------- plot results ----------------------------
     export_name = 'GF_Missingdata005_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -231,10 +231,10 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    plot_results(pf, x, y, dt, export_name, plt_smthng=False)
+    # plot_results(pf, x, y, dt, export_name, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [500, 1000]
+    Ns = [5000, 10000]
     nb_runs = 50
     compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs)
 
@@ -246,5 +246,5 @@ if __name__ == '__main__':
     add_a = False
     add_alphas = False
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_a, add_alphas)
-    learning_alg = 'pmmh'   # pmmh, gibbs, smc2
-    learn_model_parameters(prior_dict, my_prior, learning_alg)
+    learning_alg = 'smc2'  # pmmh, gibbs, smc2
+    # learn_model_parameters(prior_dict, my_prior, learning_alg)
