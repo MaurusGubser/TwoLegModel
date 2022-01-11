@@ -298,7 +298,7 @@ class Plotter:
         fig = plt.figure(figsize=(12, 8))
         plt.grid(axis='both')
         plt.plot(t_vals, logLts, label=r'$\log(p(y_{0:t}))$')
-        fig.suptitle('Log likelihoods')
+        fig.suptitle('Log likelihood factors')
         plt.legend()
         if self.export_path is not None:
             plt.savefig(self.export_path + '/LogLikelihoods.pdf')
