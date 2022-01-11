@@ -233,12 +233,6 @@ if __name__ == '__main__':
         factor_proposal)
     plot_results(pf, x, y, dt, export_name, plt_smthng=False)
 
-    # ---------------------------- smc vs sqmc ----------------------------
-    results_qmc = particles.multiSMC(fk=fk_guided, N=5, nruns=20, nprocs=6, qmc={'SMC': False, 'SQMC': True})
-    plt.figure()
-    sb.boxplot(x=[r['output'].logLt for r in results_qmc], y=[r['qmc'] for r in results_qmc])
-    plt.show()
-
     # ---------------------------- loglikelihood stats ----------------------------
     Ns = [500, 1000]
     nb_runs = 50
