@@ -42,10 +42,10 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_a, add_alphas):
         prior_legs = {'len_legs': dists.IndepProd(*[dist_femur, dist_fibula, dist_femur, dist_fibula])}
         prior_dict.update(prior_legs)
     if add_imus:
-        dist_imu0 = dists.Normal(loc=0.25, scale=0.3)    # dists.Uniform(0.0, 0.5)
-        dist_imu1 = dists.Normal(loc=0.3, scale=0.3)   # dists.Uniform(0.0, 0.6)
-        dist_imu2 = dists.Normal(loc=0.25, scale=0.3)   # dists.Uniform(0.0, 0.5)
-        dist_imu3 = dists.Normal(loc=0.3, scale=0.3)   # dists.Uniform(0.0, 0.6)
+        dist_imu0 = dists.Normal(loc=0.25, scale=0.3)  # dists.Uniform(0.0, 0.5)
+        dist_imu1 = dists.Normal(loc=0.3, scale=0.3)  # dists.Uniform(0.0, 0.6)
+        dist_imu2 = dists.Normal(loc=0.25, scale=0.3)  # dists.Uniform(0.0, 0.5)
+        dist_imu3 = dists.Normal(loc=0.3, scale=0.3)  # dists.Uniform(0.0, 0.6)
         prior_imus = {'pos_imus': dists.IndepProd(*[dist_imu0, dist_imu1, dist_imu2, dist_imu3])}
         prior_dict.update(prior_imus)
     if add_a:
@@ -66,7 +66,102 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_a, add_alphas):
     return prior_dict, dists.StructDist(prior_dict)
 
 
+def prepare_data(generation_type, max_timesteps, dim_observations):
+    path_truth = 'GeneratedData/' + generation_type + '/truth.dat'
+    path_obs = 'GeneratedData/' + generation_type + '/noised_observations.dat'
+    data_reader = DataReaderWriter()
+    data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
+    data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
+    data_reader.prepare_lists()
+    states = data_reader.states_list
+    observations = data_reader.observations_list
+    if dim_observations == 20:
+        observations = [obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)] for obs in
+                        observations]
+    return states, observations
+
+
+def run_particle_filter(fk_model):
+    pf = particles.SMC(fk=fk_model, N=nb_particles, ESSrmin=0.5, store_history=True, collect=[Moments()],
+                       verbose=True)
+    start_user, start_process = time.time(), time.process_time()
+    pf.run()
+    end_user, end_process = time.time(), time.process_time()
+    print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
+    print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), nb_timesteps))
+    loglikelihood = np.sum(pf.summaries.logLts)
+    print('Log likelihood = {}'.format(loglikelihood))
+    return pf
+
+
+def plot_results(pf, x, y, dt, export_name, plt_smthng=False):
+    plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt, export_name=export_name)
+
+    plotter.plot_observations(np.array(pf.hist.X), model=my_model)
+    # plotter.plot_particles_trajectories(np.array(pf.hist.X))
+    particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
+    particles_var = np.array([m['var'] for m in pf.summaries.moments])
+    plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
+    plotter.plot_ESS(pf.summaries.ESSs)
+    plotter.plot_logLts(pf.summaries.logLts)
+    if plt_smthng:
+        smooth_trajectories, acc_rate = pf.hist.backward_sampling(5, linear_cost=False, return_ar=True)
+        print('Acceptance rate smoothing: {}'.format(acc_rate))
+        data_reader = DataReaderWriter()
+        data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
+        plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
+    return None
+
+
+def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs):
+    results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, nprocs=6)
+    for N in nb_particles:
+        loglts = [r['output'].logLt for r in results if r['N'] == N]
+        print('N={}, Mean loglikelihood={}, Variance loglikelihood={}'.format(N, np.mean(loglts), np.var(loglts)))
+    plt.figure()
+    sb.boxplot(x=[r['output'].logLt for r in results], y=[str(r['N']) for r in results])
+    plt.xlabel('Log likelihood')
+    plt.ylabel('Number of particles')
+    plt.show()
+    return None
+
+
+def learn_model_parameters(prior_dict, my_prior, learning_alg):
+    if learning_alg == 'pmmh':
+        alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
+                     data=y, Nx=50, niter=100, verbose=50, adaptive=True, scale=1.0)
+    elif learning_alg == 'gibbs':
+        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
+                            verbose=5)
+    elif learning_alg == 'smc2':
+        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=20,
+                       ar_to_increase_Nx=0.1, smc_options={'verbose': True})
+        alg = particles.SMC(fk=fk_smc2, N=10)
+    else:
+        raise ValueError("learning_alg has to be one of 'pmmh', 'gibbs', 'smc2'; got {} instead.".format(learning_alg))
+    start_user, start_process = time.time(), time.process_time()
+    alg.run()  # Warning: takes a few seconds
+    end_user, end_process = time.time(), time.process_time()
+    print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
+
+    burnin = 0  # discard the __ first iterations
+    for i, param in enumerate(prior_dict.keys()):
+        plt.subplot(2, 2, i + 1)
+        sb.histplot(alg.chain.theta[param][burnin:], bins=10)
+        plt.title(param)
+    plt.show()
+
+    return None
+
+
 if __name__ == '__main__':
+    # ---------------------------- data ----------------------------
+    generation_type = 'Missingdata005'
+    nb_timesteps = 200
+    dim_obs = 20    # 20 or 36
+    x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
+
+    # ---------------------------- model ----------------------------
     dt = 0.01
     dim_states = 18
     dim_observations = 20
@@ -76,15 +171,12 @@ if __name__ == '__main__':
     alpha_1 = 0.0
     alpha_2 = 0.0
     alpha_3 = 0.0
-    a = np.array([5.6790e-03, 1.0575e+00, -1.2846e-01, -2.4793e-01, 3.6639e-01, -1.8980e-01,
-                  5.6790e-01, 9.6320e-02, 2.5362e+00, -3.7986e+00, -7.8163e-02, -8.1819e-01,
-                  -4.0705e-11, 5.0517e-03, -1.7762e+00, 3.3158e+00, -2.9528e-01, 5.3581e-01])
 
     a = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    factor_init = 1.0   # 1.0
+    factor_init = 1.0  # 1.0
 
     cov_step = dt  # 0.01
     scale_x = 10000.0  # 10000.0
@@ -125,81 +217,34 @@ if __name__ == '__main__':
                            factor_proposal=factor_proposal
                            )
 
-    # simulated data from weto
-    path_truth = 'GeneratedData/Missingdata005/truth_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/truth_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/truth_missingdata.dat'
-    path_obs = 'GeneratedData/Missingdata005/noised_observations_missingdata.dat'  # 'GeneratedData/RotatedFemurLeft/noised_observations_rotatedfemurleft.dat'    # 'GeneratedData/Missingdata/noised_observations_missingdata.dat'
-    data_reader = DataReaderWriter()
-    max_timesteps = 1200
-    data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
-    data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
-    data_reader.prepare_lists()
-    x = data_reader.states_list
-    y = data_reader.observations_list
-    if dim_observations == 20:
-        y = [obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)] for obs in y]
-    # simulate data from this model
-    # x_sim, y_sim = my_model.simulate(max_timesteps)
-
-    # feynman-kac model
+    # ---------------------------- particle filter ----------------------------
     nb_particles = 500
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.5, store_history=True, collect=[Moments()],
-                       verbose=True)
-    """
-    # filter and plot
-    start_user, start_process = time.time(), time.process_time()
-    pf.run()
-    end_user, end_process = time.time(), time.process_time()
-    print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
-    print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), max_timesteps))
-    print('Log likelihood small: {}; Log likelihood large: {}'.format(np.sort(pf.summaries.logLts)[0:3],
-                                                                      np.sort(pf.summaries.logLts)[-4:-1]))
+    pf = run_particle_filter(fk_model=fk_guided)
 
+    # ---------------------------- plot results ----------------------------
     export_name = 'GF_Missingdata005_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
-        max_timesteps,
+        nb_timesteps,
         nb_particles,
         factor_init,
         factor_Q,
         factor_H,
         factor_proposal)
-    plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt, export_name=export_name)
+    plot_results(pf, x, y, dt, export_name, plt_smthng=False)
 
-    plotter.plot_observations(np.array(pf.hist.X), model=my_model)
-    # plotter.plot_particles_trajectories(np.array(pf.hist.X))
-    particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
-    particles_var = np.array([m['var'] for m in pf.summaries.moments])
-    plotter.plot_ESS(pf.summaries.ESSs)
-    plotter.plot_logLts(pf.summaries.logLts)
-    plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
-    """
-    """
-    # compare MC and QMC method
+    # ---------------------------- smc vs sqmc ----------------------------
     results_qmc = particles.multiSMC(fk=fk_guided, N=5, nruns=20, nprocs=6, qmc={'SMC': False, 'SQMC': True})
     plt.figure()
     sb.boxplot(x=[r['output'].logLt for r in results_qmc], y=[r['qmc'] for r in results_qmc])
     plt.show()
-    """
-    """
-    # smoothing
-    smooth_trajectories, acc_rate = pf.hist.backward_sampling(5, linear_cost=False, return_ar=True)
-    print('Acceptance rate smoothing: {}'.format(acc_rate))
-    data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
-    plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
-    """
 
-    # compute variance of log likelihood
-    Ns = [500]
-    results = particles.multiSMC(fk=fk_guided, N=Ns, nruns=30, nprocs=6)
-    for N in Ns:
-        loglts = [r['output'].logLt for r in results if r['N']==N]
-        print('N={}, Mean loglikelihood={}, Variance loglikelihood={}'.format(N, np.mean(loglts), np.var(loglts)))
-    plt.figure()
-    sb.boxplot(x=[r['output'].logLt for r in results], y=[str(r['N']) for r in results])
-    plt.show()
+    # ---------------------------- loglikelihood stats ----------------------------
+    Ns = [500, 1000]
+    nb_runs = 50
+    compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs)
 
-    """
-    # learning parameters
+    # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False
     add_H = False
     add_legs = False
@@ -207,25 +252,5 @@ if __name__ == '__main__':
     add_a = False
     add_alphas = False
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_a, add_alphas)
-    pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
-                     data=y, Nx=50, niter=100, verbose=50, adaptive=True, scale=1.0)
-    pg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
-                            verbose=5)
-    fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=20,
-                       ar_to_increase_Nx=0.1, smc_options={'verbose': True})
-    smc2 = particles.SMC(fk=fk_smc2, N=10)
-
-    start_user, start_process = time.time(), time.process_time()
-    pmmh.run()  # Warning: takes a few seconds
-    # pg.run() need to define update_theta method for a mcmc.ParticleGibbs subclass
-    # smc2.run()
-    end_user, end_process = time.time(), time.process_time()
-    print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
-
-    burnin = 0  # discard the __ first iterations
-    for i, param in enumerate(prior_dict.keys()):
-        plt.subplot(2, 2, i + 1)
-        sb.histplot(pmmh.chain.theta[param][burnin:], bins=10)
-        plt.title(param)
-    plt.show()
-    """
+    learning_alg = 'pmmh'   # pmmh, gibbs, smc2
+    learn_model_parameters(prior_dict, my_prior, learning_alg)
