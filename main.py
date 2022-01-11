@@ -141,7 +141,7 @@ if __name__ == '__main__':
     # x_sim, y_sim = my_model.simulate(max_timesteps)
 
     # feynman-kac model
-    nb_particles = 2000
+    nb_particles = 500
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.5, store_history=True, collect=[Moments()],
@@ -175,9 +175,9 @@ if __name__ == '__main__':
 
     """
     # compare MC and QMC method
-    results = particles.multiSMC(fk=fk_guided, N=500, nruns=20, nprocs=6, qmc={'SMC': False, 'SQMC': True})
+    results_qmc = particles.multiSMC(fk=fk_guided, N=5, nruns=20, nprocs=6, qmc={'SMC': False, 'SQMC': True})
     plt.figure()
-    sb.boxplot(x=[r['output'].logLt for r in results], y=[r['qmc'] for r in results])
+    sb.boxplot(x=[r['output'].logLt for r in results_qmc], y=[r['qmc'] for r in results_qmc])
     plt.show()
     """
     """
@@ -187,6 +187,17 @@ if __name__ == '__main__':
     data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
     plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
     """
+
+    # compute variance of log likelihood
+    Ns = [100, 200]
+    results = particles.multiSMC(fk=fk_guided, N=Ns, nruns=30, nprocs=6)
+    for N in Ns:
+        loglts = [r['output'].logLt for r in results if r['N']==N]
+        print('N={}, Mean loglikelihood={}, Variance loglikelihood={}'.format(N, np.mean(loglts), np.var(loglts)))
+    plt.figure()
+    sb.boxplot(x=[r['output'].logLt for r in results], y=[str(r['N']) for r in results])
+    plt.show()
+
     """
     # learning parameters
     add_Q = False
@@ -197,7 +208,7 @@ if __name__ == '__main__':
     add_alphas = False
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_a, add_alphas)
     pmmh = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
-                     data=y, Nx=100, niter=50, verbose=50, adaptive=True, scale=1.41)
+                     data=y, Nx=50, niter=100, verbose=50, adaptive=True, scale=1.0)
     pg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                             verbose=5)
     fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=20,
