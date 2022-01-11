@@ -146,7 +146,7 @@ if __name__ == '__main__':
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = particles.SMC(fk=fk_guided, N=nb_particles, ESSrmin=0.5, store_history=True, collect=[Moments()],
                        verbose=True)
-
+    """
     # filter and plot
     start_user, start_process = time.time(), time.process_time()
     pf.run()
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     plotter.plot_ESS(pf.summaries.ESSs)
     plotter.plot_logLts(pf.summaries.logLts)
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
-
+    """
     """
     # compare MC and QMC method
     results_qmc = particles.multiSMC(fk=fk_guided, N=5, nruns=20, nprocs=6, qmc={'SMC': False, 'SQMC': True})
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     """
 
     # compute variance of log likelihood
-    Ns = [100, 200]
+    Ns = [500]
     results = particles.multiSMC(fk=fk_guided, N=Ns, nruns=30, nprocs=6)
     for N in Ns:
         loglts = [r['output'].logLt for r in results if r['N']==N]
