@@ -114,7 +114,7 @@ def plot_results(pf, x, y, dt, export_name, plt_smthng=False):
 
 
 def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs):
-    results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, nprocs=6)
+    results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, nprocs=-1)
     for N in nb_particles:
         loglts = [r['output'].logLt for r in results if r['N'] == N]
         print('N={}, Mean loglikelihood={}, Variance loglikelihood={}'.format(N, np.mean(loglts), np.var(loglts)))
@@ -157,7 +157,7 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 200
+    nb_timesteps = 100
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -234,8 +234,8 @@ if __name__ == '__main__':
     # plot_results(pf, x, y, dt, export_name, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [5000, 10000]
-    nb_runs = 50
+    Ns = [5, 10]
+    nb_runs = 20
     compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs)
 
     # ---------------------------- loglikelihood stats ----------------------------
