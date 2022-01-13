@@ -90,7 +90,7 @@ def run_particle_filter(fk_model):
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), nb_timesteps))
     loglikelihood = np.sum(pf.summaries.logLts)
-    print('Log likelihood = {}'.format(loglikelihood))
+    print('Log likelihood = {:.3E}'.format(loglikelihood))
     return pf
 
 
@@ -105,8 +105,7 @@ def plot_results(pf, x, y, dt, export_name, plt_smthng=False):
     plotter.plot_ESS(pf.summaries.ESSs)
     plotter.plot_logLts(pf.summaries.logLts)
     if plt_smthng:
-        smooth_trajectories, acc_rate = pf.hist.backward_sampling(5, linear_cost=False, return_ar=True)
-        print('Acceptance rate smoothing: {}'.format(acc_rate))
+        smooth_trajectories = pf.hist.backward_sampling(5, linear_cost=False, return_ar=False)
         data_reader = DataReaderWriter()
         data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
         plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
@@ -134,7 +133,7 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
         alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                                  verbose=5)
     elif learning_alg == 'smc2':
-        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=20,
+        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=50,
                            ar_to_increase_Nx=0.1, smc_options={'verbose': True})
         alg = particles.SMC(fk=fk_smc2, N=10)
     else:
@@ -157,7 +156,7 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 100
+    nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -166,7 +165,7 @@ if __name__ == '__main__':
     dim_states = 18
     dim_observations = 20
     length_legs = np.array([0.5, 0.6, 0.5, 0.6])  # [0.5, 0.6, 0.5, 0.6]
-    position_imus = np.array([0.30, 0.31, 0.26, 0.23])  # [0.34, 0.29, 0.315, 0.33]
+    position_imus = np.array([0.34, 0.29, 0.315, 0.33])  # [0.34, 0.29, 0.315, 0.33]
     alpha_0 = 0.0
     alpha_1 = 0.0
     alpha_2 = 0.0
@@ -188,7 +187,7 @@ if __name__ == '__main__':
     sigma_imu_gyro = 0.01  # 0.01
     sigma_press_velo = 0.01  # 0.01
     sigma_press_acc = 0.1  # 0.1
-    factor_H = 1.0  # 1.0
+    factor_H = 10.0  # 1.0
 
     factor_proposal = 1.2  # 1.2
 
@@ -218,10 +217,10 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 500
+    nb_particles = 200
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    # pf = run_particle_filter(fk_model=fk_guided)
+    pf = run_particle_filter(fk_model=fk_guided)
 
     # ---------------------------- plot results ----------------------------
     export_name = 'GF_Missingdata005_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -231,12 +230,12 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    # plot_results(pf, x, y, dt, export_name, plt_smthng=False)
+    plot_results(pf, x, y, dt, export_name, plt_smthng=True)
 
     # ---------------------------- loglikelihood stats ----------------------------
     Ns = [5, 10]
     nb_runs = 20
-    compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs)
+    # compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs)
 
     # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False

@@ -40,7 +40,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                  sigma_imu_gyro=0.01,  # 0.01
                  sigma_press_velo=0.01,    # 0.01
                  sigma_press_acc=0.1,  # 0.1
-                 factor_H=1.0,  # 1.0
+                 factor_H=5.0,  # 1.0
                  factor_proposal=1.2):  # 1.2
         super().__init__()
         self.dt = dt
