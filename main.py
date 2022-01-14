@@ -133,9 +133,9 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
         alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                                  verbose=5)
     elif learning_alg == 'smc2':
-        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=50,
-                           ar_to_increase_Nx=0.1, smc_options={'verbose': True})
-        alg = particles.SMC(fk=fk_smc2, N=10)
+        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=10,
+                           ar_to_increase_Nx=-1.0, smc_options={'verbose': True})
+        alg = particles.SMC(fk=fk_smc2, N=50)
     else:
         raise ValueError("learning_alg has to be one of 'pmmh', 'gibbs', 'smc2'; got {} instead.".format(learning_alg))
     start_user, start_process = time.time(), time.process_time()
@@ -217,13 +217,14 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 200
+    nb_particles = 500
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = run_particle_filter(fk_model=fk_guided)
 
     # ---------------------------- plot results ----------------------------
-    export_name = 'GF_Missingdata005_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
+    export_name = 'GF_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
+        generation_type,
         nb_timesteps,
         nb_particles,
         factor_init,
@@ -241,9 +242,9 @@ if __name__ == '__main__':
     add_Q = False
     add_H = False
     add_legs = False
-    add_imu = True
+    add_imu = False
     add_a = False
-    add_alphas = False
+    add_alphas = True
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_a, add_alphas)
     learning_alg = 'smc2'  # pmmh, gibbs, smc2
     # learn_model_parameters(prior_dict, my_prior, learning_alg)
