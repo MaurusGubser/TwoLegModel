@@ -16,7 +16,7 @@ from TwoLegSMCModel import TwoLegModel
 from Plotter import Plotter
 
 
-def set_prior(add_Q, add_H, add_legs, add_imus, add_a, add_alphas):
+def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
     prior_dict = {}
     if add_Q:
         prior_Q = {'scale_x': dists.LinearD(dists.InvGamma(3.0, 2.0), a=100.0, b=0.0),
@@ -37,26 +37,13 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_a, add_alphas):
                    'sigma_press_acc': dists.Uniform(0.001, 0.1)}
         prior_dict.update(prior_H)
     if add_legs:
-        dist_femur = dists.Uniform(0.3, 0.7)
-        dist_fibula = dists.Uniform(0.4, 0.8)
-        prior_legs = {'len_legs': dists.IndepProd(*[dist_femur, dist_fibula, dist_femur, dist_fibula])}
+        prior_legs = {'femur_left': dists.Uniform(0.3, 0.7), 'fibula_left': dists.Uniform(0.4, 0.8),
+                      'femur_right': dists.Uniform(0.3, 0.7), 'fibula_right': dists.Uniform(0.4, 0.8)}
         prior_dict.update(prior_legs)
     if add_imus:
-        dist_imu0 = dists.Normal(loc=0.25, scale=0.3)  # dists.Uniform(0.0, 0.5)
-        dist_imu1 = dists.Normal(loc=0.3, scale=0.3)  # dists.Uniform(0.0, 0.6)
-        dist_imu2 = dists.Normal(loc=0.25, scale=0.3)  # dists.Uniform(0.0, 0.5)
-        dist_imu3 = dists.Normal(loc=0.3, scale=0.3)  # dists.Uniform(0.0, 0.6)
-        prior_imus = {'pos_imus': dists.IndepProd(*[dist_imu0, dist_imu1, dist_imu2, dist_imu3])}
+        prior_imus = {'pos_imu0': dists.Normal(loc=0.25, scale=0.3), 'pos_imu1': dists.Normal(loc=0.3, scale=0.3),
+                      'pos_imu2': dists.Normal(loc=0.25, scale=0.3), 'pos_imu3': dists.Normal(loc=0.3, scale=0.3)}
         prior_dict.update(prior_imus)
-    if add_a:
-        mean = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-                         0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                         0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-        covar = np.diag([0.01, 0.05, 0.01, 0.01, 0.01, 0.01,
-                         0.01, 0.01, 0.01, 0.01, 0.01, 0.01,
-                         0.01, 0.01, 0.01, 0.01, 0.01, 0.01])
-        prior_a = {'a': dists.MvNormal(loc=mean, cov=covar)}
-        prior_dict.update(prior_a)
     if add_alphas:
         prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.3),
                         'alpha_1': dists.Normal(loc=0.0, scale=0.3),
@@ -133,9 +120,9 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
         alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                                  verbose=5)
     elif learning_alg == 'smc2':
-        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=10,
+        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=50,
                            ar_to_increase_Nx=-1.0, smc_options={'verbose': True})
-        alg = particles.SMC(fk=fk_smc2, N=50)
+        alg = particles.SMC(fk=fk_smc2, N=20)
     else:
         raise ValueError("learning_alg has to be one of 'pmmh', 'gibbs', 'smc2'; got {} instead.".format(learning_alg))
     start_user, start_process = time.time(), time.process_time()
@@ -164,8 +151,14 @@ if __name__ == '__main__':
     dt = 0.01
     dim_states = 18
     dim_observations = 20
-    length_legs = np.array([0.5, 0.6, 0.5, 0.6])  # [0.5, 0.6, 0.5, 0.6]
-    position_imus = np.array([0.34, 0.29, 0.315, 0.33])  # [0.34, 0.29, 0.315, 0.33]
+    femur_left = 0.5    # 0.5
+    fibula_left = 0.6   # 0.6
+    femur_right = 0.5   # 0.5
+    fibula_right = 0.6  # 0.6
+    pos_imu0 = 0.34     # 0.34
+    pos_imu1 = 0.29     # 0.29
+    pos_imu2 = 0.315    # 0.315
+    pos_imu3 = 0.33     # 0.33
     alpha_0 = 0.0
     alpha_1 = 0.0
     alpha_2 = 0.0
@@ -194,8 +187,14 @@ if __name__ == '__main__':
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
                            dim_observations=dim_observations,
-                           len_legs=length_legs,
-                           pos_imus=position_imus,
+                           femur_left=femur_left,
+                           fibula_left=fibula_left,
+                           femur_right=femur_right,
+                           fibula_right=fibula_right,
+                           pos_imu0=pos_imu0,
+                           pos_imu1=pos_imu1,
+                           pos_imu2=pos_imu2,
+                           pos_imu3=pos_imu3,
                            alpha_0=alpha_0,
                            alpha_1=alpha_1,
                            alpha_2=alpha_2,
@@ -220,7 +219,7 @@ if __name__ == '__main__':
     nb_particles = 500
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = run_particle_filter(fk_model=fk_guided)
+    # pf = run_particle_filter(fk_model=fk_guided)
 
     # ---------------------------- plot results ----------------------------
     export_name = 'GF_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -231,20 +230,19 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    plot_results(pf, x, y, dt, export_name, plt_smthng=True)
+    # plot_results(pf, x, y, dt, export_name, plt_smthng=True)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [5, 10]
-    nb_runs = 20
-    # compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs)
+    Ns = [5000, 10000]
+    nb_runs = 30
+    compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs)
 
     # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False
     add_H = False
     add_legs = False
     add_imu = False
-    add_a = False
     add_alphas = True
-    prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_a, add_alphas)
+    prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
     learning_alg = 'smc2'  # pmmh, gibbs, smc2
     # learn_model_parameters(prior_dict, my_prior, learning_alg)
