@@ -103,10 +103,16 @@ def plot_results(pf, x, y, dt, export_name, plt_smthng=False):
 def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs):
     results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, nprocs=-1)
     for N in nb_particles:
-        loglts = [r['output'].logLt for r in results if r['N'] == N]
-        print('N={}, Mean loglikelihood={}, Variance loglikelihood={}'.format(N, np.mean(loglts), np.var(loglts)))
+        last_loglts = [r['output'].logLt for r in results if r['N'] == N]
+        sum_loglts = [np.sum(r['output'].summaries.logLts) for r in results if r['N'] == N]
+        print('N={}, Mean last loglhd={}, Variance last loglhd={}'.format(N, np.mean(last_loglts), np.var(last_loglts)))
+        print('N={}, Mean loglhd={}, Variance loglhd={}'.format(N, np.mean(sum_loglts), np.var(sum_loglts)))
     plt.figure()
     sb.boxplot(x=[r['output'].logLt for r in results], y=[str(r['N']) for r in results])
+    plt.xlabel('Last log likelihood')
+    plt.ylabel('Number of particles')
+    plt.figure()
+    sb.boxplot(x=[np.sum(r['output'].summaries.logLts) for r in results], y=[str(r['N']) for r in results])
     plt.xlabel('Log likelihood')
     plt.ylabel('Number of particles')
     plt.show()
@@ -152,14 +158,14 @@ if __name__ == '__main__':
     dt = 0.01
     dim_states = 18
     dim_observations = 20
-    femur_left = 0.5    # 0.5
-    fibula_left = 0.6   # 0.6
-    femur_right = 0.5   # 0.5
+    femur_left = 0.5  # 0.5
+    fibula_left = 0.6  # 0.6
+    femur_right = 0.5  # 0.5
     fibula_right = 0.6  # 0.6
-    pos_imu0 = 0.34     # 0.34
-    pos_imu1 = 0.29     # 0.29
-    pos_imu2 = 0.315    # 0.315
-    pos_imu3 = 0.33     # 0.33
+    pos_imu0 = 0.34  # 0.34
+    pos_imu1 = 0.29  # 0.29
+    pos_imu2 = 0.315  # 0.315
+    pos_imu3 = 0.33  # 0.33
     alpha_0 = 0.0
     alpha_1 = 0.0
     alpha_2 = 0.0
@@ -234,8 +240,8 @@ if __name__ == '__main__':
     # plot_results(pf, x, y, dt, export_name, plt_smthng=True)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [5000, 10000]
-    nb_runs = 30
+    Ns = [50, 100]
+    nb_runs = 10
     compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs)
 
     # ---------------------------- loglikelihood stats ----------------------------
