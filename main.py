@@ -41,8 +41,10 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
                       'femur_right': dists.Uniform(0.3, 0.7), 'fibula_right': dists.Uniform(0.4, 0.8)}
         prior_dict.update(prior_legs)
     if add_imus:
-        prior_imus = {'pos_imu0': dists.Normal(loc=0.25, scale=0.3), 'pos_imu1': dists.Normal(loc=0.3, scale=0.3),
-                      'pos_imu2': dists.Normal(loc=0.25, scale=0.3), 'pos_imu3': dists.Normal(loc=0.3, scale=0.3)}
+        prior_imus = {'pos_imu0': dists.TruncNormal(mu=0.25, sigma=0.3, a=0.0, b=0.5),
+                      'pos_imu1': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.6),
+                      'pos_imu2': dists.TruncNormal(mu=0.25, sigma=0.3, a=0.0, b=0.5),
+                      'pos_imu3': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.6)}
         prior_dict.update(prior_imus)
     if add_alphas:
         prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.3),
@@ -223,10 +225,10 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 500
+    nb_particles = 1000
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    # pf = run_particle_filter(fk_model=fk_guided)
+    pf = run_particle_filter(fk_model=fk_guided)
 
     # ---------------------------- plot results ----------------------------
     export_name = 'GF_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -237,12 +239,12 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    # plot_results(pf, x, y, dt, export_name, plt_smthng=True)
+    plot_results(pf, x, y, dt, export_name, plt_smthng=True)
 
     # ---------------------------- loglikelihood stats ----------------------------
     Ns = [50, 100]
     nb_runs = 10
-    compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs)
+    # compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs)
 
     # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False
