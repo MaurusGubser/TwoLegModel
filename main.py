@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -102,7 +103,7 @@ def plot_results(pf, x, y, dt, export_name, plt_smthng=False):
     return None
 
 
-def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs):
+def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs, export_name=None):
     results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, nprocs=-1)
     for N in nb_particles:
         last_loglts = [r['output'].logLt for r in results if r['N'] == N]
@@ -117,6 +118,10 @@ def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs):
     sb.boxplot(x=[np.sum(r['output'].summaries.logLts) for r in results], y=[str(r['N']) for r in results])
     plt.xlabel('Log likelihood')
     plt.ylabel('Number of particles')
+    if export_name:
+        if not os.path.exists('LogPlots'):
+            os.mkdir('LogPlots')
+        plt.savefig('LogPlots/' + export_name + '.pdf')
     plt.show()
     return None
 
@@ -129,9 +134,9 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
         alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                                  verbose=5)
     elif learning_alg == 'smc2':
-        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=50,
+        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=200,
                            ar_to_increase_Nx=-1.0, smc_options={'verbose': True})
-        alg = particles.SMC(fk=fk_smc2, N=20)
+        alg = particles.SMC(fk=fk_smc2, N=50)
     else:
         raise ValueError("learning_alg has to be one of 'pmmh', 'gibbs', 'smc2'; got {} instead.".format(learning_alg))
     start_user, start_process = time.time(), time.process_time()
@@ -139,12 +144,19 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
 
-    burnin = 0  # discard the __ first iterations
-    for i, param in enumerate(prior_dict.keys()):
-        plt.subplot(2, 2, i + 1)
-        sb.histplot(alg.chain.theta[param][burnin:], bins=10)
-        plt.title(param)
-    plt.show()
+    if learning_alg == 'pmmh' or learning_alg == 'gibbs':
+        burnin = 0  # discard the __ first iterations
+        for i, param in enumerate(prior_dict.keys()):
+            plt.figure()
+            sb.histplot(alg.chain.theta[param][burnin:], bins=10)
+            plt.title(param)
+        plt.show()
+    else:
+        for i, param in enumerate(prior_dict.keys()):
+            plt.figure()
+            sb.histplot([t[i] for t in alg.X.theta], bins=10)
+            plt.title(param)
+        plt.show()
 
     return None
 
@@ -228,7 +240,7 @@ if __name__ == '__main__':
     nb_particles = 1000
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = run_particle_filter(fk_model=fk_guided)
+    # pf = run_particle_filter(fk_model=fk_guided)
 
     # ---------------------------- plot results ----------------------------
     export_name = 'GF_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -239,12 +251,16 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    plot_results(pf, x, y, dt, export_name, plt_smthng=True)
+    # plot_results(pf, x, y, dt, export_name, plt_smthng=True)
 
     # ---------------------------- loglikelihood stats ----------------------------
     Ns = [50, 100]
     nb_runs = 10
-    # compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs)
+    export_name = 'GF_{}_steps{}_nbruns{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(generation_type,
+                                                                                             nb_timesteps, nb_runs,
+                                                                                             factor_init, factor_Q,
+                                                                                             factor_H, factor_proposal)
+    # compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs, export_name)
 
     # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False
@@ -254,4 +270,4 @@ if __name__ == '__main__':
     add_alphas = True
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
     learning_alg = 'smc2'  # pmmh, gibbs, smc2
-    # learn_model_parameters(prior_dict, my_prior, learning_alg)
+    learn_model_parameters(prior_dict, my_prior, learning_alg)
