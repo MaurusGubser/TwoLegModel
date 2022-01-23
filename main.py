@@ -46,6 +46,7 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
                       'pos_imu1': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.6),
                       'pos_imu2': dists.TruncNormal(mu=0.25, sigma=0.3, a=0.0, b=0.5),
                       'pos_imu3': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.6)}
+        prior_imus = {'pos_imu0': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.5)}
         prior_dict.update(prior_imus)
     if add_alphas:
         prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.3),
@@ -129,7 +130,7 @@ def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs, export_name=Non
 def learn_model_parameters(prior_dict, my_prior, learning_alg):
     if learning_alg == 'pmmh':
         alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
-                        data=y, Nx=50, niter=100, verbose=50, adaptive=True, scale=1.0)
+                        data=y, Nx=200, niter=100, verbose=50, adaptive=True, scale=1.0)
     elif learning_alg == 'gibbs':
         alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                                  verbose=5)
@@ -201,7 +202,7 @@ if __name__ == '__main__':
     sigma_imu_gyro = 0.01  # 0.01
     sigma_press_velo = 0.01  # 0.01
     sigma_press_acc = 0.1  # 0.1
-    factor_H = 10.0  # 1.0
+    factor_H = 1.0  # 1.0
 
     factor_proposal = 1.2  # 1.2
 
@@ -237,10 +238,10 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 1000
+    nb_particles = 500
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    # pf = run_particle_filter(fk_model=fk_guided)
+    pf = run_particle_filter(fk_model=fk_guided)
 
     # ---------------------------- plot results ----------------------------
     export_name = 'GF_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -251,7 +252,7 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    # plot_results(pf, x, y, dt, export_name, plt_smthng=True)
+    plot_results(pf, x, y, dt, export_name, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
     Ns = [50, 100]
@@ -269,5 +270,5 @@ if __name__ == '__main__':
     add_imu = False
     add_alphas = True
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
-    learning_alg = 'smc2'  # pmmh, gibbs, smc2
-    learn_model_parameters(prior_dict, my_prior, learning_alg)
+    learning_alg = 'pmmh'  # pmmh, gibbs, smc2
+    # learn_model_parameters(prior_dict, my_prior, learning_alg)
