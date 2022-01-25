@@ -53,7 +53,8 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
                         'alpha_1': dists.Normal(loc=0.0, scale=0.3),
                         'alpha_2': dists.Normal(loc=0.0, scale=0.3),
                         'alpha_3': dists.Normal(loc=0.0, scale=0.3)}
-        prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.3)}
+        prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.5),
+                        'alpha_2': dists.Normal(loc=0.0, scale=0.5)}
         prior_dict.update(prior_alphas)
     return prior_dict, dists.StructDist(prior_dict)
 
@@ -135,9 +136,9 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
         alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                                  verbose=5)
     elif learning_alg == 'smc2':
-        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=200,
+        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=20,
                            ar_to_increase_Nx=-1.0, smc_options={'verbose': True})
-        alg = particles.SMC(fk=fk_smc2, N=50)
+        alg = particles.SMC(fk=fk_smc2, N=10)
     else:
         raise ValueError("learning_alg has to be one of 'pmmh', 'gibbs', 'smc2'; got {} instead.".format(learning_alg))
     start_user, start_process = time.time(), time.process_time()
@@ -151,12 +152,14 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
             plt.figure()
             sb.histplot(alg.chain.theta[param][burnin:], bins=10)
             plt.title(param)
+            plt.savefig(learning_alg + '_' + param + '.pdf')
         plt.show()
     else:
         for i, param in enumerate(prior_dict.keys()):
             plt.figure()
             sb.histplot([t[i] for t in alg.X.theta], bins=10)
             plt.title(param)
+            plt.savefig(learning_alg + '_' + param + '.pdf')
         plt.show()
 
     return None
@@ -165,7 +168,7 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 1000
+    nb_timesteps = 20
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -204,7 +207,7 @@ if __name__ == '__main__':
     sigma_press_acc = 0.1  # 0.1
     factor_H = 1.0  # 1.0
 
-    factor_proposal = 1.2  # 1.2
+    factor_proposal = 0.8  # 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -241,7 +244,7 @@ if __name__ == '__main__':
     nb_particles = 500
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = run_particle_filter(fk_model=fk_guided)
+    # pf = run_particle_filter(fk_model=fk_guided)
 
     # ---------------------------- plot results ----------------------------
     export_name = 'GF_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -252,7 +255,7 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    plot_results(pf, x, y, dt, export_name, plt_smthng=False)
+    # plot_results(pf, x, y, dt, export_name, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
     Ns = [50, 100]
@@ -270,5 +273,5 @@ if __name__ == '__main__':
     add_imu = False
     add_alphas = True
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
-    learning_alg = 'pmmh'  # pmmh, gibbs, smc2
-    # learn_model_parameters(prior_dict, my_prior, learning_alg)
+    learning_alg = 'smc2'  # pmmh, gibbs, smc2
+    learn_model_parameters(prior_dict, my_prior, learning_alg)
