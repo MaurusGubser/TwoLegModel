@@ -53,8 +53,7 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
                         'alpha_1': dists.Normal(loc=0.0, scale=0.3),
                         'alpha_2': dists.Normal(loc=0.0, scale=0.3),
                         'alpha_3': dists.Normal(loc=0.0, scale=0.3)}
-        prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.5),
-                        'alpha_2': dists.Normal(loc=0.0, scale=0.5)}
+        prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.5)}
         prior_dict.update(prior_alphas)
     return prior_dict, dists.StructDist(prior_dict)
 
@@ -131,7 +130,7 @@ def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs, export_name=Non
 def learn_model_parameters(prior_dict, my_prior, learning_alg):
     if learning_alg == 'pmmh':
         alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
-                        data=y, Nx=200, niter=100, verbose=50, adaptive=True, scale=1.0)
+                        data=y, Nx=1000, niter=100, verbose=100, adaptive=True, scale=1.0)
     elif learning_alg == 'gibbs':
         alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                                  verbose=5)
@@ -167,8 +166,8 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
 
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
-    generation_type = 'Missingdata005'
-    nb_timesteps = 20
+    generation_type = 'RotatedFemurLeftMissingdata005'
+    nb_timesteps = 100
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -207,7 +206,7 @@ if __name__ == '__main__':
     sigma_press_acc = 0.1  # 0.1
     factor_H = 1.0  # 1.0
 
-    factor_proposal = 0.8  # 1.2
+    factor_proposal = 1.2  # 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -273,5 +272,5 @@ if __name__ == '__main__':
     add_imu = False
     add_alphas = True
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
-    learning_alg = 'smc2'  # pmmh, gibbs, smc2
+    learning_alg = 'pmmh'  # pmmh, gibbs, smc2
     learn_model_parameters(prior_dict, my_prior, learning_alg)
