@@ -269,7 +269,7 @@ if __name__ == '__main__':
     # plot_results(pf, x, y, dt, export_name, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [10, 20, 50]
+    Ns = [100, 200, 500, 1000, 2000, 5000, 10000]
     nb_runs = 100
     export_name = 'GF_{}_steps{}_Ns{}_nbruns{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(generation_type,
                                                                                                    nb_timesteps, Ns,
