@@ -178,7 +178,7 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
 
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
-    generation_type = 'RotatedFemurRight'
+    generation_type = 'Missingdata005'
     nb_timesteps = 20
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
