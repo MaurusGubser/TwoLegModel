@@ -105,24 +105,36 @@ def plot_results(pf, x, y, dt, export_name, plt_smthng=False):
 
 
 def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs, export_name=None):
-    results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, nprocs=-1)
+    results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, nprocs=6)
     for N in nb_particles:
         last_loglts = [r['output'].logLt for r in results if r['N'] == N]
         sum_loglts = [np.sum(r['output'].summaries.logLts) for r in results if r['N'] == N]
-        print('N={}, Mean last loglhd={}, Variance last loglhd={}'.format(N, np.mean(last_loglts), np.var(last_loglts)))
-        print('N={}, Mean loglhd={}, Variance loglhd={}'.format(N, np.mean(sum_loglts), np.var(sum_loglts)))
-    plt.figure()
+        print('N={:.5E}, Mean last loglhd={:.5E}, Variance last loglhd={:.5E}'.format(N, np.mean(last_loglts),
+                                                                                      np.var(last_loglts)))
+        print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, np.mean(sum_loglts), np.var(sum_loglts)))
+    plt.figure(figsize=(12, 8))
     sb.boxplot(x=[r['output'].logLt for r in results], y=[str(r['N']) for r in results])
     plt.xlabel('Last log likelihood')
     plt.ylabel('Number of particles')
-    plt.figure()
+    if export_name:
+        if not os.path.exists('LikelihoodPlots'):
+            os.mkdir('LikelihoodPlots')
+        plt.savefig('LikelihoodPlots/' + export_name + '_last.pdf')
+    plt.figure(figsize=(12, 8))
     sb.boxplot(x=[np.sum(r['output'].summaries.logLts) for r in results], y=[str(r['N']) for r in results])
     plt.xlabel('Log likelihood')
     plt.ylabel('Number of particles')
     if export_name:
-        if not os.path.exists('LogPlots'):
-            os.mkdir('LogPlots')
-        plt.savefig('LogPlots/' + export_name + '.pdf')
+        if not os.path.exists('LikelihoodPlots'):
+            os.mkdir('LikelihoodPlots')
+        plt.savefig('LikelihoodPlots/' + export_name + '.pdf')
+    plt.figure(figsize=(12, 8))
+    sb.histplot(x=[np.sum(r['output'].summaries.logLts) for r in results], hue=[str(r['N']) for r in results],
+                multiple='dodge')
+    if export_name:
+        if not os.path.exists('LikelihoodPlots'):
+            os.mkdir('LikelihoodPlots')
+        plt.savefig('LikelihoodPlots/' + export_name + '_hist.pdf')
     plt.show()
     return None
 
@@ -166,8 +178,8 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
 
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
-    generation_type = 'RotatedFemurLeftMissingdata005'
-    nb_timesteps = 100
+    generation_type = 'RotatedFemurRight'
+    nb_timesteps = 20
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -241,7 +253,7 @@ if __name__ == '__main__':
 
     # ---------------------------- particle filter ----------------------------
     nb_particles = 500
-    fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
+    # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     # pf = run_particle_filter(fk_model=fk_guided)
 
@@ -257,13 +269,16 @@ if __name__ == '__main__':
     # plot_results(pf, x, y, dt, export_name, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [50, 100]
-    nb_runs = 10
-    export_name = 'GF_{}_steps{}_nbruns{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(generation_type,
-                                                                                             nb_timesteps, nb_runs,
-                                                                                             factor_init, factor_Q,
-                                                                                             factor_H, factor_proposal)
-    # compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs, export_name)
+    Ns = [10, 20, 50]
+    nb_runs = 100
+    export_name = 'GF_{}_steps{}_Ns{}_nbruns{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(generation_type,
+                                                                                                   nb_timesteps, Ns,
+                                                                                                   nb_runs,
+                                                                                                   factor_init,
+                                                                                                   factor_Q,
+                                                                                                   factor_H,
+                                                                                                   factor_proposal)
+    compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs, export_name=export_name)
 
     # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False
@@ -273,4 +288,4 @@ if __name__ == '__main__':
     add_alphas = True
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
     learning_alg = 'pmmh'  # pmmh, gibbs, smc2
-    learn_model_parameters(prior_dict, my_prior, learning_alg)
+    # learn_model_parameters(prior_dict, my_prior, learning_alg)
