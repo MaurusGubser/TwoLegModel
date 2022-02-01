@@ -104,11 +104,12 @@ def plot_results(pf, x, y, dt, export_name, plt_smthng=False):
     return None
 
 
-def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs, export_name=None):
+def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs, nb_burn, export_name=None):
     results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, nprocs=6)
+    assert nb_burn < results[0]['output'].fk.T
     for N in nb_particles:
         last_loglts = [r['output'].logLt for r in results if r['N'] == N]
-        sum_loglts = [np.sum(r['output'].summaries.logLts) for r in results if r['N'] == N]
+        sum_loglts = [np.sum(r['output'].summaries.logLts[nb_burn:]) for r in results if r['N'] == N]
         print('N={:.5E}, Mean last loglhd={:.5E}, Variance last loglhd={:.5E}'.format(N, np.mean(last_loglts),
                                                                                       np.var(last_loglts)))
         print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, np.mean(sum_loglts), np.var(sum_loglts)))
@@ -121,7 +122,7 @@ def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs, export_name=Non
             os.mkdir('LikelihoodPlots')
         plt.savefig('LikelihoodPlots/' + export_name + '_last.pdf')
     plt.figure(figsize=(12, 8))
-    sb.boxplot(x=[np.sum(r['output'].summaries.logLts) for r in results], y=[str(r['N']) for r in results])
+    sb.boxplot(x=[np.sum(r['output'].summaries.logLts[nb_burn:]) for r in results], y=[str(r['N']) for r in results])
     plt.xlabel('Log likelihood')
     plt.ylabel('Number of particles')
     if export_name:
@@ -129,7 +130,7 @@ def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs, export_name=Non
             os.mkdir('LikelihoodPlots')
         plt.savefig('LikelihoodPlots/' + export_name + '.pdf')
     plt.figure(figsize=(12, 8))
-    sb.histplot(x=[np.sum(r['output'].summaries.logLts) for r in results], hue=[str(r['N']) for r in results],
+    sb.histplot(x=[np.sum(r['output'].summaries.logLts[nb_burn:]) for r in results], hue=[str(r['N']) for r in results],
                 multiple='dodge')
     if export_name:
         if not os.path.exists('LikelihoodPlots'):
@@ -179,7 +180,7 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 20
+    nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -204,7 +205,7 @@ if __name__ == '__main__':
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    factor_init = 0.1  # 0.1
+    factor_init = 0.01  # 0.1
 
     cov_step = dt  # 0.01
     scale_x = 10000.0  # 10000.0
@@ -269,8 +270,9 @@ if __name__ == '__main__':
     # plot_results(pf, x, y, dt, export_name, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [100, 200, 500, 1000, 2000, 5000, 10000]
-    nb_runs = 100
+    Ns = [100, 200, 500, 1000, 2000, 5000]
+    nb_runs = 500
+    nb_burn = 200
     export_name = 'GF_{}_steps{}_Ns{}_nbruns{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(generation_type,
                                                                                                    nb_timesteps, Ns,
                                                                                                    nb_runs,
@@ -278,7 +280,7 @@ if __name__ == '__main__':
                                                                                                    factor_Q,
                                                                                                    factor_H,
                                                                                                    factor_proposal)
-    compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs, export_name=export_name)
+    compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs, nb_burn=nb_burn, export_name=export_name)
 
     # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False
