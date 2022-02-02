@@ -73,8 +73,8 @@ def prepare_data(generation_type, max_timesteps, dim_observations):
     return states, observations
 
 
-def run_particle_filter(fk_model):
-    pf = particles.SMC(fk=fk_model, N=nb_particles, ESSrmin=0.5, store_history=True, collect=[Moments()],
+def run_particle_filter(fk_model, nb_particles, ESSrmin=0.5):
+    pf = particles.SMC(fk=fk_model, N=nb_particles, ESSrmin=ESSrmin, store_history=True, collect=[Moments()],
                        verbose=True)
     start_user, start_process = time.time(), time.process_time()
     pf.run()
@@ -87,25 +87,28 @@ def run_particle_filter(fk_model):
 
 
 def plot_results(pf, x, y, dt, export_name, plt_smthng=False):
-    plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt, export_name=export_name)
+    plotter_single_run = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt, export_name=export_name)
 
-    plotter.plot_observations(np.array(pf.hist.X), model=my_model)
-    # plotter.plot_particles_trajectories(np.array(pf.hist.X))
+    plotter_single_run.plot_observations(np.array(pf.hist.X), model=my_model)
+    # plotter_single_run.plot_particles_trajectories(np.array(pf.hist.X))
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
-    plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
-    plotter.plot_ESS(pf.summaries.ESSs)
-    plotter.plot_logLts(pf.summaries.logLts)
+    plotter_single_run.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
+    plotter_single_run.plot_ESS(pf.summaries.ESSs)
+    plotter_single_run.plot_logLts_one_run(pf.summaries.logLts)
     if plt_smthng:
         smooth_trajectories = pf.hist.backward_sampling(5, linear_cost=False, return_ar=False)
         data_reader = DataReaderWriter()
         data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
-        plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
+        plotter_single_run.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
     return None
 
 
-def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs, t_start, export_name=None):
+def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t_start, export_name=None):
+    start_user, start_process = time.time(), time.process_time()
     results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, nprocs=-1)
+    end_user, end_process = time.time(), time.process_time()
+    print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
     assert t_start < results[0]['output'].fk.T
     for N in nb_particles:
         last_loglts = [r['output'].logLt for r in results if r['N'] == N]
@@ -113,30 +116,10 @@ def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs, t_start, export
         print('N={:.5E}, Mean last loglhd={:.5E}, Variance last loglhd={:.5E}'.format(N, np.mean(last_loglts),
                                                                                       np.var(last_loglts)))
         print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, np.mean(sum_loglts), np.var(sum_loglts)))
-    plt.figure(figsize=(12, 8))
-    sb.boxplot(x=[r['output'].logLt for r in results], y=[str(r['N']) for r in results])
-    plt.xlabel('Last log likelihood')
-    plt.ylabel('Number of particles')
-    if export_name:
-        if not os.path.exists('LikelihoodPlots'):
-            os.mkdir('LikelihoodPlots')
-        plt.savefig('LikelihoodPlots/' + export_name + '_last.pdf')
-    plt.figure(figsize=(12, 8))
-    sb.boxplot(x=[np.sum(r['output'].summaries.logLts[t_start:]) for r in results], y=[str(r['N']) for r in results])
-    plt.xlabel('Log likelihood')
-    plt.ylabel('Number of particles')
-    if export_name:
-        if not os.path.exists('LikelihoodPlots'):
-            os.mkdir('LikelihoodPlots')
-        plt.savefig('LikelihoodPlots/' + export_name + '.pdf')
-    plt.figure(figsize=(12, 8))
-    sb.histplot(x=[np.sum(r['output'].summaries.logLts[t_start:]) for r in results], hue=[str(r['N']) for r in results],
-                multiple='dodge')
-    if export_name:
-        if not os.path.exists('LikelihoodPlots'):
-            os.mkdir('LikelihoodPlots')
-        plt.savefig('LikelihoodPlots/' + export_name + '_hist.pdf')
-    plt.show()
+
+    plotter_multismc = Plotter(np.array(true_states), np.array(data), dt, export_name)
+    plotter_multismc.plot_logLts_multiple_runs(results, nb_particles, nb_runs, t_start)
+
     return None
 
 
@@ -180,7 +163,7 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 1000
+    nb_timesteps = 100
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -253,13 +236,13 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 500
+    nb_particles = 1000
     # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    # pf = run_particle_filter(fk_model=fk_guided)
+    # pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
 
     # ---------------------------- plot results ----------------------------
-    export_name = 'GF_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
+    export_name_single = 'SingleRun_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
         generation_type,
         nb_timesteps,
         nb_particles,
@@ -267,13 +250,13 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    # plot_results(pf, x, y, dt, export_name, plt_smthng=False)
+    # plot_results(pf, x, y, dt, export_name_single, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [500, 1000, 2000, 5000]
-    nb_runs = 200
-    t_start = 100
-    export_name = 'GF_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
+    Ns = [10, 20]
+    nb_runs = 50
+    t_start = 0
+    export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
         generation_type,
         nb_timesteps, Ns,
         nb_runs,
@@ -282,7 +265,8 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs, t_start=t_start, export_name=export_name)
+    analyse_likelihood(fk_model=fk_guided, true_states=x, data=y, dt=dt, nb_particles=Ns, nb_runs=nb_runs,
+                       t_start=t_start, export_name=export_name_multi)
 
     # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False
