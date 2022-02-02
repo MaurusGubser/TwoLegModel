@@ -104,8 +104,8 @@ def plot_results(pf, x, y, dt, export_name, plt_smthng=False):
     return None
 
 
-def compute_loglikelihood_stats(fk_model, nb_particles, nb_runs, nb_burn, export_name=None):
-    results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, nprocs=6)
+def compute_loglikelihood_stats(fk_model, nb_particles, t_start, nb_burn, export_name=None):
+    results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=t_start, nprocs=6)
     assert nb_burn < results[0]['output'].fk.T
     for N in nb_particles:
         last_loglts = [r['output'].logLt for r in results if r['N'] == N]
@@ -205,7 +205,7 @@ if __name__ == '__main__':
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    factor_init = 0.01  # 0.1
+    factor_init = 10.0  # 0.1
 
     cov_step = dt  # 0.01
     scale_x = 10000.0  # 10000.0
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     sigma_imu_gyro = 0.01  # 0.01
     sigma_press_velo = 0.01  # 0.01
     sigma_press_acc = 0.1  # 0.1
-    factor_H = 1.0  # 1.0
+    factor_H = 10.0  # 10.0
 
     factor_proposal = 1.2  # 1.2
 
@@ -256,7 +256,7 @@ if __name__ == '__main__':
     nb_particles = 500
     # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    # pf = run_particle_filter(fk_model=fk_guided)
+    pf = run_particle_filter(fk_model=fk_guided)
 
     # ---------------------------- plot results ----------------------------
     export_name = 'GF_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -267,20 +267,22 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    # plot_results(pf, x, y, dt, export_name, plt_smthng=False)
+    plot_results(pf, x, y, dt, export_name, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [100, 200, 500, 1000, 2000, 5000]
-    nb_runs = 500
-    nb_burn = 200
-    export_name = 'GF_{}_steps{}_Ns{}_nbruns{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(generation_type,
-                                                                                                   nb_timesteps, Ns,
-                                                                                                   nb_runs,
-                                                                                                   factor_init,
-                                                                                                   factor_Q,
-                                                                                                   factor_H,
-                                                                                                   factor_proposal)
-    compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs, nb_burn=nb_burn, export_name=export_name)
+    Ns = [10, 50]  # [100, 200, 500, 1000, 2000, 5000]
+    nb_runs = 20
+    t_start = 0
+    export_name = 'GF_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
+        generation_type,
+        nb_timesteps, Ns,
+        nb_runs,
+        t_start,
+        factor_init,
+        factor_Q,
+        factor_H,
+        factor_proposal)
+    # compute_loglikelihood_stats(fk_model=fk_guided, nb_particles=Ns, nb_runs=nb_runs, nb_burn=nb_burn, export_name=export_name)
 
     # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False
