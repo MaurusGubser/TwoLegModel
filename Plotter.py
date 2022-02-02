@@ -324,19 +324,20 @@ class Plotter:
         return residuals
 
     def plot_logLts_multiple_runs(self, output_multismc, nb_particles, nb_runs, t_start):
+        fig = plt.figure(figsize=(12, 8))
         for N in nb_particles:
             loglts = np.array([r['output'].summaries.logLts for r in output_multismc if r['N'] == N])
             mean_loglts = np.mean(loglts, axis=0)
             sd_loglots = np.std(loglts, axis=0)
-            fig = plt.figure(figsize=(12, 8))
             plt.grid(axis='both')
-            plt.plot(self.t_vals, mean_loglts, label='Number particles='.format(N))
+            plt.plot(self.t_vals, mean_loglts, label='Number particles={}'.format(N))
             plt.fill_between(self.t_vals, mean_loglts - sd_loglots, mean_loglts + sd_loglots, alpha=0.5)
+            plt.legend()
             plt.xlabel('t')
             plt.ylabel('$p(y_{t}|y_{0:t-1})$')
             fig.suptitle('Mean and var over {} runs'.format(nb_runs))
             if self.export_path:
-                plt.savefig(self.export_path + '/Likelihoods_mean_var_nbparticles' + str(N) + '.pdf')
+                plt.savefig(self.export_path + '/Likelihoods_mean_var_nbparticles.pdf')
 
         fig = plt.figure(figsize=(12, 8))
         sb.boxplot(x=[np.sum(r['output'].summaries.logLts[t_start:]) for r in output_multismc],
