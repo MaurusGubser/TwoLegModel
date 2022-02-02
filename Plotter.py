@@ -325,11 +325,12 @@ class Plotter:
 
     def plot_logLts_multiple_runs(self, output_multismc, nb_particles, nb_runs, t_start):
         fig = plt.figure(figsize=(12, 8))
+        plt.grid(axis='both')
         for N in nb_particles:
             loglts = np.array([r['output'].summaries.logLts for r in output_multismc if r['N'] == N])
             mean_loglts = np.mean(loglts, axis=0)
             sd_loglots = np.std(loglts, axis=0)
-            plt.grid(axis='both')
+
             plt.plot(self.t_vals, mean_loglts, label='Number particles={}'.format(N))
             plt.fill_between(self.t_vals, mean_loglts - sd_loglots, mean_loglts + sd_loglots, alpha=0.5)
             plt.legend()
