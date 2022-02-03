@@ -115,12 +115,12 @@ def get_extremal_cases(output_multismc, N):
             var_X.append([stats['var'] for stats in r['output'].summaries.moments])
     mean, sd = np.mean(loglts, axis=0), np.std(loglts, axis=0)
     res = np.abs(loglts - mean)
-    idx_bad, idx_good = np.argmax(res), np.argmin(res)
+    idx_bad, idx_middle = np.argmax(res), np.argmin(res)
     print('Worst run has likelihood={}'.format(loglts[idx_bad]))
-    print('Best run has likelihood={}'.format(loglts[idx_good]))
+    print('Middle run has likelihood={}'.format(loglts[idx_middle]))
     bad_run = {'mean': np.array(mean_X[idx_bad]), 'var': np.array(var_X[idx_bad])}
-    good_run = {'mean': np.array(mean_X[idx_good]), 'var': np.array(var_X[idx_good])}
-    return bad_run, good_run
+    middle_run = {'mean': np.array(mean_X[idx_middle]), 'var': np.array(var_X[idx_middle])}
+    return bad_run, middle_run
 
 
 def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t_start, export_name=None):
@@ -135,9 +135,9 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
         loglts = [np.sum(r['output'].summaries.logLts[t_start:]) for r in results if r['N'] == N]
         mean, var = np.mean(loglts, axis=0), np.var(loglts, axis=0)
         print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, mean, var))
-        bad_run, good_run = get_extremal_cases(output_multismc=results, N=N)
-        plotter_multismc.plot_particle_moments(bad_run['mean'], bad_run['var'], name_suffix='bad_N{}_'.format(N))
-        plotter_multismc.plot_particle_moments(good_run['mean'], good_run['var'], name_suffix='good_N{}'.format(N))
+        bad_run, middle_run = get_extremal_cases(output_multismc=results, N=N)
+        plotter_multismc.plot_particle_moments(bad_run['mean'], bad_run['var'], name_suffix='_bad_N{}_'.format(N))
+        plotter_multismc.plot_particle_moments(middle_run['mean'], middle_run['var'], name_suffix='_middle_N{}_'.format(N))
 
     plotter_multismc.plot_logLts_multiple_runs(results, nb_particles, nb_runs, t_start)
 
