@@ -63,7 +63,6 @@ class Plotter:
         nb_graphs = min(nb_particles, 5)
         nb_axes = 3
         nb_figures = int(np.ceil(self.dim_states / nb_axes))
-        # t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
         if self.dim_states == 18:
             state_names = ['$x_H$', '$y_H$', r'$\varphi_0$', r'$\varphi_1$', r'$\varphi_2$', r'$\varphi_3$',
                            r'$\dot x_H$', r'$\dot y_H$', r'$\dot \varphi_0$', r'$\dot \varphi_1$', r'$\dot \varphi_2$',
@@ -125,7 +124,6 @@ class Plotter:
         nb_graphs = min(nb_samples, 5)
         nb_axes = 3
         nb_figures = int(np.ceil(self.dim_states / nb_axes))
-        # t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
         if self.dim_states == 18:
             state_names = ['$x_H$', '$y_H$', r'$\varphi_0$', r'$\varphi_1$', r'$\varphi_2$', r'$\varphi_3$',
                            r'$\dot x_H$', r'$\dot y_H$', r'$\dot \varphi_0$', r'$\dot \varphi_1$', r'$\dot \varphi_2$',
@@ -182,7 +180,6 @@ class Plotter:
     def plot_particle_moments(self, particles_mean, particles_var, name_suffix=''):
         nb_axes = 3
         nb_figures = int(np.ceil(self.dim_states / nb_axes))
-        # t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
         particles_sd = np.sqrt(particles_var)
         if self.dim_states == 18:
             state_names = ['$x_H$', '$y_H$', r'$\varphi_0$', r'$\varphi_1$', r'$\varphi_2$', r'$\varphi_3$',
@@ -268,7 +265,6 @@ class Plotter:
         else:
             raise ValueError('Observation dimension has to be 20 or 36; got {} instead.'.format(self.dim_observations))
         _, _, nb_observations = obs.shape
-        # t_vals = np.linspace(0.0, nb_steps * self.delta_t, nb_steps)
         nb_axes = 3
         nb_figures = int(np.ceil(nb_observations / nb_axes))
         for i in range(0, nb_figures):
@@ -290,7 +286,6 @@ class Plotter:
         return None
 
     def plot_ESS(self, ESS):
-        # t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
         window_avg = np.ones(10) / 10.0
         moving_avg = np.convolve(ESS, window_avg, 'same')
         fig = plt.figure(figsize=(12, 8))
@@ -307,7 +302,6 @@ class Plotter:
         return None
 
     def plot_logLts_one_run(self, logLts):
-        # t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
         fig = plt.figure(figsize=(12, 8))
         plt.grid(axis='both')
         plt.plot(self.t_vals, logLts, label=r'$\log(p(y_{t}|y_{0:t-1}))$')
