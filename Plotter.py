@@ -179,7 +179,7 @@ class Plotter:
         plt.show()
         return None
 
-    def plot_particle_moments(self, particles_mean, particles_var):
+    def plot_particle_moments(self, particles_mean, particles_var, name_suffix=''):
         nb_axes = 3
         nb_figures = int(np.ceil(self.dim_states / nb_axes))
         # t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
@@ -233,7 +233,7 @@ class Plotter:
             fig_list.append(fig)
             axs_list.append(axs)
             if self.export_path is not None:
-                plt.savefig(self.export_path + '/MomentsTrajectories_' + str(i) + '.pdf')
+                plt.savefig(self.export_path + '/MomentsTrajectories_' + str(i) + name_suffix + '.pdf')
         plt.show()
 
         return None
