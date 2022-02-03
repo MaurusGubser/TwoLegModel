@@ -324,19 +324,23 @@ class Plotter:
         return residuals
 
     def plot_logLts_multiple_runs(self, output_multismc, nb_particles, nb_runs, t_start):
-        fig = plt.figure(figsize=(12, 8))
-        plt.grid(axis='both')
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
+        axs[0].grid(axis='both')
+        axs[1].grid(axis='both')
         for N in nb_particles:
             loglts = np.array([r['output'].summaries.logLts for r in output_multismc if r['N'] == N])
             mean_loglts = np.mean(loglts, axis=0)
             sd_loglots = np.std(loglts, axis=0)
 
-            plt.plot(self.t_vals, mean_loglts, label='Number particles={}'.format(N))
-            plt.fill_between(self.t_vals, mean_loglts - sd_loglots, mean_loglts + sd_loglots, alpha=0.5)
-            plt.legend()
-            plt.xlabel('t')
-            plt.ylabel('$p(y_{t}|y_{0:t-1})$')
-            fig.suptitle('Mean and var over {} runs'.format(nb_runs))
+            axs[0].plot(self.t_vals, mean_loglts, label='N={}'.format(N))
+            axs[0].fill_between(self.t_vals, mean_loglts - sd_loglots, mean_loglts + sd_loglots, alpha=0.5)
+            axs[0].legend()
+            axs[0].set_xlabel('t')
+            axs[0].set_ylabel('$p(y_{t}|y_{0:t-1})$')
+            axs[0].set_title('Mean and var over {} runs'.format(nb_runs))
+            axs[1].plot(self.t_vals, sd_loglots, label='N={}'.format(N))
+            axs[1].legend()
+            axs[1].set_title('Standard deviation')
             if self.export_path:
                 plt.savefig(self.export_path + '/Likelihoods_mean_var_nbparticles.pdf')
 
