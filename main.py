@@ -104,20 +104,41 @@ def plot_results(pf, x, y, dt, export_name, plt_smthng=False):
     return None
 
 
+def get_extremal_cases(output_multismc, N):
+    loglts = []
+    mean_X = []
+    var_X = []
+    for r in output_multismc:
+        if r['N'] == N:
+            loglts.append(np.sum(r['output'].summaries.logLts[t_start:]))
+            mean_X.append([stats['mean'] for stats in r['output'].summaries.moments])
+            var_X.append([stats['var'] for stats in r['output'].summaries.moments])
+    mean, sd = np.mean(loglts, axis=0), np.std(loglts, axis=0)
+    res = np.abs(loglts - mean)
+    idx_bad, idx_good = np.argmax(res), np.argmin(res)
+    print('Worst run has likelihood={}'.format(loglts[idx_bad]))
+    print('Best run has likelihood={}'.format(loglts[idx_good]))
+    bad_run = {'mean': np.array(mean_X[idx_bad]), 'var': np.array(var_X[idx_bad])}
+    good_run = {'mean': np.array(mean_X[idx_good]), 'var': np.array(var_X[idx_good])}
+    return bad_run, good_run
+
+
 def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t_start, export_name=None):
     start_user, start_process = time.time(), time.process_time()
-    results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, nprocs=-1)
+    results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, collect=[Moments], nprocs=-1)
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
     assert t_start < results[0]['output'].fk.T
-    for N in nb_particles:
-        last_loglts = [r['output'].logLt for r in results if r['N'] == N]
-        sum_loglts = [np.sum(r['output'].summaries.logLts[t_start:]) for r in results if r['N'] == N]
-        print('N={:.5E}, Mean last loglhd={:.5E}, Variance last loglhd={:.5E}'.format(N, np.mean(last_loglts),
-                                                                                      np.var(last_loglts)))
-        print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, np.mean(sum_loglts), np.var(sum_loglts)))
 
     plotter_multismc = Plotter(np.array(true_states), np.array(data), dt, export_name)
+    for N in nb_particles:
+        loglts = [np.sum(r['output'].summaries.logLts[t_start:]) for r in results if r['N'] == N]
+        mean, var = np.mean(loglts, axis=0), np.var(loglts, axis=0)
+        print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, mean, var))
+        bad_run, good_run = get_extremal_cases(output_multismc=results, N=N)
+        plotter_multismc.plot_particle_moments(bad_run['mean'], bad_run['var'], name_suffix='bad_N{}_'.format(N))
+        plotter_multismc.plot_particle_moments(good_run['mean'], good_run['var'], name_suffix='good_N{}'.format(N))
+
     plotter_multismc.plot_logLts_multiple_runs(results, nb_particles, nb_runs, t_start)
 
     return None
