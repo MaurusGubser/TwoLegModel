@@ -304,8 +304,8 @@ class Plotter:
     def plot_logLts_one_run(self, logLts):
         fig = plt.figure(figsize=(12, 8))
         plt.grid(axis='both')
-        plt.plot(self.t_vals, logLts, label=r'$\log(p(y_{t}|y_{0:t-1}))$')
-        fig.suptitle('Log likelihood factors')
+        plt.plot(self.t_vals, logLts, label=r'$\log(p(y_{t}))$')
+        fig.suptitle('Log likelihood')
         plt.legend()
         if self.export_path is not None:
             plt.savefig(self.export_path + '/LogLikelihoods.pdf')

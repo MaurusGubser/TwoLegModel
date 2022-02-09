@@ -81,7 +81,7 @@ def run_particle_filter(fk_model, nb_particles, ESSrmin=0.5):
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), nb_timesteps))
-    loglikelihood = np.sum(pf.summaries.logLts)
+    loglikelihood = pf.summaries.logLts[-1]
     print('Log likelihood = {:.3E}'.format(loglikelihood))
     return pf
 
@@ -104,20 +104,20 @@ def plot_results(pf, x, y, dt, export_name, plt_smthng=False):
     return None
 
 
-def get_extremal_cases(output_multismc, N):
-    loglts = []
+def get_extremal_cases(output_multismc, N, t_start):
+    logLts = []
     mean_X = []
     var_X = []
     for r in output_multismc:
         if r['N'] == N:
-            loglts.append(np.sum(r['output'].summaries.logLts[t_start:]))
+            logLts.append(r['output'].summaries.logLts[-1])
             mean_X.append([stats['mean'] for stats in r['output'].summaries.moments])
             var_X.append([stats['var'] for stats in r['output'].summaries.moments])
-    mean, sd = np.mean(loglts, axis=0), np.std(loglts, axis=0)
-    res = np.abs(loglts - mean)
+    mean, sd = np.mean(logLts, axis=0), np.std(logLts, axis=0)
+    res = np.abs(logLts - mean)
     idx_bad, idx_middle = np.argmax(res), np.argmin(res)
-    print('Worst run has likelihood={}'.format(loglts[idx_bad]))
-    print('Middle run has likelihood={}'.format(loglts[idx_middle]))
+    print('Worst run has likelihood={}'.format(logLts[idx_bad]))
+    print('Middle run has likelihood={}'.format(logLts[idx_middle]))
     bad_run = {'mean': np.array(mean_X[idx_bad]), 'var': np.array(var_X[idx_bad])}
     middle_run = {'mean': np.array(mean_X[idx_middle]), 'var': np.array(var_X[idx_middle])}
     return bad_run, middle_run
@@ -132,12 +132,13 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
 
     plotter_multismc = Plotter(np.array(true_states), np.array(data), dt, export_name)
     for N in nb_particles:
-        loglts = [np.sum(r['output'].summaries.logLts[t_start:]) for r in results if r['N'] == N]
-        mean, var = np.mean(loglts, axis=0), np.var(loglts, axis=0)
+        logLts = [r['output'].summaries.logLts[-1] for r in results if r['N'] == N]
+        mean, var = np.mean(logLts, axis=0), np.var(logLts, axis=0)
         print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, mean, var))
-        bad_run, middle_run = get_extremal_cases(output_multismc=results, N=N)
+        bad_run, middle_run = get_extremal_cases(output_multismc=results, N=N, t_start=t_start)
         plotter_multismc.plot_particle_moments(bad_run['mean'], bad_run['var'], name_suffix='_bad_N{}_'.format(N))
-        plotter_multismc.plot_particle_moments(middle_run['mean'], middle_run['var'], name_suffix='_middle_N{}_'.format(N))
+        plotter_multismc.plot_particle_moments(middle_run['mean'], middle_run['var'],
+                                               name_suffix='_middle_N{}_'.format(N))
 
     plotter_multismc.plot_logLts_multiple_runs(results, nb_particles, nb_runs, t_start)
 
@@ -190,8 +191,8 @@ if __name__ == '__main__':
 
     # ---------------------------- model ----------------------------
     dt = 0.01
-    dim_states = 18
-    dim_observations = 20
+    dim_states = 18  # 18
+    dim_observations = dim_obs  # 20
     femur_left = 0.5  # 0.5
     fibula_left = 0.6  # 0.6
     femur_right = 0.5  # 0.5
@@ -274,8 +275,8 @@ if __name__ == '__main__':
     # plot_results(pf, x, y, dt, export_name_single, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [10, 20]
-    nb_runs = 50
+    Ns = [100, 200]
+    nb_runs = 20
     t_start = 0
     export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
         generation_type,
@@ -286,8 +287,7 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    analyse_likelihood(fk_model=fk_guided, true_states=x, data=y, dt=dt, nb_particles=Ns, nb_runs=nb_runs,
-                       t_start=t_start, export_name=export_name_multi)
+    analyse_likelihood(fk_guided, x, y, dt, Ns, nb_runs, t_start, export_name=export_name_multi)
 
     # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False
