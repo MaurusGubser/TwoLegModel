@@ -330,7 +330,7 @@ class Plotter:
             axs[0].fill_between(self.t_vals, mean_loglts - sd_loglots, mean_loglts + sd_loglots, alpha=0.5)
             axs[0].legend()
             axs[0].set_xlabel('t')
-            axs[0].set_ylabel('$p(y_{t}|y_{0:t-1})$')
+            axs[0].set_ylabel('$p(y_{t})$')
             axs[0].set_title('Mean and var over {} runs'.format(nb_runs))
             axs[1].plot(self.t_vals, sd_loglots, label='N={}'.format(N))
             axs[1].legend()
@@ -339,7 +339,7 @@ class Plotter:
                 plt.savefig(self.export_path + '/Likelihoods_mean_var_nbparticles.pdf')
 
         fig = plt.figure(figsize=(12, 8))
-        sb.boxplot(x=[np.sum(r['output'].summaries.logLts[t_start:]) for r in output_multismc],
+        sb.boxplot(x=[r['output'].summaries.logLts[-1] for r in output_multismc],
                    y=[str(r['N']) for r in output_multismc])
         plt.xlabel('$p(y_{0:T})$')
         plt.ylabel('Number of particles')
@@ -348,7 +348,7 @@ class Plotter:
             plt.savefig(self.export_path + '/Likelihood_Boxplot.pdf')
 
         fig = plt.figure(figsize=(12, 8))
-        sb.histplot(x=[np.sum(r['output'].summaries.logLts[t_start:]) for r in output_multismc],
+        sb.histplot(x=[r['output'].summaries.logLts[-1] for r in output_multismc],
                     hue=[str(r['N']) for r in output_multismc], multiple='dodge')
         plt.xlabel('Bins of $p(y_{0:T})$')
         fig.suptitle('Histogram of log likelihood over {} runs of {} timesteps'.format(nb_runs, self.nb_steps))
