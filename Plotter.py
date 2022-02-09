@@ -330,7 +330,7 @@ class Plotter:
             axs[0].fill_between(self.t_vals, mean_loglts - sd_loglots, mean_loglts + sd_loglots, alpha=0.5)
             axs[0].legend()
             axs[0].set_xlabel('t')
-            axs[0].set_ylabel('$p(y_{t})$')
+            axs[0].set_ylabel('$p(y_{0:t})$')
             axs[0].set_title('Mean and var over {} runs'.format(nb_runs))
             axs[1].plot(self.t_vals, sd_loglots, label='N={}'.format(N))
             axs[1].legend()
