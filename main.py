@@ -110,7 +110,7 @@ def get_extremal_cases(output_multismc, N, t_start):
     var_X = []
     for r in output_multismc:
         if r['N'] == N:
-            logLts.append(r['output'].summaries.logLts[-1])
+            logLts.append(r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start])
             mean_X.append([stats['mean'] for stats in r['output'].summaries.moments])
             var_X.append([stats['var'] for stats in r['output'].summaries.moments])
     mean, sd = np.mean(logLts, axis=0), np.std(logLts, axis=0)
@@ -132,7 +132,7 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
 
     plotter_multismc = Plotter(np.array(true_states), np.array(data), dt, export_name)
     for N in nb_particles:
-        logLts = [r['output'].summaries.logLts[-1] for r in results if r['N'] == N]
+        logLts = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in results if r['N'] == N]
         mean, var = np.mean(logLts, axis=0), np.var(logLts, axis=0)
         print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, mean, var))
         bad_run, middle_run = get_extremal_cases(output_multismc=results, N=N, t_start=t_start)
