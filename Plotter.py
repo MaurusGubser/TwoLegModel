@@ -11,7 +11,7 @@ def compute_hist_stats(X_hist):
 
 
 class Plotter:
-    def __init__(self, true_states, true_obs, delta_t, export_name):
+    def __init__(self, true_states, true_obs, delta_t, export_name, show_fig):
         nb_steps_states, _, dim_states = true_states.shape
         nb_steps_obs, _, dim_observations = true_obs.shape
         if nb_steps_states != nb_steps_obs:
@@ -24,6 +24,7 @@ class Plotter:
         self.true_states = true_states
         self.true_obs = true_obs
         self.export_name = export_name
+        self.show_fig = show_fig
         self.export_path = self.set_export_path()
         self.contact_left = np.zeros((nb_steps_obs, 1))
         self.contact_right = np.zeros((nb_steps_obs, 1))
@@ -111,7 +112,8 @@ class Plotter:
             axs_list.append(axs)
             if self.export_path is not None:
                 plt.savefig(self.export_path + '/ParticleTrajectories_' + str(i) + '.pdf')
-        plt.show()
+        if self.show_fig:
+            plt.show()
         return None
 
     def plot_smoothed_trajectories(self, samples):
@@ -174,7 +176,8 @@ class Plotter:
             axs_list.append(axs)
             if self.export_path is not None:
                 plt.savefig(self.export_path + '/SmoothedTrajectories_' + str(i) + '.pdf')
-        plt.show()
+        if self.show_fig:
+            plt.show()
         return None
 
     def plot_particle_moments(self, particles_mean, particles_var, name_suffix=''):
@@ -231,8 +234,8 @@ class Plotter:
             axs_list.append(axs)
             if self.export_path is not None:
                 plt.savefig(self.export_path + '/MomentsTrajectories_' + str(i) + name_suffix + '.pdf')
-        plt.show()
-
+        if self.show_fig:
+            plt.show()
         return None
 
     def plot_observations(self, samples, model):
@@ -282,7 +285,8 @@ class Plotter:
             fig.tight_layout()
             if self.export_path is not None:
                 plt.savefig(self.export_path + '/ObservationTrajectories_' + str(i) + '.pdf')
-        plt.show()
+        if self.show_fig:
+            plt.show()
         return None
 
     def plot_ESS(self, ESS):
@@ -298,7 +302,8 @@ class Plotter:
         plt.legend()
         if self.export_path is not None:
             plt.savefig(self.export_path + '/ESSTrajectories.pdf')
-        plt.show()
+        if self.show_fig:
+            plt.show()
         return None
 
     def plot_logLts_one_run(self, logLts):
@@ -309,7 +314,8 @@ class Plotter:
         plt.legend()
         if self.export_path is not None:
             plt.savefig(self.export_path + '/LogLikelihoods.pdf')
-        plt.show()
+        if self.show_fig:
+            plt.show()
         return None
 
     def compute_residuals(self, observations):
@@ -355,5 +361,6 @@ class Plotter:
         fig.suptitle('Histogram of log likelihood over {} runs of {} timesteps'.format(nb_runs, self.nb_steps))
         if self.export_path:
             plt.savefig(self.export_path + '/Likelihood_Histogram.pdf')
-        plt.show()
+        if self.show_fig:
+            plt.show()
         return None

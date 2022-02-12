@@ -86,8 +86,9 @@ def run_particle_filter(fk_model, nb_particles, ESSrmin=0.5):
     return pf
 
 
-def plot_results(pf, x, y, dt, export_name, plt_smthng=False):
-    plotter_single_run = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt, export_name=export_name)
+def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
+    plotter_single_run = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt, show_fig=show_fig,
+                                 export_name=export_name)
 
     plotter_single_run.plot_observations(np.array(pf.hist.X), model=my_model)
     # plotter_single_run.plot_particles_trajectories(np.array(pf.hist.X))
@@ -123,16 +124,17 @@ def get_extremal_cases(output_multismc, N, t_start):
     return bad_run, middle_run
 
 
-def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t_start, export_name=None):
+def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t_start, show_fig, export_name=None):
     start_user, start_process = time.time(), time.process_time()
     results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, collect=[Moments], nprocs=-1)
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
     assert t_start < results[0]['output'].fk.T
 
-    plotter_multismc = Plotter(np.array(true_states), np.array(data), dt, export_name)
+    plotter_multismc = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig=show_fig)
     for N in nb_particles:
-        logLts = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in results if r['N'] == N]
+        logLts = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in results if
+                  r['N'] == N]
         mean, var = np.mean(logLts, axis=0), np.var(logLts, axis=0)
         print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, mean, var))
         bad_run, middle_run = get_extremal_cases(output_multismc=results, N=N, t_start=t_start)
@@ -275,9 +277,10 @@ if __name__ == '__main__':
     # plot_results(pf, x, y, dt, export_name_single, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [100, 200]
+    Ns = [10, 20]
     nb_runs = 20
     t_start = 0
+    show_fig = False
     export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
         generation_type,
         nb_timesteps, Ns,
@@ -287,7 +290,7 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    analyse_likelihood(fk_guided, x, y, dt, Ns, nb_runs, t_start, export_name=export_name_multi)
+    analyse_likelihood(fk_guided, x, y, dt, Ns, nb_runs, t_start, show_fig=show_fig, export_name=export_name_multi)
 
     # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False
