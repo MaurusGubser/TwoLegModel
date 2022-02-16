@@ -15,6 +15,7 @@ from particles import smc_samplers as ssp
 from DataReaderWriter import DataReaderWriter
 from TwoLegSMCModel import TwoLegModel
 from Plotter import Plotter
+from CustomMCMC import CustomPMMH
 
 
 def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
@@ -149,8 +150,13 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
 
 def learn_model_parameters(prior_dict, my_prior, learning_alg):
     if learning_alg == 'pmmh':
-        alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
-                        data=y, Nx=1000, niter=100, verbose=100, adaptive=True, scale=1.0)
+        alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF,
+                        smc_options={'ESSrmin': 0.5}, data=y, Nx=100, niter=100, verbose=100,
+                        adaptive=True, scale=1.0, t_start=50)
+    elif learning_alg == 'cpmmh':
+        alg = CustomPMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF,
+                         smc_options={'ESSrmin': 0.5}, data=y, Nx=100, niter=100, verbose=100,
+                         adaptive=True, scale=1.0)
     elif learning_alg == 'gibbs':
         alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                                  verbose=5)
@@ -165,7 +171,7 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg):
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
 
-    if learning_alg == 'pmmh' or learning_alg == 'gibbs':
+    if learning_alg == 'pmmh' or learning_alg == 'cpmmh' or learning_alg == 'gibbs':
         burnin = 0  # discard the __ first iterations
         for i, param in enumerate(prior_dict.keys()):
             plt.figure()
@@ -290,7 +296,7 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    analyse_likelihood(fk_guided, x, y, dt, Ns, nb_runs, t_start, show_fig=show_fig, export_name=export_name_multi)
+    # analyse_likelihood(fk_guided, x, y, dt, Ns, nb_runs, t_start, show_fig=show_fig, export_name=export_name_multi)
 
     # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False
@@ -299,5 +305,5 @@ if __name__ == '__main__':
     add_imu = False
     add_alphas = True
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
-    learning_alg = 'pmmh'  # pmmh, gibbs, smc2
-    # learn_model_parameters(prior_dict, my_prior, learning_alg)
+    learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
+    learn_model_parameters(prior_dict, my_prior, learning_alg)
