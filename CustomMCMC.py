@@ -14,7 +14,7 @@ from particles.mcmc import PMMH
 from particles.collectors import Moments
 
 
-class TruncatedPMMH(PMMH):
+class CustomPMMH(PMMH):
     def __init__(self, niter=10, verbose=0, ssm_cls=None,
                  smc_cls=particles.SMC, prior=None, data=None, smc_options=None,
                  fk_cls=Bootstrap, Nx=100, theta0=None, adaptive=True, scale=1.,
