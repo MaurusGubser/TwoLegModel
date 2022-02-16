@@ -148,15 +148,15 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
     return None
 
 
-def learn_model_parameters(prior_dict, my_prior, learning_alg):
+def learn_model_parameters(prior_dict, my_prior, learning_alg, t_start):
     if learning_alg == 'pmmh':
         alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF,
                         smc_options={'ESSrmin': 0.5}, data=y, Nx=100, niter=100, verbose=100,
-                        adaptive=True, scale=1.0, t_start=50)
+                        adaptive=True, scale=1.0)
     elif learning_alg == 'cpmmh':
         alg = CustomPMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF,
                          smc_options={'ESSrmin': 0.5}, data=y, Nx=100, niter=100, verbose=100,
-                         adaptive=True, scale=1.0)
+                         adaptive=True, scale=1.0, t_start=t_start)
     elif learning_alg == 'gibbs':
         alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                                  verbose=5)
@@ -305,5 +305,6 @@ if __name__ == '__main__':
     add_imu = False
     add_alphas = True
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
+    t_start = 500
     learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
-    learn_model_parameters(prior_dict, my_prior, learning_alg)
+    learn_model_parameters(prior_dict, my_prior, learning_alg, t_start)
