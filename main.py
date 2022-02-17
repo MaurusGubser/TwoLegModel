@@ -15,7 +15,7 @@ from particles import smc_samplers as ssp
 from DataReaderWriter import DataReaderWriter
 from TwoLegSMCModel import TwoLegModel
 from Plotter import Plotter
-from CustomMCMC import CustomPMMH
+from custom_mcmc import TruncatedPMMH
 
 
 def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
@@ -154,9 +154,9 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg, t_start):
                         smc_options={'ESSrmin': 0.5}, data=y, Nx=100, niter=100, verbose=100,
                         adaptive=True, scale=1.0)
     elif learning_alg == 'cpmmh':
-        alg = CustomPMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF,
-                         smc_options={'ESSrmin': 0.5}, data=y, Nx=100, niter=100, verbose=100,
-                         adaptive=True, scale=1.0, t_start=t_start)
+        alg = TruncatedPMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF,
+                            smc_options={'ESSrmin': 0.5}, data=y, Nx=100, niter=100, verbose=100,
+                            adaptive=True, scale=1.0, t_start=t_start)
     elif learning_alg == 'gibbs':
         alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
                                  verbose=5)
@@ -193,7 +193,7 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg, t_start):
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 100
+    nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -266,10 +266,10 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 1000
+    nb_particles = 500
     # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    # pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
+    pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
 
     # ---------------------------- plot results ----------------------------
     export_name_single = 'SingleRun_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -280,7 +280,8 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    # plot_results(pf, x, y, dt, export_name_single, plt_smthng=False)
+    show_fig = True
+    plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
     Ns = [10, 20]
@@ -307,4 +308,4 @@ if __name__ == '__main__':
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
     t_start = 500
     learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
-    learn_model_parameters(prior_dict, my_prior, learning_alg, t_start)
+    # learn_model_parameters(prior_dict, my_prior, learning_alg, t_start)
