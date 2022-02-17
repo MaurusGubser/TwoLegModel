@@ -160,6 +160,10 @@ class MvStudent(ProbDist):
 
 
 class MvNormalMissingObservations(MvNormal):
+
+    def __init__(self, loc=0., scale=1., cov=None):
+        MvNormal.__init__(self, loc=loc, scale=scale, cov=cov)
+
     def logpdf(self, x):
         nb_part, _ = x.shape
         assert nb_part == 1, 'x is expected to be 2-dimensional, got {} array instead'.format(x.shape)
