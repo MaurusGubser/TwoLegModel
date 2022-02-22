@@ -50,10 +50,10 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
         prior_imus = {'pos_imu0': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.5)}
         prior_dict.update(prior_imus)
     if add_alphas:
-        prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.3),
-                        'alpha_1': dists.Normal(loc=0.0, scale=0.3),
-                        'alpha_2': dists.Normal(loc=0.0, scale=0.3),
-                        'alpha_3': dists.Normal(loc=0.0, scale=0.3)}
+        prior_alphas = {'alpha_0': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
+                        'alpha_1': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
+                        'alpha_2': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
+                        'alpha_3': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57)}
         prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.5)}
         prior_dict.update(prior_alphas)
     return prior_dict, dists.StructDist(prior_dict)
