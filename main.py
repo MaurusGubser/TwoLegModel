@@ -148,22 +148,22 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
     return None
 
 
-def learn_model_parameters(prior_dict, my_prior, learning_alg, t_start):
+def learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start):
     if learning_alg == 'pmmh':
         alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF,
-                        smc_options={'ESSrmin': 0.5}, data=y, Nx=100, niter=100, verbose=100,
+                        smc_options={'ESSrmin': 0.5}, data=y, Nx=Nx, niter=100, verbose=100,
                         adaptive=True, scale=1.0)
     elif learning_alg == 'cpmmh':
         alg = TruncatedPMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF,
-                            smc_options={'ESSrmin': 0.5}, data=y, Nx=100, niter=100, verbose=100,
+                            smc_options={'ESSrmin': 0.5}, data=y, Nx=Nx, niter=100, verbose=100,
                             adaptive=True, scale=1.0, t_start=t_start)
     elif learning_alg == 'gibbs':
-        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=100, niter=10,
+        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=Nx, niter=10,
                                  verbose=5)
     elif learning_alg == 'smc2':
-        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=20,
+        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=Nx,
                            ar_to_increase_Nx=-1.0, smc_options={'verbose': True})
-        alg = particles.SMC(fk=fk_smc2, N=10)
+        alg = particles.SMC(fk=fk_smc2, N=N)
     else:
         raise ValueError("learning_alg has to be one of 'pmmh', 'gibbs', 'smc2'; got {} instead.".format(learning_alg))
     start_user, start_process = time.time(), time.process_time()
@@ -306,6 +306,8 @@ if __name__ == '__main__':
     add_imu = False
     add_alphas = True
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
+    Nx = 5000
+    N = 20
     t_start = 500
     learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
-    # learn_model_parameters(prior_dict, my_prior, learning_alg, t_start)
+    learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start)
