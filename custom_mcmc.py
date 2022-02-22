@@ -69,4 +69,4 @@ class TruncatedPMMH(PMMH):
         if np.isfinite(self.prop.lpost[0]):
             pf = self.alg_instance(ssp.rec_to_dict(self.prop.theta[0]))
             pf.run()
-            self.prop.lpost[0] += pf.summaries.logLts[-1] - pf.summaries.logLts[self.t_start]    # pf.logLt[self.t_start:]
+            self.prop.lpost[0] += pf.summaries.logLts[-1] - pf.summaries.logLts[self.t_start]
