@@ -148,18 +148,18 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
     return None
 
 
-def learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start):
+def learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, niter):
     if learning_alg == 'pmmh':
         alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF,
-                        smc_options={'ESSrmin': 0.5}, data=y, Nx=Nx, niter=100, verbose=100,
+                        smc_options={'ESSrmin': 0.5}, data=y, Nx=Nx, niter=niter, verbose=niter,
                         adaptive=True, scale=1.0)
     elif learning_alg == 'cpmmh':
         alg = TruncatedPMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF,
-                            smc_options={'ESSrmin': 0.5}, data=y, Nx=Nx, niter=100, verbose=100,
+                            smc_options={'ESSrmin': 0.5}, data=y, Nx=Nx, niter=niter, verbose=niter,
                             adaptive=True, scale=1.0, t_start=t_start)
     elif learning_alg == 'gibbs':
-        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=Nx, niter=10,
-                                 verbose=5)
+        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=Nx, niter=niter,
+                                 verbose=niter)
     elif learning_alg == 'smc2':
         fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=Nx,
                            ar_to_increase_Nx=-1.0, smc_options={'verbose': True})
@@ -269,7 +269,7 @@ if __name__ == '__main__':
     nb_particles = 500
     # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
+    # pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
 
     # ---------------------------- plot results ----------------------------
     export_name_single = 'SingleRun_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -281,7 +281,7 @@ if __name__ == '__main__':
         factor_H,
         factor_proposal)
     show_fig = True
-    plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=False)
+    # plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
     Ns = [10, 20]
@@ -306,8 +306,9 @@ if __name__ == '__main__':
     add_imu = False
     add_alphas = True
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
-    Nx = 5000
+    Nx = 1000
     N = 20
     t_start = 500
+    niter = 100
     learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
-    learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start)
+    learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)
