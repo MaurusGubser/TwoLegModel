@@ -138,11 +138,12 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
                   r['N'] == N]
         mean, var = np.mean(logLts, axis=0), np.var(logLts, axis=0)
         print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, mean, var))
+        """
         bad_run, middle_run = get_extremal_cases(output_multismc=results, N=N, t_start=t_start)
         plotter_multismc.plot_particle_moments(bad_run['mean'], bad_run['var'], name_suffix='_bad_N{}_'.format(N))
         plotter_multismc.plot_particle_moments(middle_run['mean'], middle_run['var'],
                                                name_suffix='_middle_N{}_'.format(N))
-
+        """
     plotter_multismc.plot_logLts_multiple_runs(results, nb_particles, nb_runs, t_start)
 
     return None
@@ -284,10 +285,10 @@ if __name__ == '__main__':
     # plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [10, 20]
-    nb_runs = 20
-    t_start = 0
-    show_fig = False
+    Ns = [1000, 2000]
+    nb_runs = 30
+    t_start = 500
+    show_fig = True
     export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
         generation_type,
         nb_timesteps, Ns,
@@ -297,7 +298,7 @@ if __name__ == '__main__':
         factor_Q,
         factor_H,
         factor_proposal)
-    # analyse_likelihood(fk_guided, x, y, dt, Ns, nb_runs, t_start, show_fig=show_fig, export_name=export_name_multi)
+    analyse_likelihood(fk_guided, x, y, dt, Ns, nb_runs, t_start, show_fig=show_fig, export_name=export_name_multi)
 
     # ---------------------------- loglikelihood stats ----------------------------
     add_Q = False
@@ -311,4 +312,4 @@ if __name__ == '__main__':
     t_start = 500
     niter = 100
     learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
-    learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)
+    # learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)
