@@ -334,15 +334,16 @@ class Plotter:
             mean_loglts = np.mean(loglts, axis=0)
             sd_loglots = np.std(loglts, axis=0)
 
-            axs[0].plot(self.t_vals[t_start:], mean_loglts[t_start:], label='N={}'.format(N))
-            axs[0].fill_between(self.t_vals[t_start:], mean_loglts[t_start:] - sd_loglots[t_start:], mean_loglts[t_start:] + sd_loglots[t_start:], alpha=0.5)
+            axs[0].plot(self.t_vals, mean_loglts, label='N={}'.format(N))
+            axs[0].fill_between(self.t_vals, mean_loglts - sd_loglots, mean_loglts + sd_loglots, alpha=0.5)
             axs[0].legend()
             axs[0].set_xlabel('t')
-            axs[0].set_ylabel('$\log(p(y_{t_{0}+1:t}|y_{0:t_{0}}))$')
+            axs[0].set_ylabel('$\log(p(y_{0:t}))$')
             axs[0].set_title('Mean and var over {} runs'.format(nb_runs))
-            axs[1].plot(self.t_vals[t_start:], sd_loglots[t_start:], label='N={}'.format(N))
+            axs[1].plot(self.t_vals, sd_loglots, label='N={}'.format(N))
             axs[1].legend()
-            axs[1].set_title('Standard deviation')
+            axs[1].set_xlabel('t')
+            axs[1].set_title('Standard deviation of $\log(p(y_{0:t}))$')
             if self.export_path:
                 plt.savefig(self.export_path + '/Likelihoods_mean_var_nbparticles.pdf')
 
