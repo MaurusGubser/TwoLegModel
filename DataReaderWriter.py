@@ -25,8 +25,9 @@ class DataReaderWriter:
         return None
 
     def read_observations_as_arr(self, path_observations, max_timesteps):
-        col_names = ['time', 'obs1', 'obs2', 'obs3', 'obs4', 'obs5', 'obs6']
+        col_names = ['time', 'obs1', 'obs2', 'obs3', 'obs4', 'obs5', 'obs6', 'last']
         df = pd.read_csv(path_observations, index_col=None, names=col_names)
+        df.drop(columns=col_names[-1], inplace=True)
         df = df[df['time'] != '#time'].reset_index(drop=True)
 
         pattern_obs = '[#] Observations'
@@ -34,6 +35,7 @@ class DataReaderWriter:
         sensors_measurements = []
         for i, j in pairwise(sensor_idxs):
             df_sensor = df.iloc[i + 1:j]
+            df_sensor.columns = ['time'] + [col_name + '_' + str(i) for col_name in df_sensor.columns[1:]]
             sensors_measurements.append(df_sensor)
         last_idx = sensor_idxs[-1] + 1
         sensors_measurements.append(df[last_idx:])
