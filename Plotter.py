@@ -373,7 +373,7 @@ class Plotter:
         if self.export_path:
             plt.savefig(self.export_path + '/Likelihood_different_start_times.pdf')
 
-        # N-var plot
+        # N-vs-var plot
         fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
         axs[0].grid(axis='both')
         axs[1].grid(axis='both')
@@ -386,7 +386,7 @@ class Plotter:
         axs[1].plot(nb_particles, means_N_truncated, marker='o')
         axs[1].set_xlabel('N')
         axs[1].set_ylabel('$\log(p(y_{t_{0}:T} | y_{0:t_{0}+1}))$')
-        axs[1].set_title('Log likelihood for different N')
+        axs[1].set_title('Truncated log likelihood for different N')
         if self.export_path:
             plt.savefig(self.export_path + '/N_vs_loglikelihood.pdf')
 
