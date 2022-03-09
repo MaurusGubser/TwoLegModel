@@ -71,7 +71,7 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 200
+    nb_timesteps = 500
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -148,9 +148,9 @@ if __name__ == '__main__':
     # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
 
-    Ns = [100, 200]
+    Ns = [100, 200, 300, 400, 500]
     nb_runs = 10
-    t_start = 100
+    t_start = 250
     show_fig = True
     export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
         generation_type,
