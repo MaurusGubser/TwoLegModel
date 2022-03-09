@@ -313,7 +313,6 @@ class Plotter:
         plt.xlabel('t')
         plt.ylabel(r'$\log(p(y_{0:t}))$')
         fig.suptitle('Log likelihood')
-        plt.legend()
         if self.export_path is not None:
             plt.savefig(self.export_path + '/LogLikelihoods.pdf')
         if self.show_fig:
