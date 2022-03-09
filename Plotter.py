@@ -351,7 +351,7 @@ class Plotter:
         fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
         axs[0].grid(axis='both')
         axs[1].grid(axis='both')
-        t_start_vals = np.arange(0, t_start, t_start // 10)
+        t_start_vals = np.arange(0, t_start + 1, t_start // 20)
         for N in nb_particles:
             logLts_N = np.array([r['output'].summaries.logLts for r in output_multismc if r['N'] == N])
             logLts_truncated = np.array([logLts_N[:, -1] - logLts_N[:, t] for t in t_start_vals]).T
