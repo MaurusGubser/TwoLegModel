@@ -354,7 +354,7 @@ class Plotter:
         fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
         axs[0].grid(axis='both')
         axs[1].grid(axis='both')
-        t_start_vals = np.arange(0, t_start + 1, t_start // 20)
+        t_start_vals = np.arange(0, t_start + 1, t_start // 50)
         for key, loglts in logLts_data.items():
             logLts_truncated = np.array([loglts[:, -1] - loglts[:, t] for t in t_start_vals]).T
             mean_truncated = np.mean(logLts_truncated, axis=0)
