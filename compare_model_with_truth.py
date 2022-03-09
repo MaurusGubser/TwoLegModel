@@ -51,8 +51,8 @@ def plot_observations(model, x, y_true, supress_zeros, export_name=None):
 
 
 # ---------- data -----------------
-path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
-path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations_normal.dat'
+path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Missingdata005/truth.dat'
+path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Missingdata005/noised_observations.dat'
 data_reader = DataReaderWriter()
 max_timesteps = 1000
 data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
