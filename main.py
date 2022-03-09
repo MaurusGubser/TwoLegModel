@@ -7,7 +7,7 @@ import particles
 from collections import OrderedDict
 
 from particles import distributions as dists
-from particles.collectors import Moments
+from particles.collectors import Moments, LogLts
 from particles import state_space_models as ssm
 from particles import mcmc
 from particles import smc_samplers as ssp
@@ -15,7 +15,7 @@ from particles import smc_samplers as ssp
 from DataReaderWriter import DataReaderWriter
 from TwoLegSMCModel import TwoLegModel
 from Plotter import Plotter
-from custom_mcmc import TruncatedPMMH
+from CustomMCMC import TruncatedPMMH
 
 
 def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
@@ -54,7 +54,8 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
                         'alpha_1': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
                         'alpha_2': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
                         'alpha_3': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57)}
-        prior_alphas = {'alpha_0': dists.Normal(loc=0.0, scale=0.5)}
+        prior_alphas = {'alpha_0': dists.TruncNormal(mu=0.0, sigma=1.0, a=-2.0, b=2.0),
+                        'alpha_2': dists.TruncNormal(mu=0.0, sigma=1.0, a=-2.0, b=2.0)}
         prior_dict.update(prior_alphas)
     return prior_dict, dists.StructDist(prior_dict)
 
@@ -125,12 +126,15 @@ def get_extremal_cases(output_multismc, N, t_start):
     return bad_run, middle_run
 
 
+
+
+
 def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t_start, show_fig, export_name=None):
     start_user, start_process = time.time(), time.process_time()
-    results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, collect=[Moments], nprocs=-1)
+    results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, collect=[Moments()], nprocs=-1)
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
-    assert t_start < results[0]['output'].fk.T
+    assert t_start < results[0]['output'].fk.T, 'Start time should be shorter than number of steps.'
 
     plotter_multismc = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig=show_fig)
     for N in nb_particles:
@@ -194,7 +198,7 @@ def learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, n
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 1000
+    nb_timesteps = 500
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -285,9 +289,9 @@ if __name__ == '__main__':
     # plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=False)
 
     # ---------------------------- loglikelihood stats ----------------------------
-    Ns = [1000, 2000]
-    nb_runs = 30
-    t_start = 500
+    Ns = [2000, 5000]
+    nb_runs = 10
+    t_start = 250
     show_fig = True
     export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
         generation_type,
@@ -309,7 +313,7 @@ if __name__ == '__main__':
     prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
     Nx = 1000
     N = 20
-    t_start = 500
+    t_start = 100
     niter = 100
     learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
     # learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)
