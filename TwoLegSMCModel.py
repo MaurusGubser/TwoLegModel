@@ -2,7 +2,7 @@ import itertools
 import numpy as np
 from particles import state_space_models as ssm
 from particles import distributions as dists
-from custom_distributions import MvNormalMultiDimCov, MvStudent, MvNormalMissingObservations
+from CustomDistributions import MvNormalMultiDimCov, MvStudent, MvNormalMissingObservations
 from scipy.linalg import block_diag
 
 from MechanicalModel import state_to_obs, compute_jacobian_obs, state_to_obs_linear, create_rotation_matrix_z
