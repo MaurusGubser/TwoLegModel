@@ -30,7 +30,8 @@ class Plotter:
         self.contact_right = np.zeros((nb_steps_obs, 1))
         self.set_contacts()
         self.delta_t = delta_t
-        self.t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
+        # self.t_vals = np.linspace(0.0, self.nb_steps * self.delta_t, self.nb_steps)
+        self.t_vals = np.arange(0, self.nb_steps)
 
     def set_export_path(self):
         if self.export_name:
@@ -370,7 +371,7 @@ class Plotter:
             axs[1].legend()
         fig.suptitle('Truncated log for different starting times $ t_{0} $.')
         if self.export_path:
-            plt.savefig(self.export_path + 'Likelihood_different_start_times.pdf')
+            plt.savefig(self.export_path + '/Likelihood_different_start_times.pdf')
 
         # boxplot of truncated logLts
         fig = plt.figure(figsize=(12, 8))
