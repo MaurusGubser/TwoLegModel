@@ -60,7 +60,7 @@ def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 500
+    nb_timesteps = 200
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -93,11 +93,11 @@ if __name__ == '__main__':
     scale_phi = 10000000.0  # 10000000.0
     factor_Q = 1.0  # 1.0
     diag_Q = False
-    sigma_imu_acc = 0.01  # 0.01
-    sigma_imu_gyro = 0.01  # 0.01
-    sigma_press_velo = 0.01  # 0.01
-    sigma_press_acc = 0.1  # 0.1
-    factor_H = 10.0  # 10.0
+    sigma_imu_acc = 0.1  # 0.1
+    sigma_imu_gyro = 0.1  # 0.1
+    sigma_press_velo = 0.1  # 0.1
+    sigma_press_acc = 1.0  # 1.0
+    factor_H = 1.0  # 1.0
 
     factor_proposal = 1.2  # 1.2
 
@@ -133,8 +133,8 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 500
-    # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
+    nb_particles = 200
+    fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
 
@@ -148,4 +148,4 @@ if __name__ == '__main__':
         factor_H,
         factor_proposal)
     show_fig = True
-    plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=False)
+    plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=True)
