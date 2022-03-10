@@ -94,19 +94,14 @@ class Plotter:
                 axs[j].set_title(state_names[nb_axes * i + j])
                 axs[j].legend()
                 if state_names[nb_axes * i + j] == r'$y_H$':
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_left + 1.0, label='Contact left', color='red',
-                                          lw=1.5)
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_right + 1.0, label='Contact right', color='orange',
-                                          lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_left + 1.0, label='Contact left', color='red', lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_right + 1.0, label='Contact right', color='orange', lw=1.5)
                 elif state_names[nb_axes * i + j] == r'$\dot x_H$':
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_left + 0.6, label='Contact left', color='red',
-                                          lw=1.5)
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_right + 0.6, label='Contact right', color='orange',
-                                          lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_left + 0.6, label='Contact left', color='red', lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_right + 0.6, label='Contact right', color='orange', lw=1.5)
                 else:
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_right, label='Contact right', color='orange',
-                                          lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
             fig.suptitle('{} particle trajectories'.format(nb_graphs))
             fig.tight_layout()
             fig_list.append(fig)
@@ -119,11 +114,9 @@ class Plotter:
 
     def plot_smoothed_trajectories(self, samples):
         nb_steps, nb_samples, dim_states = samples.shape
-        if nb_steps != self.nb_steps or dim_states != self.dim_states:
-            raise AssertionError(
-                'Truth and states are not compatible: shape truth is {}; shape samples is {}'.format(
-                    self.true_states.shape,
-                    samples.shape))
+        assert nb_steps == self.nb_steps and dim_states == self.dim_states, 'Truth and states are not compatible: shape truth is {}; shape samples is {}'.format(
+            self.true_states.shape, samples.shape)
+
         nb_graphs = min(nb_samples, 5)
         nb_axes = 3
         nb_figures = int(np.ceil(self.dim_states / nb_axes))
@@ -132,8 +125,7 @@ class Plotter:
                            r'$\dot x_H$', r'$\dot y_H$', r'$\dot \varphi_0$', r'$\dot \varphi_1$', r'$\dot \varphi_2$',
                            r'$\dot \varphi_3$',
                            r'$\ddot x_H$', r'$\ddot y_H$', r'$\ddot \varphi_0$', r'$\ddot \varphi_1$',
-                           r'$\ddot \varphi_2$',
-                           r'$\ddot \varphi_3$']
+                           r'$\ddot \varphi_2$', r'$\ddot \varphi_3$']
         elif self.dim_states == 12:
             state_names = ['$x_H$', '$y_H$', r'$\varphi_0$', r'$\varphi_1$',
                            r'$\dot x_H$', r'$\dot y_H$', r'$\dot \varphi_0$', r'$\dot \varphi_1$',
@@ -156,21 +148,16 @@ class Plotter:
                 axs[j % nb_axes].plot(self.t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5,
                                       color='green')
                 if state_names[nb_axes * i + j] == r'$y_H$':
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_left + 1.0, label='Contact left', color='red',
-                                          lw=1.5)
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_right + 1.0, label='Contact right', color='orange',
-                                          lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_left + 1.0, label='Contact left', color='red', lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_right + 1.0, label='Contact right', color='orange', lw=1.5)
                 elif state_names[nb_axes * i + j] == r'$\dot x_H$':
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_left + 0.6, label='Contact left', color='red',
-                                          lw=1.5)
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_right + 0.6, label='Contact right', color='orange',
-                                          lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_left + 0.6, label='Contact left', color='red', lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_right + 0.6, label='Contact right', color='orange', lw=1.5)
                 else:
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_right, label='Contact right', color='orange',
-                                          lw=1.5)
-                axs[j % nb_axes].set_title(state_names[nb_axes * i + j])
-                axs[j % nb_axes].legend()
+                    axs[j].plot(self.t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
+                axs[j].set_title(state_names[nb_axes * i + j])
+                axs[j].legend()
             fig.suptitle('Smoothed samples')
             fig.tight_layout()
             fig_list.append(fig)
@@ -213,19 +200,14 @@ class Plotter:
                                     color='blue')
                 axs[j].plot(self.t_vals, self.true_states[:, :, nb_axes * i + j], label='Truth', color='green', lw=1.5)
                 if state_names[nb_axes * i + j] == r'$y_H$':
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_left + 1.0, label='Contact left', color='red',
-                                          lw=1.5)
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_right + 1.0, label='Contact right', color='orange',
-                                          lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_left + 1.0, label='Contact left', color='red', lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_right + 1.0, label='Contact right', color='orange', lw=1.5)
                 elif state_names[nb_axes * i + j] == r'$\dot x_H$':
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_left + 0.6, label='Contact left', color='red',
-                                          lw=1.5)
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_right + 0.6, label='Contact right', color='orange',
-                                          lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_left + 0.6, label='Contact left', color='red', lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_right + 0.6, label='Contact right', color='orange', lw=1.5)
                 else:
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
-                    axs[j % nb_axes].plot(self.t_vals, self.contact_right, label='Contact right', color='orange',
-                                          lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
                 axs[j].set_title(state_names[nb_axes * i + j])
                 axs[j].legend()
 
@@ -243,10 +225,8 @@ class Plotter:
         nb_steps, nb_samples, dim_states = samples.shape
         nb_graphs = min(nb_samples, 5)
         if nb_steps != self.nb_steps or dim_states != self.dim_states:
-            raise AssertionError(
-                'Truth and states are not compatible: shape truth is {}; shape samples is {}'.format(
-                    self.true_states.shape,
-                    samples.shape))
+            raise AssertionError('Truth and states are not compatible: shape truth is {}; shape samples is {}'.format(
+                self.true_states.shape, samples.shape))
         true_obs = self.true_obs
         obs = np.empty((nb_steps, nb_graphs, self.dim_observations))
         for i in range(0, nb_graphs):
@@ -281,6 +261,12 @@ class Plotter:
                     axs[j].plot(self.t_vals, obs[:, k, i * nb_axes + j], label='Sample {}'.format(k), lw=1)
                 axs[j].plot(self.t_vals, true_obs[:, :, i * nb_axes + j], label='True observation', color='green',
                             lw=1.5)
+                if obs_names[i * nb_axes + j] in ['$\ddot y^0$', '$\ddot y^1$', '$\ddot y^2$', '$\ddot y^3$']:
+                    axs[j].plot(self.t_vals, self.contact_left + 10.0, label='Contact left', color='red', lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_right + 10.0, label='Contact right', color='orange', lw=1.5)
+                else:
+                    axs[j].plot(self.t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
+                    axs[j].plot(self.t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
                 axs[j].legend()
                 axs[j].set_title(obs_names[i * nb_axes + j])
             fig.tight_layout()
