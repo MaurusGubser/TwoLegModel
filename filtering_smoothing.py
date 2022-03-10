@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
     nb_timesteps = 200
-    dim_obs = 20  # 20 or 36
+    dim_obs = 36  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
     # ---------------------------- model ----------------------------
@@ -148,4 +148,4 @@ if __name__ == '__main__':
         factor_H,
         factor_proposal)
     show_fig = True
-    plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=True)
+    plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=False)
