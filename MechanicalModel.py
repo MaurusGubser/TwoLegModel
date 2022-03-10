@@ -1,5 +1,5 @@
 import warnings
-
+from numba import jit
 import numpy as np
 
 
@@ -8,6 +8,7 @@ def create_rotation_matrix_z(alpha):
     return R
 
 
+@jit(nopython=True)
 def state_to_obs(x, dim_observations, g, legs, imus, R):
     nb_steps, _ = x.shape
     y = np.empty((nb_steps, 36))
@@ -77,10 +78,12 @@ def state_to_obs(x, dim_observations, g, legs, imus, R):
         x[:, 4] + x[:, 5]) + x[:, 13]
     y[:, 35] = 0.0
 
+    y = (R @ y.T).T
+    """
     y = np.matmul(R, y.T).T
-
     if dim_observations == 20:
         y = y[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
+    """
     return y
 
 
@@ -221,13 +224,16 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, imus, R):
     df[:, 34, 16] = legs[2] * np.sin(x[:, 4]) + legs[3] * np.sin(x[:, 4] + x[:, 5])
     df[:, 34, 17] = legs[3] * np.sin(x[:, 4] + x[:, 5])
 
+    df = R  @ df
+    """
     df = np.matmul(R, df)
-
     if dim_observations == 20:
         df = df[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34), :]
+    """
     return df
 
 
+@jit(nopython=True)
 def state_to_obs_linear(x, xp, dim_states, dim_observations, g, legs, cst, R):
     if xp is None:
         xp = np.zeros(x.shape)
@@ -259,12 +265,15 @@ class MechanicalModel:
                     self.A[row, col] = self.dt ** 2 / 2.0
         return None
 
+    @jit(nopython=True)
     def state_transition(self, x):
         return np.matmul(self.A, x.T).T
 
+    @jit(nopython=True)
     def state_to_observation(self, x):
         return state_to_obs(x, self.dim_observations, self.g, self.legs, self.cst, self.R)
 
+    @jit(nopython=True)
     def compute_jacobian_observation(self, x):
         return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.legs, self.cst, self.R)
 
@@ -280,5 +289,6 @@ class MechanicalModel:
             df[:, j] = delta_f / (2 * delta_x)
         return df
 
+    @jit(nopython=True)
     def state_to_observation_linear(self, x, xp):
         return state_to_obs_linear(x, xp, self.dim_states, self.dim_observations, self.g, self.legs, self.cst, self.R)
