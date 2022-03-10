@@ -121,10 +121,11 @@ my_model = MechanicalModel(dt=dt,
                            )
 
 # -------- Data -----------
-path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Largetimestep/truth.dat'
-path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Largetimestep/noised_observations.dat'
+### EKF cannot handle missing data so far! ###
+path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth.dat'
+path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations.dat'
 data_reader = DataReaderWriter()
-max_timesteps = 100
+max_timesteps = 1000
 data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
 data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
 data_reader.prepare_lists()
