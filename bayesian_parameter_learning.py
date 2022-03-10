@@ -1,20 +1,15 @@
-import os
 import time
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sb
 import particles
-from collections import OrderedDict
 
 from particles import distributions as dists
-from particles.collectors import Moments, LogLts
 from particles import state_space_models as ssm
 from particles import mcmc
 from particles import smc_samplers as ssp
 
 from DataReaderWriter import DataReaderWriter
 from TwoLegSMCModel import TwoLegModel
-from Plotter import Plotter
 from CustomMCMC import TruncatedPMMH
 
 
