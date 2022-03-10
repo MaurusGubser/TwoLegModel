@@ -121,10 +121,10 @@ my_model = MechanicalModel(dt=dt,
                            )
 
 # -------- Data -----------
-path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/truth_normal.dat'
-path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Normal/noised_observations_normal.dat'
+path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Largetimestep/truth.dat'
+path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Largetimestep/noised_observations.dat'
 data_reader = DataReaderWriter()
-max_timesteps = 1000
+max_timesteps = 100
 data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
 data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
 data_reader.prepare_lists()
@@ -136,18 +136,18 @@ if DIM_OBSERVATIONS == 20:
 obs = np.reshape(obs, (max_timesteps, 1, DIM_OBSERVATIONS))
 
 # -------- EKF -----------
-a = np.array([0.01, 1.06, -0.13, -0.25, 0.37, -0.19,
-              0.57, 0.10, 2.54, -3.8, -0.08, -0.82,
-              -0.00, 0.01, -1.78, 3.32, -0.30, 0.54])
+a = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 # dt already defined for model
-scale_x = 100.01
-scale_y = 100.0
-scale_phi = 250.0
+scale_x = 10000.0     # 100.0
+scale_y = 1000.0     # 100.0
+scale_phi = 10000000.0   # 250.0
 Q = generate_process_covar(dt=dt, sx=scale_x, sy=scale_y, sphi=scale_phi)
-sigma_imu_acc = 0.1
-sigma_imu_gyro = 0.01
-sigma_press_velo = 0.1
-sigma_press_acc = 1000.0
+sigma_imu_acc = 0.1         # 0.1
+sigma_imu_gyro = 0.1       # 0.01
+sigma_press_velo = 0.1      # 0.1
+sigma_press_acc = 1.0    # 1000.0
 H = generate_observation_covar(s_imu_acc=sigma_imu_acc, s_imu_gyro=sigma_imu_gyro, s_press_velo=sigma_press_velo,
                                s_press_acc=sigma_press_acc, dim_observations=DIM_OBSERVATIONS)
 
@@ -163,5 +163,6 @@ for t in range(0, max_timesteps):
 
 # -------- Plotting -----------
 x_vals = np.reshape(x_vals, (max_timesteps, 1, DIM_STATES))
-my_plotter = Plotter(true_states=true_states, true_obs=obs, delta_t=dt)
-my_plotter.plot_smoothed_trajectories(samples=x_vals, export_name='ekf_analytic')
+my_plotter = Plotter(true_states=true_states, true_obs=obs, delta_t=dt, export_name='ekf_analytic', show_fig=True)
+my_plotter.plot_observations(samples=x_vals, model=my_model)
+my_plotter.plot_smoothed_trajectories(samples=x_vals)

@@ -51,10 +51,10 @@ def plot_observations(model, x, y_true, supress_zeros, export_name=None):
 
 
 # ---------- data -----------------
-path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Missingdata005/truth.dat'
-path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Missingdata005/noised_observations.dat'
+path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Largetimestep/truth.dat'
+path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Largetimestep/noised_observations.dat'
 data_reader = DataReaderWriter()
-max_timesteps = 1000
+max_timesteps = 80
 data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
 data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
 data_reader.prepare_lists()
@@ -62,7 +62,7 @@ x = data_reader.true_states
 y = data_reader.observations
 
 # ---------- model -----------------
-dt = 0.01
+dt = 0.1
 leg_constants = np.array([0.5, 0.6, 0.5, 0.6])
 imu_position = np.array([0.34, 0.29, 0.315, 0.33])
 dim_state = 18
