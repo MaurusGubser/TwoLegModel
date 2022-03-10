@@ -47,7 +47,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                  sigma_press_acc=1.0,  # 1.0
                  factor_H=1.0,  # 1.0
                  factor_proposal=1.2):  # 1.2
-        super().__init__()
+        ssm.StateSpaceModel().__init__()
         self.dt = dt
         self.dim_states = dim_states
         self.dim_observations = dim_observations
