@@ -1,3 +1,5 @@
+import cProfile
+import pstats
 import time
 import numpy as np
 import particles
@@ -148,4 +150,18 @@ if __name__ == '__main__':
         factor_H,
         factor_proposal)
     show_fig = True
-    plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=False)
+
+    #plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=False)
+    cProfile.run('plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=plot_smoothing)', 'output.dat')
+
+    with open('output_time.dat', 'w') as f:
+        p = pstats.Stats('output.dat', stream=f)
+        p.sort_stats('time').print_stats()
+
+    with open('output_calls.dat', 'w') as f:
+        p = pstats.Stats('output.dat', stream=f)
+        p.sort_stats('calls').print_stats()
+
+    with open('output_cumtime.dat', 'w') as f:
+        p = pstats.Stats('output.dat', stream=f)
+        p.sort_stats('cumtime').print_stats()
