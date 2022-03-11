@@ -1,6 +1,7 @@
 import time
 import matplotlib.pyplot as plt
 import seaborn as sb
+import numpy as np
 import particles
 
 from particles import distributions as dists
@@ -13,8 +14,9 @@ from TwoLegSMCModel import TwoLegModel
 from CustomMCMC import TruncatedPMMH
 
 
-def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
+def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas, set_theta0):
     prior_dict = {}
+    theta0 = None
     if add_Q:
         prior_Q = {'scale_x': dists.LinearD(dists.InvGamma(3.0, 2.0), a=100.0, b=0.0),
                    'scale_y': dists.LinearD(dists.InvGamma(3.0, 2.0), a=100.0, b=0.0),
@@ -23,6 +25,9 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
                    'scale_y': dists.Uniform(20.0, 200.0),
                    'scale_phi': dists.Uniform(50.0, 500.0)}
         prior_dict.update(prior_Q)
+        if set_theta0:
+            theta0 = np.array([(10000.0, 1000.0, 10000000.0)],
+                              dtype=[('scale_x', 'float64'), ('scale_y', 'float64'), ('scale_phi', 'float64')])
     if add_H:
         prior_H = {'sigma_imu_acc': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.1, b=0.0),
                    'sigma_imu_gyro': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.01, b=0.0),
@@ -33,10 +38,18 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
                    'sigma_press_velo': dists.Uniform(0.0001, 0.01),
                    'sigma_press_acc': dists.Uniform(0.001, 0.1)}
         prior_dict.update(prior_H)
+        if set_theta0:
+            theta0 = np.array([(0.1, 0.1, 0.1, 1.0)],
+                              dtype=[('sigma_imu_acc', 'float64'), ('sigma_imu_gyro', 'float64'),
+                                     ('sigma_press_velo', 'float64'), ('sigma_press_acc', 'float64')])
     if add_legs:
         prior_legs = {'femur_left': dists.Uniform(0.3, 0.7), 'fibula_left': dists.Uniform(0.4, 0.8),
                       'femur_right': dists.Uniform(0.3, 0.7), 'fibula_right': dists.Uniform(0.4, 0.8)}
         prior_dict.update(prior_legs)
+        if set_theta0:
+            theta0 = np.array([(0.5, 0.6, 0.5, 0.6)],
+                              dtype=[('femur_left', 'float64'), ('fibula_left', 'float64'), ('femur_right', 'float64'),
+                                     ('fibula_right', 'float64')])
     if add_imus:
         prior_imus = {'pos_imu0': dists.TruncNormal(mu=0.25, sigma=0.3, a=0.0, b=0.5),
                       'pos_imu1': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.6),
@@ -44,6 +57,8 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
                       'pos_imu3': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.6)}
         prior_imus = {'pos_imu0': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.5)}
         prior_dict.update(prior_imus)
+        if set_theta0:
+            theta0 = np.array([0.25], dtype=[('pos_imu0', 'float64')])
     if add_alphas:
         prior_alphas = {'alpha_0': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
                         'alpha_1': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
@@ -52,7 +67,9 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas):
         prior_alphas = {'alpha_0': dists.TruncNormal(mu=0.0, sigma=1.0, a=-2.0, b=2.0),
                         'alpha_2': dists.TruncNormal(mu=0.0, sigma=1.0, a=-2.0, b=2.0)}
         prior_dict.update(prior_alphas)
-    return prior_dict, dists.StructDist(prior_dict)
+        if set_theta0:
+            theta0 = np.array([(0.0, 0.0)], dtype=[('alpha_0', 'float64'), ('alpha_2', 'float64')])
+    return theta0, prior_dict, dists.StructDist(prior_dict)
 
 
 def prepare_data(generation_type, max_timesteps, dim_observations):
@@ -70,18 +87,17 @@ def prepare_data(generation_type, max_timesteps, dim_observations):
     return states, observations
 
 
-def learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, niter):
+def learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_start, niter):
     if learning_alg == 'pmmh':
-        alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF,
-                        smc_options={'ESSrmin': 0.5}, data=y, Nx=Nx, niter=niter, verbose=niter,
-                        adaptive=True, scale=1.0)
+        alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5}, data=y,
+                        Nx=Nx, theta0=theta0, niter=niter, verbose=niter, adaptive=True, scale=1.0)
     elif learning_alg == 'cpmmh':
-        alg = TruncatedPMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF,
-                            smc_options={'ESSrmin': 0.5}, data=y, Nx=Nx, niter=niter, verbose=niter,
-                            adaptive=True, scale=1.0, t_start=t_start)
+        alg = TruncatedPMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
+                            data=y, Nx=Nx, theta0=theta0, niter=niter, verbose=niter, adaptive=True, scale=1.0,
+                            t_start=t_start)
     elif learning_alg == 'gibbs':
-        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=Nx, niter=niter,
-                                 verbose=niter)
+        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=Nx, theta0=theta0,
+                                 niter=niter, verbose=niter)
     elif learning_alg == 'smc2':
         fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=Nx,
                            ar_to_increase_Nx=-1.0, smc_options={'verbose': True})
@@ -125,10 +141,11 @@ if __name__ == '__main__':
     add_legs = False
     add_imu = False
     add_alphas = True
-    prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas)
-    Nx = 1000
+    set_theta0 = False
+    theta0, prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
+    Nx = 100
     N = 20
     t_start = 100
     niter = 100
-    learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
-    learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)
+    learning_alg = 'pmmh'  # cpmmh, pmmh, gibbs, smc2
+    learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)
