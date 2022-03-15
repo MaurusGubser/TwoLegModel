@@ -55,10 +55,11 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas, set_theta0):
                       'pos_imu1': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.6),
                       'pos_imu2': dists.TruncNormal(mu=0.25, sigma=0.3, a=0.0, b=0.5),
                       'pos_imu3': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.6)}
-        prior_imus = {'pos_imu0': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.5)}
+        prior_imus = {'pos_imu0': dists.Uniform(a=0.0, b=5.0),
+                      'pos_imu2': dists.Uniform(a=0.0, b=5.0)}
         prior_dict.update(prior_imus)
         if set_theta0:
-            theta0 = np.array([0.25], dtype=[('pos_imu0', 'float64')])
+            theta0 = np.array([(0.25, 0.25)], dtype=[('pos_imu0', 'float64'), ('pos_imu2', 'float64')])
     if add_alphas:
         prior_alphas = {'alpha_0': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
                         'alpha_1': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
@@ -143,9 +144,9 @@ if __name__ == '__main__':
     add_alphas = True
     set_theta0 = False
     theta0, prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
-    Nx = 100
+    Nx = 1000
     N = 20
-    t_start = 100
+    t_start = 500
     niter = 100
-    learning_alg = 'pmmh'  # cpmmh, pmmh, gibbs, smc2
+    learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
     learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)
