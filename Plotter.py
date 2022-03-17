@@ -328,13 +328,15 @@ class Plotter:
             axs[0].legend()
             axs[0].set_xlabel('t')
             axs[0].set_ylabel('$\log(p(y_{0:t}))$')
-            axs[0].set_title('Mean and var over {} runs'.format(nb_runs))
+            axs[0].set_title('Mean with std deviation')
             axs[1].plot(self.t_vals, std ** 2, label='N={}'.format(key))
             axs[1].legend()
             axs[1].set_xlabel('t')
+            axs[1].set_ylabel('$\Var[\log(p(y_{0:t}))]$')
             axs[1].set_title('Variance of $\log(p(y_{0:t}))$')
+            fig.suptitle('Loglikelihood, non-truncated, averaged over {} runs'.format(nb_runs))
             if self.export_path:
-                plt.savefig(self.export_path + '/Likelihoods_mean_var_nbparticles.pdf')
+                plt.savefig(self.export_path + '/Likelihoods_mean_var.pdf')
 
         # comparison of differently truncated logLts
         fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
@@ -349,17 +351,17 @@ class Plotter:
             axs[0].fill_between(t_start_vals, mean_truncated - std_trunacted, mean_truncated + std_trunacted, alpha=0.5)
             axs[0].set_xlabel('Start time $ t_{0} $')
             axs[0].set_ylabel('$\log(p(y_{t_{0}+1:T} | y_{0:t_{0}})$')
-            axs[0].set_title('Truncated loglikelihood averaged over {} runs'.format(nb_runs))
+            axs[0].set_title('Truncated loglikelihood')
             axs[0].legend()
             axs[1].plot(t_start_vals, std_trunacted ** 2, label='N={}'.format(key))
             axs[1].set_xlabel('Start time $ t_{0} $')
-            axs[1].set_title('Variance averaged over {} runs'.format(nb_runs))
+            axs[1].set_title('Variance of $ \log(p(y_{t_{0}+1:T | y{0:t_{0}})) $')
             axs[1].legend()
-        fig.suptitle('Truncated log for different starting times $ t_{0} $.')
+        fig.suptitle('Truncated loglikelihood for different starting times, averaged over {} runs'.format(nb_runs))
         if self.export_path:
-            plt.savefig(self.export_path + '/Likelihood_different_start_times.pdf')
+            plt.savefig(self.export_path + '/Truncated_Likelihood_different_start_times.pdf')
 
-        # N-vs-var plot
+        # nb_particles-vs-var plot
         fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
         axs[0].grid(axis='both')
         axs[1].grid(axis='both')
@@ -367,14 +369,15 @@ class Plotter:
         axs[0].plot(nb_particles, means_N, marker='o')
         axs[0].set_xlabel('N')
         axs[0].set_ylabel('$\log(p(y_{0:T}))$')
-        axs[0].set_title('Log likelihood for different N')
+        axs[0].set_title('Loglikelihood')
         means_N_truncated = np.array([np.mean(loglts[:, -1] - loglts[:, t_start]) for loglts in logLts_data.values()])
         axs[1].plot(nb_particles, means_N_truncated, marker='o')
         axs[1].set_xlabel('N')
         axs[1].set_ylabel('$\log(p(y_{t_{0}:T} | y_{0:t_{0}+1}))$')
-        axs[1].set_title('Truncated log likelihood for different N')
+        axs[1].set_title('Truncated loglikelihood')
+        fig.suptitle('N vs. Loglikelihood, averaged over {} runs'.format(nb_runs))
         if self.export_path:
-            plt.savefig(self.export_path + '/N_vs_loglikelihood.pdf')
+            plt.savefig(self.export_path + '/nb_particles_vs_loglikelihood.pdf')
 
         # boxplot of truncated logLts
         fig = plt.figure(figsize=(12, 8))
@@ -383,7 +386,7 @@ class Plotter:
             y=[str(r['N']) for r in output_multismc])
         plt.xlabel('$\log(p(y_{t_{0}+1:T} | y_{0:t_{0}}))$')
         plt.ylabel('Number of particles')
-        fig.suptitle('Log likelihood over {} runs of {} timesteps'.format(nb_runs, self.nb_steps))
+        fig.suptitle('Truncated loglikelihood of {} timesteps, averaged over {} runs'.format(self.nb_steps, nb_runs))
         if self.export_path:
             plt.savefig(self.export_path + '/Likelihood_Boxplot.pdf')
 
@@ -393,7 +396,7 @@ class Plotter:
             x=[r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in output_multismc],
             hue=[str(r['N']) for r in output_multismc], multiple='dodge')
         plt.xlabel('Bins of $\log(p(y_{t_{0}+1:T}|y_{0:t_{0}}))$')
-        fig.suptitle('Histogram of log likelihood over {} runs of {} timesteps'.format(nb_runs, self.nb_steps))
+        fig.suptitle('Histogram of truncated loglikelihood of {} timesteps, averaged over {} runs '.format(self.nb_steps, nb_runs))
         if self.export_path:
             plt.savefig(self.export_path + '/Likelihood_Histogram.pdf')
         if self.show_fig:
