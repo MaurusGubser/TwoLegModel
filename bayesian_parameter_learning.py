@@ -1,3 +1,4 @@
+import os.path
 import time
 import matplotlib.pyplot as plt
 import seaborn as sb
@@ -110,22 +111,25 @@ def learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
 
+    if not os.path.exists('ParameterLearning/'):
+        os.mkdir('ParameterLearning/')
     if learning_alg == 'pmmh' or learning_alg == 'cpmmh' or learning_alg == 'gibbs':
         burnin = 0  # discard the __ first iterations
         for i, param in enumerate(prior_dict.keys()):
             plt.figure()
             sb.histplot(alg.chain.theta[param][burnin:], bins=10)
             plt.title(param)
-            plt.savefig(learning_alg + '_' + param + '.pdf')
+            plt.savefig('ParameterLearning/' + learning_alg + '_' + param + '.pdf')
         plt.show()
-    else:
+    elif learning_alg == 'smc2':
         for i, param in enumerate(prior_dict.keys()):
             plt.figure()
             sb.histplot([t[i] for t in alg.X.theta], bins=10)
             plt.title(param)
-            plt.savefig(learning_alg + '_' + param + '.pdf')
+            plt.savefig('ParameterLearning/' + learning_alg + '_' + param + '.pdf')
         plt.show()
-
+    else:
+        raise ValueError("learning_alg has to be one of 'pmmh', 'gibbs', 'smc2'; got {} instead.".format(learning_alg))
     return None
 
 
