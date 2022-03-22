@@ -134,7 +134,7 @@ if __name__ == '__main__':
     t_start = 500
     niter = 200
     learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
-    learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)
+    # learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)
 
     cProfile.run('learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)', 'output.dat')
 
