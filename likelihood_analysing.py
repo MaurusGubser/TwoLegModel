@@ -71,7 +71,7 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 500
+    nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -104,11 +104,11 @@ if __name__ == '__main__':
     scale_phi = 10000000.0  # 10000000.0
     factor_Q = 1.0  # 1.0
     diag_Q = False
-    sigma_imu_acc = 0.01  # 0.01
-    sigma_imu_gyro = 0.01  # 0.01
-    sigma_press_velo = 0.01  # 0.01
-    sigma_press_acc = 0.1  # 0.1
-    factor_H = 10.0  # 10.0
+    sigma_imu_acc = 0.1  # 0.1
+    sigma_imu_gyro = 0.1  # 0.1
+    sigma_press_velo = 0.1  # 0.1
+    sigma_press_acc = 1.0  # 1.0
+    factor_H = 1.0  # 1.0
 
     factor_proposal = 1.2  # 1.2
 
@@ -148,9 +148,9 @@ if __name__ == '__main__':
     # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
 
-    Ns = [100, 200, 300, 400, 500]
-    nb_runs = 10
-    t_start = 250
+    Ns = [1000, 2000, 3000, 4000, 5000]
+    nb_runs = 20
+    t_start = 500
     show_fig = True
     export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
         generation_type,
