@@ -159,11 +159,3 @@ if __name__ == '__main__':
     with open('output_time_jit_800particles.dat', 'w') as f:
         p = pstats.Stats('output.dat', stream=f)
         p.sort_stats('time').print_stats()
-
-    with open('output_calls_jit_800particles.dat', 'w') as f:
-        p = pstats.Stats('output.dat', stream=f)
-        p.sort_stats('calls').print_stats()
-
-    with open('output_cumtime_jit_800particles.dat', 'w') as f:
-        p = pstats.Stats('output.dat', stream=f)
-        p.sort_stats('cumtime').print_stats()
