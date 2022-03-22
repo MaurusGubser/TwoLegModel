@@ -4,6 +4,7 @@ from particles import state_space_models as ssm
 from particles import distributions as dists
 from CustomDistributions import MvNormalMultiDimCov, MvStudent, MvNormalMissingObservations
 from scipy.linalg import block_diag
+from numba import jit
 
 from MechanicalModel import state_to_obs, compute_jacobian_obs, state_to_obs_linear, create_rotation_matrix_z
 
@@ -229,6 +230,8 @@ class TwoLegModel(ssm.StateSpaceModel):
         mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain_masked, prediction_err)
         sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), self.Q)
         """
+
+
 
         # covariance masked
         x_hat = self.state_transition(xp)

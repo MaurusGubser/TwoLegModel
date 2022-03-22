@@ -77,7 +77,6 @@ def state_to_obs(x, dim_observations, g, legs, imus, R):
             x[:, 10] + x[:, 11]) ** 2 * np.cos(x[:, 4] + x[:, 5]) + legs[3] * (x[:, 16] + x[:, 17]) * np.sin(
         x[:, 4] + x[:, 5]) + x[:, 13]
     y[:, 35] = 0.0
-
     y = (R @ y.T).T
     """
     y = np.matmul(R, y.T).T
@@ -87,6 +86,7 @@ def state_to_obs(x, dim_observations, g, legs, imus, R):
     return y
 
 
+@jit(nopython=True)
 def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, imus, R):
     nb_particles, _ = x.shape
     df = np.zeros((nb_particles, 36, dim_states))
@@ -224,7 +224,8 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, imus, R):
     df[:, 34, 16] = legs[2] * np.sin(x[:, 4]) + legs[3] * np.sin(x[:, 4] + x[:, 5])
     df[:, 34, 17] = legs[3] * np.sin(x[:, 4] + x[:, 5])
 
-    df = R  @ df
+    for i in range(0, nb_particles):
+        df[i, :, :] = R @ df[i, :, :]
     """
     df = np.matmul(R, df)
     if dim_observations == 20:
