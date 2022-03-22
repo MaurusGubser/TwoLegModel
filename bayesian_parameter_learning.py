@@ -1,3 +1,5 @@
+import cProfile
+import pstats
 import time
 import matplotlib.pyplot as plt
 import seaborn as sb
@@ -133,3 +135,9 @@ if __name__ == '__main__':
     niter = 200
     learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
     learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)
+
+    cProfile.run('learn_model_parameters(prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)', 'output.dat')
+
+    with open('output_time.dat', 'w') as f:
+        p = pstats.Stats('output.dat', stream=f)
+        p.sort_stats('time').print_stats()
