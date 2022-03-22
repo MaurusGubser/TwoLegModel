@@ -62,7 +62,7 @@ def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 200
+    nb_timesteps = 250
     dim_obs = 36  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -135,10 +135,10 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 200
+    nb_particles = 800
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
+    # pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
 
     # ---------------------------- plot results ----------------------------
     export_name_single = 'SingleRun_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -151,17 +151,19 @@ if __name__ == '__main__':
         factor_proposal)
     show_fig = True
 
-    #plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=False)
-    cProfile.run('plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=plot_smoothing)', 'output.dat')
+    # plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=False)
 
-    with open('output_time.dat', 'w') as f:
+    # ---------------------------- profiling ----------------------------
+    cProfile.run('run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)', 'output.dat')
+
+    with open('output_time_jit_800particles.dat', 'w') as f:
         p = pstats.Stats('output.dat', stream=f)
         p.sort_stats('time').print_stats()
 
-    with open('output_calls.dat', 'w') as f:
+    with open('output_calls_jit_800particles.dat', 'w') as f:
         p = pstats.Stats('output.dat', stream=f)
         p.sort_stats('calls').print_stats()
 
-    with open('output_cumtime.dat', 'w') as f:
+    with open('output_cumtime_jit_800particles.dat', 'w') as f:
         p = pstats.Stats('output.dat', stream=f)
         p.sort_stats('cumtime').print_stats()
