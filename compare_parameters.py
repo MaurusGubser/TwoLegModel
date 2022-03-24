@@ -34,15 +34,11 @@ def compare_parameters(fk_models, nb_timesteps, nb_particles, nb_runs, t_start, 
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
 
     logLts = [r['output'].summaries.logLts[-1] for r in results]
-    mean, var = np.mean(logLts, axis=0), np.var(logLts, axis=0)
-    print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, mean, var))
     plt.figure(figsize=(15, 8))
     sb.boxplot(x=logLts, y=[r['fk'] for r in results])
     plt.title('Boxplots for likelihood')
 
     logLts_truncated = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in results]
-    mean, var = np.mean(logLts_truncated, axis=0), np.var(logLts_truncated, axis=0)
-    print('N={:.5E}, Mean loglhd truncated={:.5E}, Variance loglhd truncated={:.5E}'.format(N, mean, var))
     plt.figure(figsize=(15, 8))
     sb.boxplot(x=logLts_truncated, y=[r['fk'] for r in results])
     plt.title('Boxplots for truncated likelihood')
@@ -52,6 +48,7 @@ def compare_parameters(fk_models, nb_timesteps, nb_particles, nb_runs, t_start, 
     for fk_model in fk_models.keys():
         logLts = np.array([r['output'].summaries.logLts for r in results if r['fk'] == fk_model])
         mean, std = np.mean(logLts, axis=0), np.std(logLts, axis=0)
+        print('Parameters={}; mean of loglikelihood={}'.format(fk_model, mean[-1]))
         plt.plot(t_vals, mean, label=fk_model)
         plt.fill_between(t_vals, mean - std, mean + std, alpha=0.5)
         plt.xlabel('Timesteps')
