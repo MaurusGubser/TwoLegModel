@@ -54,7 +54,7 @@ if __name__ == '__main__':
     dt = 0.01
     N = 100
     t_start = 50
-    nb_runs = 2
+    nb_runs = 10
     show_fig = True
     params = 'imu_position'
     export_name = 'MultiRun_{}_steps{}_N{}_nbruns{}_tstart{}_params{}'.format(

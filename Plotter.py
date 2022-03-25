@@ -324,7 +324,7 @@ class Plotter:
             mean = np.mean(loglts, axis=0)
             std = np.std(loglts, axis=0)
             axs[0].plot(self.t_vals, mean, label='N={}'.format(key))
-            axs[0].fill_between(self.t_vals, mean - std, mean + std, alpha=0.5)
+            # axs[0].fill_between(self.t_vals, mean - std, mean + std, alpha=0.5)
             axs[0].legend()
             axs[0].set_xlabel('t')
             axs[0].set_ylabel(r'$\log(p(y_{0:t}))$')
@@ -348,7 +348,7 @@ class Plotter:
             mean_truncated = np.mean(logLts_truncated, axis=0)
             std_trunacted = np.std(logLts_truncated, axis=0)
             axs[0].plot(t_start_vals, mean_truncated, label='N={}'.format(key))
-            axs[0].fill_between(t_start_vals, mean_truncated - std_trunacted, mean_truncated + std_trunacted, alpha=0.5)
+            # axs[0].fill_between(t_start_vals, mean_truncated - std_trunacted, mean_truncated + std_trunacted, alpha=0.5)
             axs[0].set_xlabel('Start time $ t_{0} $')
             axs[0].set_ylabel(r'$\log(p(y_{t_{0}+1:T} | y_{0:t_{0}})$')
             axs[0].set_title('Truncated loglikelihood')
@@ -383,7 +383,8 @@ class Plotter:
         fig = plt.figure(figsize=(12, 8))
         sb.boxplot(
             x=[r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in output_multismc],
-            y=[str(r['N']) for r in output_multismc])
+            y=[str(r['N']) for r in output_multismc],
+            showfliers=False)
         plt.xlabel('r$\log(p(y_{t_{0}+1:T} | y_{0:t_{0}}))$')
         plt.ylabel('Number of particles')
         fig.suptitle('Truncated loglikelihood of {} timesteps, averaged over {} runs'.format(self.nb_steps, nb_runs))
@@ -406,13 +407,13 @@ class Plotter:
     def plot_likelihood_parameters(self, output_multismc, model_params, t_start):
         logLts = [r['output'].summaries.logLts[-1] for r in output_multismc]
         plt.figure(figsize=(15, 8))
-        sb.boxplot(x=logLts, y=[r['fk'] for r in output_multismc])
+        sb.boxplot(x=logLts, y=[r['fk'] for r in output_multismc], showfliers=False)
         plt.title('Boxplots for likelihood')
         if self.export_path:
             plt.savefig(self.export_path + '/Boxplot_different_params.pdf')
         logLts_truncated = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in output_multismc]
         plt.figure(figsize=(15, 8))
-        sb.boxplot(x=logLts_truncated, y=[r['fk'] for r in output_multismc])
+        sb.boxplot(x=logLts_truncated, y=[r['fk'] for r in output_multismc], showfliers=False)
         plt.title('Boxplots for truncated likelihood')
         plt.figure(figsize=(15, 8))
         if self.export_path:
@@ -422,7 +423,7 @@ class Plotter:
             mean, std = np.mean(logLts, axis=0), np.std(logLts, axis=0)
             print('Parameters={}; mean of loglikelihood={}'.format(fk_model, mean[-1]))
             plt.plot(self.t_vals, mean, label=fk_model)
-            plt.fill_between(self.t_vals, mean - std, mean + std, alpha=0.2)
+            # plt.fill_between(self.t_vals, mean - std, mean + std, alpha=0.2)
             plt.xlabel('Timesteps')
             plt.ylabel('$p(y_{0:t})$')
             plt.legend()
