@@ -421,7 +421,7 @@ class Plotter:
         for fk_model in model_params:
             logLts = np.array([r['output'].summaries.logLts for r in output_multismc if r['fk'] == fk_model])
             mean, std = np.mean(logLts, axis=0), np.std(logLts, axis=0)
-            print('Parameters={}; mean of loglikelihood={}'.format(fk_model, mean[-1]))
+            print('Parameters={}; mean of loglikelihood={};\nmean of truncated likelihood={}'.format(fk_model, mean[-1], mean[-1] - mean[t_start]))
             plt.plot(self.t_vals, mean, label=fk_model)
             # plt.fill_between(self.t_vals, mean - std, mean + std, alpha=0.2)
             plt.xlabel('Timesteps')
