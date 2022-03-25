@@ -27,36 +27,19 @@ def prepare_data(generation_type, max_timesteps, dim_observations):
     return states, observations
 
 
-def compare_parameters(fk_models, nb_timesteps, nb_particles, nb_runs, t_start, show_fig, export_name=None):
+def compare_parameters(fk_models, true_states, data, dt, nb_particles, nb_runs, t_start, show_fig, export_name=None):
     start_user, start_process = time.time(), time.process_time()
     results = particles.multiSMC(fk=fk_models, N=nb_particles, nruns=nb_runs, collect=[LogLts()], nprocs=-1)
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
 
-    logLts = [r['output'].summaries.logLts[-1] for r in results]
-    plt.figure(figsize=(15, 8))
-    sb.boxplot(x=logLts, y=[r['fk'] for r in results])
-    plt.title('Boxplots for likelihood')
+    plotter_params = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig)
+    plotter_params.plot_likelihood_parameters(results, fk_models.keys(), t_start)
 
-    logLts_truncated = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in results]
-    plt.figure(figsize=(15, 8))
-    sb.boxplot(x=logLts_truncated, y=[r['fk'] for r in results])
-    plt.title('Boxplots for truncated likelihood')
-
-    t_vals = np.arange(nb_timesteps)
-    plt.figure(figsize=(15, 8))
-    for fk_model in fk_models.keys():
-        logLts = np.array([r['output'].summaries.logLts for r in results if r['fk'] == fk_model])
-        mean, std = np.mean(logLts, axis=0), np.std(logLts, axis=0)
-        print('Parameters={}; mean of loglikelihood={}'.format(fk_model, mean[-1]))
-        plt.plot(t_vals, mean, label=fk_model)
-        plt.fill_between(t_vals, mean - std, mean + std, alpha=0.5)
-        plt.xlabel('Timesteps')
-        plt.ylabel('$p(y_{0:t})$')
-        plt.legend()
-        plt.title('Loglikelihood, not truncated')
-    plt.show()
     return None
+
+
+
 
 
 if __name__ == '__main__':
@@ -72,12 +55,19 @@ if __name__ == '__main__':
     N = 100
     t_start = 50
     nb_runs = 2
-    show_fig = False
-    export_name = 'pos_imu0'
+    show_fig = True
+    params = 'imu_position'
+    export_name = 'MultiRun_{}_steps{}_N{}_nbruns{}_tstart{}_params{}'.format(
+        generation_type,
+        nb_timesteps,
+        N,
+        nb_runs,
+        t_start,
+        params)
 
-    parameters = [{'pos_imu0': 0.20}, {'pos_imu0': 0.25}]   #, {}, {'pos_imu0': 0.35}, {'pos_imu0': 0.4}, {'pos_imu0': 0.45}]
+    parameters = [{'pos_imu0': 0.20}, {'pos_imu0': 0.25}, {}, {'pos_imu0': 0.35}, {'pos_imu0': 0.4}, {'pos_imu0': 0.45}]
     fk_models = {}
     for param in parameters:
         fk_models[str(param)] = ssm.GuidedPF(ssm=TwoLegModel(**param), data=y)
-    compare_parameters(fk_models=fk_models, nb_timesteps=nb_timesteps, nb_particles=N, nb_runs=nb_runs,
+    compare_parameters(fk_models=fk_models, true_states=x, data=y, dt=dt, nb_particles=N, nb_runs=nb_runs,
                        t_start=t_start, show_fig=show_fig, export_name=export_name)
