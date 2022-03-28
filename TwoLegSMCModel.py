@@ -229,10 +229,23 @@ class TwoLegModel(ssm.StateSpaceModel):
         mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain_masked, prediction_err)
         sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), self.Q)
         """
+        """
+        # covariance masked, dfQ separated
+        x_hat = self.state_transition(xp)
+        df = self.compute_observation_derivatives(x_hat)
+        df = df[:, mask_not_nan.flatten(), :]
+        H_masked = np.reshape(self.H[mask_2d], (nb_non_nan, nb_non_nan))
 
+        dfQ = np.matmul(df, self.Q)
+        S_inv = np.linalg.inv(np.matmul(dfQ, np.transpose(df, (0, 2, 1))) + H_masked)
+        kalman_gain = np.matmul(np.transpose(dfQ, (0, 2, 1)), S_inv)
+        prediction_err = data_t[mask_not_nan] - self.state_to_observation(x_hat)[:, mask_not_nan.flatten()]
 
+        mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, prediction_err)
+        sigma = self.Q - np.matmul(kalman_gain, dfQ)
+        """
 
-        # covariance masked
+        # covariance masked, dfQ non-separated
         x_hat = self.state_transition(xp)
         df = self.compute_observation_derivatives(x_hat)
         df = df[:, mask_not_nan.flatten(), :]

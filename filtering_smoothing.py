@@ -62,7 +62,7 @@ def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 250
+    nb_timesteps = 500
     dim_obs = 36  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -156,6 +156,6 @@ if __name__ == '__main__':
     # ---------------------------- profiling ----------------------------
     cProfile.run('run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)', 'output.dat')
 
-    with open('output_time_jit_{}particles.dat'.format(nb_particles), 'w') as f:
+    with open('output_time_dfQnonseparate_{}particles.dat'.format(nb_particles), 'w') as f:
         p = pstats.Stats('output.dat', stream=f)
         p.sort_stats('time').print_stats()
