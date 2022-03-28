@@ -7,11 +7,6 @@ from Plotter import Plotter
 
 class TwoLegEKF:
     def __init__(self, model, x0, Q, H, numeric_jacobian):
-        """EKF(model, x0, Q, H)
-        model has state transition function f and state to observation function h
-        x' = f(x, u)    state transition function
-        z' = h(x)       observation function
-        x0              initial state estimate"""
         self.f, self.h = model.state_transition, model.state_to_observation
         self.A = model.A
         self.x = np.reshape(x0, (1, -1))
