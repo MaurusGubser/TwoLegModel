@@ -2,11 +2,36 @@ import numpy as np
 
 
 def create_rotation_matrix_z(alpha):
+    """
+    Create rotation matrix for rotation of angle alpha around z-axis
+    :param alpha: float
+        rotation angle in radian
+    :return: np.ndarray
+        rotation matrix R of shape (3, 3)
+    """
     R = np.array([[np.cos(alpha), np.sin(alpha), 0.0], [-np.sin(alpha), np.cos(alpha), 0.0], [0.0, 0.0, 1.0]])
     return R
 
 
 def state_to_obs(x, dim_observations, g, legs, imus, R):
+    """
+    Compute state to observation transition for fixed two-leg-model
+    :param x: np.ndarray
+        N x 18-dimensional state vector where N is the number of particles and the 18 dimension composed of
+        $ (x_H, y_H, phi_0, phi_1, phi_2, phi_3) $ and the corresponding first and second (temporal) derivatives
+    :param dim_observations: int
+        Dimension of observation vector, should be either 20 or 36
+    :param g: float
+        gravitational constant $ g = 9.81m/s^{2} $
+    :param legs: np.ndarray
+        4-dimensional array, containing the length of left femur, left fibula, right femur, right fibula
+    :param imus: np.ndarray
+        4-dimensional array, containing the position of the four imus, measured from the hip or the knees, respectively
+    :param R: np.ndarray
+        Rotation matrix of shape (36, 36)
+    :return: np.ndarray
+        N x dim_observation-dimensional observation vector
+    """
     nb_steps, _ = x.shape
     y = np.empty((nb_steps, 36))
     # left femur
@@ -83,6 +108,26 @@ def state_to_obs(x, dim_observations, g, legs, imus, R):
 
 
 def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, imus, R):
+    """
+    Compute the Jacobian of the state-observation-transition at a given point
+    :param x: np.ndarray
+        N x 18-dimensional state vector where N is the number of particles and the 18 dimension composed of
+        $ (x_H, y_H, phi_0, phi_1, phi_2, phi_3) $ and the corresponding first and second (temporal) derivatives
+    :param dim_states: int
+        Dimension of state vector, should be 18
+    :param dim_observations: int
+        Dimension of observation vector, should be either 20 or 36
+    :param g: float
+            gravitational constant $ g = 9.81m/s^{2} $
+    :param legs: np.ndarray
+            4-dimensional array, containing the length of left femur, left fibula, right femur, right fibula
+    :param imus: np.ndarray
+            4-dimensional array, containing the position of the four imus, measured from the hip or the knees, respectively
+    :param R: np.ndarray
+            Rotation matrix of shape (36, 36)
+    :return: np.ndarray
+        N x dim_states x dim_observation-dimensional Jacobian
+    """
     nb_particles, _ = x.shape
     df = np.zeros((nb_particles, 36, dim_states))
     # left femur
@@ -226,12 +271,36 @@ def compute_jacobian_obs(x, dim_states, dim_observations, g, legs, imus, R):
     return df
 
 
-def state_to_obs_linear(x, xp, dim_states, dim_observations, g, legs, cst, R):
+def state_to_obs_linear(x, xp, dim_states, dim_observations, g, legs, imus, R):
+    """
+    Compute linearised state-to-observation transition. For a given state x and is predecessor xp, the observation for
+    state x is approximated by $ h(x) \approx h(xp) + Dh(xp) \times (x-xp) $.
+    :param x: np.ndarray
+        N x 18-dimensional state vector where N is the number of particles and the 18 dimension composed of
+        $ (x_H, y_H, phi_0, phi_1, phi_2, phi_3) $ and the corresponding first and second (temporal) derivatives
+    :param xp: np.ndarray
+        N x 18-dimensional state vector where N is the number of particles and the 18 dimension composed of
+        $ (x_H, y_H, phi_0, phi_1, phi_2, phi_3) $ and the corresponding first and second (temporal) derivatives
+    :param dim_states: int
+        Dimension of state vector, should be 18
+    :param dim_observations: int
+        Dimension of observation vector, should be either 20 or 36
+    :param g: float
+            gravitational constant $ g = 9.81m/s^{2} $
+    :param legs: np.ndarray
+            4-dimensional array, containing the length of left femur, left fibula, right femur, right fibula
+    :param imus: np.ndarray
+            4-dimensional array, containing the position of the four imus, measured from the hip or the knees, respectively
+    :param R: np.ndarray
+            Rotation matrix of shape (36, 36)
+    :return: np.ndarray
+        N x dim_observation-dimensional observation vector
+    """
     if xp is None:
         xp = np.zeros(x.shape)
     nb_steps, _ = x.shape
-    df = compute_jacobian_obs(xp, dim_states, dim_observations, g, legs, cst, R)
-    y = state_to_obs(xp, dim_observations, g, legs, cst, R) + np.einsum('ijk, ik -> ij', df, x - xp)
+    df = compute_jacobian_obs(xp, dim_states, dim_observations, g, legs, imus, R)
+    y = state_to_obs(xp, dim_observations, g, legs, imus, R) + np.einsum('ijk, ik -> ij', df, x - xp)
     return y
 
 
@@ -243,8 +312,8 @@ class MechanicalModel:
         self.A = np.zeros((self.dim_states, self.dim_states))
         self.set_process_transition_matrix()
         self.g = 9.81
-        self.cst = imu_position
-        self.legs = leg_constants
+        self.imu_pos = imu_position
+        self.leg_len = leg_constants
         self.R = R
 
     def set_process_transition_matrix(self):
@@ -261,10 +330,11 @@ class MechanicalModel:
         return np.matmul(self.A, x.T).T
 
     def state_to_observation(self, x):
-        return state_to_obs(x, self.dim_observations, self.g, self.legs, self.cst, self.R)
+        return state_to_obs(x, self.dim_observations, self.g, self.leg_len, self.imu_pos, self.R)
 
     def compute_jacobian_observation(self, x):
-        return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.legs, self.cst, self.R)
+        return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.leg_len, self.imu_pos,
+                                    self.R)
 
     def compute_jacobian_observation_numeric(self, x, delta_x=0.01):
         df = np.empty((self.dim_observations, self.dim_states))
@@ -279,4 +349,5 @@ class MechanicalModel:
         return df
 
     def state_to_observation_linear(self, x, xp):
-        return state_to_obs_linear(x, xp, self.dim_states, self.dim_observations, self.g, self.legs, self.cst, self.R)
+        return state_to_obs_linear(x, xp, self.dim_states, self.dim_observations, self.g, self.leg_len, self.imu_pos,
+                                   self.R)
