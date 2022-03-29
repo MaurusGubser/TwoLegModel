@@ -233,25 +233,6 @@ class TwoLegModel(ssm.StateSpaceModel):
         mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, prediction_err)
         sigma = self.Q - np.matmul(kalman_gain, dfQ)
 
-        """
-        # method without explicit inverse
-        x_hat = self.state_transition(xp)
-        df = self.compute_observation_derivatives(x_hat)
-        df = df[:, mask_not_nan.flatten(), :]
-        H_masked = np.reshape(self.H[mask_2d], (nb_non_nan, nb_non_nan))
-        dfQ = np.matmul(df, self.Q)
-        S = np.matmul(dfQ, np.transpose(df, (0, 2, 1))) + H_masked
-        L = np.linalg.cholesky(S)
-        lower = True
-        prediction_err = data_t[mask_not_nan] - self.state_to_observation(x_hat)[:, mask_not_nan.flatten()]
-        # xi = np.linalg.solve(S, prediction_err)
-        xi = np.array([scipy.linalg.cho_solve((L[ptcl, :, :], lower), prediction_err[ptcl, :], overwrite_b=True) for ptcl in range(0, nb_particles)])
-        # Xi = np.linalg.solve(S, np.matmul(df, self.Q))
-        Xi = np.array([scipy.linalg.solve(S[ptcl, :, :], np.matmul(df, self.Q)[ptcl, :, :]) for ptcl in range(0, nb_particles)])
-        
-        mu = x_hat + np.einsum('ijk, ik -> ij', np.matmul(self.Q, np.transpose(df, (0, 2, 1))), xi)
-        sigma = self.Q - np.matmul(self.Q, np.matmul(np.transpose(df, (0, 2, 1)), Xi))
-        """
         return mu, sigma
 
     def proposal0(self, data):
