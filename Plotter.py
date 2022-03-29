@@ -406,18 +406,18 @@ class Plotter:
 
     def plot_likelihood_parameters(self, output_multismc, model_params, t_start):
         logLts = [r['output'].summaries.logLts[-1] for r in output_multismc]
-        plt.figure(figsize=(15, 8))
+        plt.figure(figsize=(12, 8))
         sb.boxplot(x=logLts, y=[r['fk'] for r in output_multismc], showfliers=False)
-        plt.title('Boxplots for likelihood')
+        plt.title('Boxplots for loglikelihood')
         if self.export_path:
             plt.savefig(self.export_path + '/Boxplot_different_params.pdf')
         logLts_truncated = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in output_multismc]
-        plt.figure(figsize=(15, 8))
+        plt.figure(figsize=(12, 8))
         sb.boxplot(x=logLts_truncated, y=[r['fk'] for r in output_multismc], showfliers=False)
-        plt.title('Boxplots for truncated likelihood')
-        plt.figure(figsize=(15, 8))
+        plt.title('Boxplots for truncated loglikelihood')
         if self.export_path:
             plt.savefig(self.export_path + '/Boxplot_truncated_different_params.pdf')
+        plt.figure(figsize=(12, 8))
         for fk_model in model_params:
             logLts = np.array([r['output'].summaries.logLts for r in output_multismc if r['fk'] == fk_model])
             mean, std = np.mean(logLts, axis=0), np.std(logLts, axis=0)
