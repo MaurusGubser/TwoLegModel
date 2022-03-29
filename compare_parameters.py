@@ -39,24 +39,21 @@ def compare_parameters(fk_models, true_states, data, dt, nb_particles, nb_runs, 
     return None
 
 
-
-
-
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 100
+    nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
     # ---------------------------- model ----------------------------
     # ! model works with parameters defined below; other parameters are chosen as the standard params in TwoLegModelSMC.py
     dt = 0.01
-    N = 100
-    t_start = 50
-    nb_runs = 10
+    N = 2000
+    t_start = 500
+    nb_runs = 50
     show_fig = True
-    params = 'imu_position'
+    params = 'pos_imu0'
     export_name = 'MultiRun_{}_steps{}_N{}_nbruns{}_tstart{}_params{}'.format(
         generation_type,
         nb_timesteps,
@@ -65,7 +62,16 @@ if __name__ == '__main__':
         t_start,
         params)
 
-    parameters = [{'pos_imu0': 0.20}, {'pos_imu0': 0.25}, {}, {'pos_imu0': 0.35}, {'pos_imu0': 0.4}, {'pos_imu0': 0.45}]
+    parameters = [{'pos_imu0': 0.15}, {'pos_imu0': 0.20}, {'pos_imu0': 0.25}, {}, {'pos_imu0': 0.35}, {'pos_imu0': 0.4},
+                  {'pos_imu0': 0.45}]
+    parameters = [{'pos_imu0': 0.15, 'pos_imu2': 0.15}, {'pos_imu0': 0.2, 'pos_imu2': 0.2},
+                  {'pos_imu0': 0.25, 'pos_imu2': 0.25}, {}, {'pos_imu0': 0.35, 'pos_imu2': 0.35},
+                  {'pos_imu0': 0.4, 'pos_imu2': 0.4}, {'pos_imu0': 0.45, 'pos_imu2': 0.45}]
+    parameters = [{'alpha_0': -0.2}, {'alpha_0': -0.1}, {'alpha_0': 0.0}, {'alpha_0': 0.1}, {'alpha_0': 0.2},
+                  {'alpha_0': 0.3}]
+    parameters = [{'alpha_0': -0.2, 'alpha_2': -0.2}, {'alpha_0': -0.1, 'alpha_2': -0.1},
+                  {'alpha_0': 0.0, 'alpha_2': 0.0}, {'alpha_0': 0.1, 'alpha_2': 0.1}, {'alpha_0': 0.2, 'alpha_2': 0.2},
+                  {'alpha_0': 0.3, 'alpha_2': 0.3}]
     fk_models = {}
     for param in parameters:
         fk_models[str(param)] = ssm.GuidedPF(ssm=TwoLegModel(**param), data=y)
