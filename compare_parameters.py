@@ -64,14 +64,9 @@ if __name__ == '__main__':
 
     parameters = [{'pos_imu0': 0.15}, {'pos_imu0': 0.20}, {'pos_imu0': 0.25}, {}, {'pos_imu0': 0.35}, {'pos_imu0': 0.4},
                   {'pos_imu0': 0.45}]
-    parameters = [{'pos_imu0': 0.15, 'pos_imu2': 0.15}, {'pos_imu0': 0.2, 'pos_imu2': 0.2},
-                  {'pos_imu0': 0.25, 'pos_imu2': 0.25}, {}, {'pos_imu0': 0.35, 'pos_imu2': 0.35},
-                  {'pos_imu0': 0.4, 'pos_imu2': 0.4}, {'pos_imu0': 0.45, 'pos_imu2': 0.45}]
-    parameters = [{'alpha_0': -0.2}, {'alpha_0': -0.1}, {'alpha_0': 0.0}, {'alpha_0': 0.1}, {'alpha_0': 0.2},
-                  {'alpha_0': 0.3}]
-    parameters = [{'alpha_0': -0.2, 'alpha_2': -0.2}, {'alpha_0': -0.1, 'alpha_2': -0.1},
-                  {'alpha_0': 0.0, 'alpha_2': 0.0}, {'alpha_0': 0.1, 'alpha_2': 0.1}, {'alpha_0': 0.2, 'alpha_2': 0.2},
-                  {'alpha_0': 0.3, 'alpha_2': 0.3}]
+    # parameters = [{'pos_imu0': 0.15, 'pos_imu2': 0.15}, {'pos_imu0': 0.2, 'pos_imu2': 0.2}, {'pos_imu0': 0.25, 'pos_imu2': 0.25}, {}, {'pos_imu0': 0.35, 'pos_imu2': 0.35}, {'pos_imu0': 0.4, 'pos_imu2': 0.4}, {'pos_imu0': 0.45, 'pos_imu2': 0.45}]
+    # parameters = [{'alpha_0': -0.2}, {'alpha_0': -0.1}, {'alpha_0': 0.0}, {'alpha_0': 0.1}, {'alpha_0': 0.2}, {'alpha_0': 0.3}]
+    # parameters = [{'alpha_0': -0.2, 'alpha_2': -0.2}, {'alpha_0': -0.1, 'alpha_2': -0.1}, {'alpha_0': 0.0, 'alpha_2': 0.0}, {'alpha_0': 0.1, 'alpha_2': 0.1}, {'alpha_0': 0.2, 'alpha_2': 0.2}, {'alpha_0': 0.3, 'alpha_2': 0.3}]
     fk_models = {}
     for param in parameters:
         fk_models[str(param)] = ssm.GuidedPF(ssm=TwoLegModel(**param), data=y)
