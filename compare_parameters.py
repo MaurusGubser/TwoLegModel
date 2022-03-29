@@ -31,7 +31,10 @@ def compare_parameters(fk_models, true_states, data, dt, nb_particles, nb_runs, 
     start_user, start_process = time.time(), time.process_time()
     results = particles.multiSMC(fk=fk_models, N=nb_particles, nruns=nb_runs, collect=[LogLts()], nprocs=-1)
     end_user, end_process = time.time(), time.process_time()
-    print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
+    s_user = end_user - start_user
+    s_process = end_process - start_process
+    print('Time user {}min {}s; time processor {}min {}s'.format(s_user // 60, s_user % 60, s_process // 60,
+                                                                 s_process % 60))
 
     plotter = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig)
     plotter.plot_likelihood_parameters(results, fk_models.keys(), t_start)

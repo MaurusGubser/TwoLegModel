@@ -90,16 +90,19 @@ def prepare_data(generation_type, max_timesteps, dim_observations):
     return states, observations
 
 
-def learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_start, niter, true_states, data, dt, show_fig, export_name=None):
+def learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_start, niter, true_states, data, dt,
+                           show_fig, export_name=None):
     if learning_alg == 'pmmh':
-        alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5}, data=data,
+        alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
+                        data=data,
                         Nx=Nx, theta0=theta0, niter=niter, verbose=niter, adaptive=True, scale=1.0)
     elif learning_alg == 'cpmmh':
         alg = TruncatedPMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
                             data=data, Nx=Nx, theta0=theta0, niter=niter, verbose=niter, adaptive=True, scale=1.0,
                             t_start=t_start)
     elif learning_alg == 'gibbs':
-        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=data, Nx=Nx, theta0=theta0,
+        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=data, Nx=Nx,
+                                 theta0=theta0,
                                  niter=niter, verbose=niter)
     elif learning_alg == 'smc2':
         fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=data, init_Nx=Nx,
@@ -110,7 +113,10 @@ def learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_
     start_user, start_process = time.time(), time.process_time()
     alg.run()  # Warning: takes a few seconds
     end_user, end_process = time.time(), time.process_time()
-    print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
+    s_user = end_user - start_user
+    s_process = end_process - start_process
+    print('Time user {}h {}min; time processor {}h {}min'.format(s_user // 3600, s_user % 3600, s_user // 3600,
+                                                                 s_process % 3600))
 
     plotter = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig)
     plotter.plot_learned_parameters(alg, learning_alg, prior_dict)

@@ -31,7 +31,10 @@ def run_particle_filter(fk_model, nb_particles, ESSrmin=0.5):
     start_user, start_process = time.time(), time.process_time()
     pf.run()
     end_user, end_process = time.time(), time.process_time()
-    print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
+    s_user = end_user - start_user
+    s_process = end_process - start_process
+    print('Time user {}min {}s; time processor {}min {}s'.format(s_user // 60, s_user % 60, s_process // 60,
+                                                                 s_process % 60))
     print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), nb_timesteps))
     loglikelihood = pf.summaries.logLts[-1]
     print('Log likelihood = {:.3E}'.format(loglikelihood))
@@ -40,7 +43,7 @@ def run_particle_filter(fk_model, nb_particles, ESSrmin=0.5):
 
 def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt, show_fig=show_fig,
-                                 export_name=export_name)
+                      export_name=export_name)
 
     plotter.plot_observations(np.array(pf.hist.X), model=my_model)
     # plotter.plot_particles_trajectories(np.array(pf.hist.X))
