@@ -11,6 +11,7 @@ from particles import mcmc
 from particles import smc_samplers as ssp
 
 from DataReaderWriter import DataReaderWriter
+from Plotter import Plotter
 from TwoLegSMCModel import TwoLegModel
 from CustomMCMC import TruncatedPMMH
 
@@ -89,19 +90,19 @@ def prepare_data(generation_type, max_timesteps, dim_observations):
     return states, observations
 
 
-def learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_start, niter):
+def learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_start, niter, true_states, data, dt, show_fig, export_name=None):
     if learning_alg == 'pmmh':
-        alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5}, data=y,
+        alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5}, data=data,
                         Nx=Nx, theta0=theta0, niter=niter, verbose=niter, adaptive=True, scale=1.0)
     elif learning_alg == 'cpmmh':
         alg = TruncatedPMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
-                            data=y, Nx=Nx, theta0=theta0, niter=niter, verbose=niter, adaptive=True, scale=1.0,
+                            data=data, Nx=Nx, theta0=theta0, niter=niter, verbose=niter, adaptive=True, scale=1.0,
                             t_start=t_start)
     elif learning_alg == 'gibbs':
-        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, Nx=Nx, theta0=theta0,
+        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=data, Nx=Nx, theta0=theta0,
                                  niter=niter, verbose=niter)
     elif learning_alg == 'smc2':
-        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=y, init_Nx=Nx,
+        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=data, init_Nx=Nx,
                            ar_to_increase_Nx=-1.0, smc_options={'verbose': True})
         alg = particles.SMC(fk=fk_smc2, N=N)
     else:
@@ -111,6 +112,12 @@ def learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_
     end_user, end_process = time.time(), time.process_time()
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
 
+    plotter = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig)
+    plotter.plot_learned_parameters(alg, learning_alg, prior_dict)
+    return None
+
+
+def plot_learned_parameters(alg, learning_alg, prior_dict):
     sub_dir_name = 'ParameterLearning/'
     if not os.path.exists(sub_dir_name):
         os.mkdir(sub_dir_name)
@@ -131,7 +138,6 @@ def learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_
         plt.show()
     else:
         raise ValueError("learning_alg has to be one of 'pmmh', 'gibbs', 'smc2'; got {} instead.".format(learning_alg))
-    return None
 
 
 if __name__ == '__main__':

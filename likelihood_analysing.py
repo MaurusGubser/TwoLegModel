@@ -52,7 +52,7 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
     print('Time user {:.1f}s; time processor {:.1f}s'.format(end_user - start_user, end_process - start_process))
     assert t_start < results[0]['output'].fk.T, 'Start time should be shorter than number of steps.'
 
-    plotter_multismc = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig=show_fig)
+    plotter = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig=show_fig)
     for N in nb_particles:
         logLts = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in results if
                   r['N'] == N]
@@ -60,11 +60,11 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
         print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, mean, var))
         """
         bad_run, middle_run = get_extremal_cases(output_multismc=results, N=N, t_start=t_start)
-        plotter_multismc.plot_particle_moments(bad_run['mean'], bad_run['var'], name_suffix='_bad_N{}_'.format(N))
-        plotter_multismc.plot_particle_moments(middle_run['mean'], middle_run['var'],
+        plotter.plot_particle_moments(bad_run['mean'], bad_run['var'], name_suffix='_bad_N{}_'.format(N))
+        plotter.plot_particle_moments(middle_run['mean'], middle_run['var'],
                                                name_suffix='_middle_N{}_'.format(N))
         """
-    plotter_multismc.plot_logLts_multiple_runs(results, nb_particles, nb_runs, t_start)
+    plotter.plot_logLts_multiple_runs(results, nb_particles, nb_runs, t_start)
     return None
 
 

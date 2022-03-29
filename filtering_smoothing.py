@@ -39,28 +39,28 @@ def run_particle_filter(fk_model, nb_particles, ESSrmin=0.5):
 
 
 def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
-    plotter_single_run = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt, show_fig=show_fig,
+    plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt, show_fig=show_fig,
                                  export_name=export_name)
 
-    plotter_single_run.plot_observations(np.array(pf.hist.X), model=my_model)
-    # plotter_single_run.plot_particles_trajectories(np.array(pf.hist.X))
+    plotter.plot_observations(np.array(pf.hist.X), model=my_model)
+    # plotter.plot_particles_trajectories(np.array(pf.hist.X))
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
-    plotter_single_run.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
-    plotter_single_run.plot_ESS(pf.summaries.ESSs)
-    plotter_single_run.plot_logLts_one_run(pf.summaries.logLts)
+    plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
+    plotter.plot_ESS(pf.summaries.ESSs)
+    plotter.plot_logLts_one_run(pf.summaries.logLts)
     if plt_smthng:
         smooth_trajectories = pf.hist.backward_sampling(5, linear_cost=False, return_ar=False)
         data_reader = DataReaderWriter()
         data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
-        plotter_single_run.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
+        plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
     return None
 
 
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
-    generation_type = 'Missingdata005'
-    nb_timesteps = 500
+    generation_type = 'NoNoise'
+    nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
 
@@ -133,7 +133,7 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 300
+    nb_particles = 1000
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
