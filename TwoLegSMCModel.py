@@ -1,5 +1,6 @@
 import itertools
 import numpy as np
+import scipy.linalg
 from particles import state_space_models as ssm
 from particles import distributions as dists
 from CustomDistributions import MvNormalMultiDimCov, MvStudent, MvNormalMissingObservations
@@ -216,8 +217,8 @@ class TwoLegModel(ssm.StateSpaceModel):
         mask_not_nan = np.invert(np.isnan(data_t))
         mask_2d = np.outer(mask_not_nan, mask_not_nan)
         nb_non_nan = np.sum(mask_not_nan)
-        # covariance not masked (particles collapse when no pressure sensor information)
         """
+        # covariance not masked (particles collapse when no pressure sensor information)
         x_hat = self.state_transition(xp)
         df = self.compute_observation_derivatives(x_hat)
 
@@ -245,6 +246,25 @@ class TwoLegModel(ssm.StateSpaceModel):
         sigma = self.Q - np.matmul(kalman_gain, dfQ)
         """
 
+        # without explicit inverse
+        nb_particles = xp.shape[0]
+        x_hat = self.state_transition(xp)
+        df = self.compute_observation_derivatives(x_hat)
+        df = df[:, mask_not_nan.flatten(), :]
+        H_masked = np.reshape(self.H[mask_2d], (nb_non_nan, nb_non_nan))
+
+        dfQ = np.matmul(df, self.Q)
+        S = np.matmul(dfQ, np.transpose(df, (0, 2, 1))) + H_masked
+        L = np.array([scipy.linalg.cho_factor(S[i, :, :])[0] for i in range(0, nb_particles)])
+
+        prediction_err = data_t[mask_not_nan] - self.state_to_observation(x_hat)[:, mask_not_nan.flatten()]
+        xi = np.array([scipy.linalg.cho_solve((L[i, :, :], False), prediction_err[i]) for i in range(0, nb_particles)])
+        mu = x_hat + np.einsum('ijk, ij -> ik', dfQ, xi)
+
+        Xi = np.array([scipy.linalg.cho_solve((L[i, :, :], False), dfQ[i, :, :]) for i in range(0, nb_particles)])
+        sigma = self.Q - np.matmul(np.transpose(dfQ, (0, 2, 1)), Xi)
+
+        """
         # covariance masked, dfQ non-separated
         x_hat = self.state_transition(xp)
         df = self.compute_observation_derivatives(x_hat)
@@ -257,9 +277,9 @@ class TwoLegModel(ssm.StateSpaceModel):
 
         mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, prediction_err)
         sigma = np.matmul(np.eye(self.dim_states) - np.matmul(kalman_gain, df), self.Q)
-
-        # old version
         """
+        """
+        # old version
         x_hat = self.state_transition(xp)
         df = self.compute_observation_derivatives(x_hat)
 
