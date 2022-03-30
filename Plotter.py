@@ -397,7 +397,9 @@ class Plotter:
             x=[r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in output_multismc],
             hue=[str(r['N']) for r in output_multismc], multiple='dodge')
         plt.xlabel(r'Bins of $\log(p(y_{t_{0}+1:T}|y_{0:t_{0}}))$')
-        fig.suptitle('Histogram of truncated loglikelihood of {} timesteps, averaged over {} runs '.format(self.nb_steps, nb_runs))
+        fig.suptitle(
+            'Histogram of truncated loglikelihood of {} timesteps, averaged over {} runs '.format(self.nb_steps,
+                                                                                                  nb_runs))
         if self.export_path:
             plt.savefig(self.export_path + '/Likelihood_Histogram.pdf')
         if self.show_fig:
@@ -411,7 +413,8 @@ class Plotter:
         plt.title('Boxplots for loglikelihood')
         if self.export_path:
             plt.savefig(self.export_path + '/Boxplot_different_params.pdf')
-        logLts_truncated = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in output_multismc]
+        logLts_truncated = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in
+                            output_multismc]
         plt.figure(figsize=(12, 8))
         sb.boxplot(x=logLts_truncated, y=[r['fk'] for r in output_multismc], showfliers=False)
         plt.title('Boxplots for truncated loglikelihood')
@@ -421,7 +424,9 @@ class Plotter:
         for fk_model in model_params:
             logLts = np.array([r['output'].summaries.logLts for r in output_multismc if r['fk'] == fk_model])
             mean, std = np.mean(logLts, axis=0), np.std(logLts, axis=0)
-            print('Parameters={}; mean of loglikelihood={};\nmean of truncated likelihood={}'.format(fk_model, mean[-1], mean[-1] - mean[t_start]))
+            print('Parameters={}; mean of loglikelihood={};\nmean of truncated likelihood={}'.format(fk_model, mean[-1],
+                                                                                                     mean[-1] - mean[
+                                                                                                         t_start]))
             plt.plot(self.t_vals, mean, label=fk_model)
             # plt.fill_between(self.t_vals, mean - std, mean + std, alpha=0.2)
             plt.xlabel('Timesteps')
@@ -432,4 +437,30 @@ class Plotter:
             plt.savefig(self.export_path + '/Likelihood_different_params.pdf')
         if self.show_fig:
             plt.show()
+        return None
+
+    def plot_learned_parameters(self, alg, learning_alg, prior_dict):
+        sub_dir_name = 'ParameterLearning/'
+        if not os.path.exists(sub_dir_name):
+            os.mkdir(sub_dir_name)
+        if learning_alg == 'pmmh' or learning_alg == 'cpmmh' or learning_alg == 'gibbs':
+            burnin = 0  # discard the __ first iterations
+            for i, param in enumerate(prior_dict.keys()):
+                plt.figure(figsize=(12, 8))
+                sb.histplot(alg.chain.theta[param][burnin:], bins=10)
+                plt.title(param)
+                if self.export_path:
+                    plt.savefig('{}/Histplot_{}_{}.pdf'.format(self.export_path, learning_alg, str(param)))
+            plt.show()
+        elif learning_alg == 'smc2':
+            for i, param in enumerate(prior_dict.keys()):
+                plt.figure(figsize=(12, 8))
+                sb.histplot([t[i] for t in alg.X.theta], bins=10)
+                plt.title(param)
+                if self.export_path:
+                    plt.savefig('{}/Histplot_{}_{}.pdf'.format(self.export_path, learning_alg, str(param)))
+            plt.show()
+        else:
+            raise ValueError(
+                "learning_alg has to be one of 'pmmh', 'gibbs', 'smc2'; got {} instead.".format(learning_alg))
         return None

@@ -90,22 +90,20 @@ def prepare_data(generation_type, max_timesteps, dim_observations):
     return states, observations
 
 
-def learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_start, niter, true_states, data, dt,
-                           show_fig, export_name=None):
+def learn_model_parameters(theta0, prior_dict, structured_prior, learning_alg, Nx, N, t_start, niter, true_states, data,
+                           dt, show_fig, export_name=None):
     if learning_alg == 'pmmh':
-        alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
-                        data=data,
-                        Nx=Nx, theta0=theta0, niter=niter, verbose=niter, adaptive=True, scale=1.0)
+        alg = mcmc.PMMH(ssm_cls=TwoLegModel, prior=structured_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
+                        data=data, Nx=Nx, theta0=theta0, niter=niter, verbose=niter, adaptive=True, scale=1.0)
     elif learning_alg == 'cpmmh':
-        alg = TruncatedPMMH(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, smc_options={'ESSrmin': 0.5},
-                            data=data, Nx=Nx, theta0=theta0, niter=niter, verbose=niter, adaptive=True, scale=1.0,
-                            t_start=t_start)
+        alg = TruncatedPMMH(ssm_cls=TwoLegModel, prior=structured_prior, fk_cls=ssm.GuidedPF,
+                            smc_options={'ESSrmin': 0.5}, data=data, Nx=Nx, theta0=theta0, niter=niter, verbose=niter,
+                            adaptive=True, scale=1.0, t_start=t_start)
     elif learning_alg == 'gibbs':
-        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=data, Nx=Nx,
-                                 theta0=theta0,
-                                 niter=niter, verbose=niter)
+        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=structured_prior, fk_cls=ssm.GuidedPF, data=data, Nx=Nx,
+                                 theta0=theta0, niter=niter, verbose=niter)
     elif learning_alg == 'smc2':
-        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=my_prior, fk_cls=ssm.GuidedPF, data=data, init_Nx=Nx,
+        fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=structured_prior, fk_cls=ssm.GuidedPF, data=data, init_Nx=Nx,
                            ar_to_increase_Nx=-1.0, smc_options={'verbose': True})
         alg = particles.SMC(fk=fk_smc2, N=N)
     else:
@@ -115,43 +113,20 @@ def learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_
     end_user, end_process = time.time(), time.process_time()
     s_user = end_user - start_user
     s_process = end_process - start_process
-    print('Time user {}h {}min; time processor {}h {}min'.format(s_user // 3600, s_user % 3600, s_user // 3600,
-                                                                 s_process % 3600))
-
+    print('Time user {:.0f}h {:.0f}min; time processor {:.0f}h {:.0f}min'.format(s_user // 3600, s_user % 3600,
+                                                                                 s_process // 3600, s_process % 3600))
     plotter = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig)
     plotter.plot_learned_parameters(alg, learning_alg, prior_dict)
     return None
 
 
-def plot_learned_parameters(alg, learning_alg, prior_dict):
-    sub_dir_name = 'ParameterLearning/'
-    if not os.path.exists(sub_dir_name):
-        os.mkdir(sub_dir_name)
-    if learning_alg == 'pmmh' or learning_alg == 'cpmmh' or learning_alg == 'gibbs':
-        burnin = 0  # discard the __ first iterations
-        for i, param in enumerate(prior_dict.keys()):
-            plt.figure()
-            sb.histplot(alg.chain.theta[param][burnin:], bins=10)
-            plt.title(param)
-            plt.savefig(sub_dir_name + learning_alg + '_' + param + '.pdf')
-        plt.show()
-    elif learning_alg == 'smc2':
-        for i, param in enumerate(prior_dict.keys()):
-            plt.figure()
-            sb.histplot([t[i] for t in alg.X.theta], bins=10)
-            plt.title(param)
-            plt.savefig(sub_dir_name + learning_alg + '_' + param + '.pdf')
-        plt.show()
-    else:
-        raise ValueError("learning_alg has to be one of 'pmmh', 'gibbs', 'smc2'; got {} instead.".format(learning_alg))
-
-
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 1000
+    nb_timesteps = 100
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
+    dt = 0.01
 
     # ---------------------------- parameter learning ----------------------------
     add_Q = False
@@ -160,10 +135,16 @@ if __name__ == '__main__':
     add_imu = True
     add_alphas = False
     set_theta0 = True
-    theta0, prior_dict, my_prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
-    Nx = 5000
+    theta0, prior_dict, prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
+    Nx = 50
     N = 20
-    t_start = 500
-    niter = 200
+    t_start = 50
+    niter = 100
     learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
-    learn_model_parameters(theta0, prior_dict, my_prior, learning_alg, Nx, N, t_start, niter)
+    show_fig = True
+    export_name = 'Learning{}_data{}_steps{}_N{}_niter{}_tstart{}_prior{}'.format(learning_alg, generation_type,
+                                                                                  nb_timesteps, N, niter, t_start,
+                                                                                  prior_dict)
+    learn_model_parameters(theta0=theta0, prior_dict=prior_dict, structured_prior=prior, learning_alg=learning_alg,
+                           Nx=Nx, N=N, t_start=t_start, niter=niter, true_states=x, data=y, dt=dt, show_fig=show_fig,
+                           export_name=export_name)

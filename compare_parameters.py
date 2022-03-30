@@ -33,8 +33,8 @@ def compare_parameters(fk_models, true_states, data, dt, nb_particles, nb_runs, 
     end_user, end_process = time.time(), time.process_time()
     s_user = end_user - start_user
     s_process = end_process - start_process
-    print('Time user {}min {}s; time processor {}min {}s'.format(s_user // 60, s_user % 60, s_process // 60,
-                                                                 s_process % 60))
+    print('Time user {:.0f}min {:.0f}s; time processor {:.0f}min {:.0f}s'.format(s_user // 60, s_user % 60,
+                                                                                 s_process // 60, s_process % 60))
 
     plotter = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig)
     plotter.plot_likelihood_parameters(results, fk_models.keys(), t_start)

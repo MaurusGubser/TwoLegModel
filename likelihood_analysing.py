@@ -2,7 +2,6 @@ import time
 import numpy as np
 import particles
 
-
 from particles.collectors import Moments, LogLts
 from particles import state_space_models as ssm
 
@@ -51,8 +50,8 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
     end_user, end_process = time.time(), time.process_time()
     s_user = end_user - start_user
     s_process = end_process - start_process
-    print('Time user {}min {}s; time processor {}min {}s'.format(s_user // 60, s_user % 60, s_process // 60,
-                                                                 s_process % 60))
+    print('Time user {:.0f}min {:.0f}s; time processor {:.0f}min {:.0f}s'.format(s_user // 60, s_user % 60,
+                                                                                 s_process // 60, s_process % 60))
     assert t_start < results[0]['output'].fk.T, 'Start time should be shorter than number of steps.'
 
     plotter = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig=show_fig)
