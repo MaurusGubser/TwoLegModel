@@ -123,7 +123,7 @@ def learn_model_parameters(theta0, prior_dict, structured_prior, learning_alg, N
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 100
+    nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
     dt = 0.01
@@ -136,10 +136,10 @@ if __name__ == '__main__':
     add_alphas = False
     set_theta0 = True
     theta0, prior_dict, prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
-    Nx = 50
+    Nx = 5000
     N = 20
-    t_start = 50
-    niter = 100
+    t_start = 500
+    niter = 200
     learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
     show_fig = True
     export_name = 'Learning{}_data{}_steps{}_N{}_niter{}_tstart{}_prior{}'.format(learning_alg, generation_type,
