@@ -440,9 +440,6 @@ class Plotter:
         return None
 
     def plot_learned_parameters(self, alg, learning_alg, prior_dict):
-        sub_dir_name = 'ParameterLearning/'
-        if not os.path.exists(sub_dir_name):
-            os.mkdir(sub_dir_name)
         if learning_alg == 'pmmh' or learning_alg == 'cpmmh' or learning_alg == 'gibbs':
             burnin = 0  # discard the __ first iterations
             for i, param in enumerate(prior_dict.keys()):
