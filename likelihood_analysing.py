@@ -10,21 +10,6 @@ from TwoLegSMCModel import TwoLegModel
 from Plotter import Plotter
 
 
-def prepare_data(generation_type, max_timesteps, dim_observations):
-    path_truth = 'GeneratedData/' + generation_type + '/truth.dat'
-    path_obs = 'GeneratedData/' + generation_type + '/noised_observations.dat'
-    data_reader = DataReaderWriter()
-    data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
-    data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
-    data_reader.prepare_lists()
-    states = data_reader.states_list
-    observations = data_reader.observations_list
-    if dim_observations == 20:
-        observations = [obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)] for obs in
-                        observations]
-    return states, observations
-
-
 def get_extremal_cases(output_multismc, N, t_start):
     logLts = []
     mean_X = []
@@ -75,7 +60,8 @@ if __name__ == '__main__':
     generation_type = 'Missingdata005'
     nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
-    x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
+    data_reader = DataReaderWriter()
+    x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
 
     # ---------------------------- model ----------------------------
     dt = 0.01

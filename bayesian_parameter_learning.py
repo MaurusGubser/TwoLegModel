@@ -75,21 +75,6 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas, set_theta0):
     return theta0, prior_dict, dists.StructDist(prior_dict)
 
 
-def prepare_data(generation_type, max_timesteps, dim_observations):
-    path_truth = 'GeneratedData/' + generation_type + '/truth.dat'
-    path_obs = 'GeneratedData/' + generation_type + '/noised_observations.dat'
-    data_reader = DataReaderWriter()
-    data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
-    data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
-    data_reader.prepare_lists()
-    states = data_reader.states_list
-    observations = data_reader.observations_list
-    if dim_observations == 20:
-        observations = [obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)] for obs in
-                        observations]
-    return states, observations
-
-
 def learn_model_parameters(theta0, prior_dict, structured_prior, learning_alg, Nx, N, t_start, niter, true_states, data,
                            dt, show_fig, export_name=None):
     if learning_alg == 'pmmh':
@@ -125,7 +110,8 @@ if __name__ == '__main__':
     generation_type = 'Missingdata005'
     nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
-    x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
+    data_reader = DataReaderWriter()
+    x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
     dt = 0.01
 
     # ---------------------------- parameter learning ----------------------------

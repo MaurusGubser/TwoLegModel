@@ -10,21 +10,6 @@ from TwoLegSMCModel import TwoLegModel
 from Plotter import Plotter
 
 
-def prepare_data(generation_type, max_timesteps, dim_observations):
-    path_truth = 'GeneratedData/' + generation_type + '/truth.dat'
-    path_obs = 'GeneratedData/' + generation_type + '/noised_observations.dat'
-    data_reader = DataReaderWriter()
-    data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
-    data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
-    data_reader.prepare_lists()
-    states = data_reader.states_list
-    observations = data_reader.observations_list
-    if dim_observations == 20:
-        observations = [obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)] for obs in
-                        observations]
-    return states, observations
-
-
 def run_particle_filter(fk_model, nb_particles, ESSrmin=0.5):
     pf = particles.SMC(fk=fk_model, N=nb_particles, ESSrmin=ESSrmin, store_history=True, collect=[Moments()],
                        verbose=True)
@@ -54,18 +39,19 @@ def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
     plotter.plot_logLts_one_run(pf.summaries.logLts)
     if plt_smthng:
         smooth_trajectories = pf.hist.backward_sampling(5, linear_cost=False, return_ar=False)
-        data_reader = DataReaderWriter()
-        data_reader.export_trajectory(np.array(smooth_trajectories), dt, export_name)
+        data_writer = DataReaderWriter()
+        data_writer.export_trajectory(np.array(smooth_trajectories), dt, export_name)
         plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
     return None
 
 
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
-    generation_type = 'NoNoise'
+    generation_type = 'Missingdata005'
     nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
-    x, y = prepare_data(generation_type, nb_timesteps, dim_obs)
+    data_reader = DataReaderWriter()
+    x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
 
     # ---------------------------- model ----------------------------
     dt = 0.01
@@ -79,7 +65,7 @@ if __name__ == '__main__':
     pos_imu1 = 0.29  # 0.29
     pos_imu2 = 0.315  # 0.315
     pos_imu3 = 0.33  # 0.33
-    alpha_0 = 0.0
+    alpha_0 = -0.1
     alpha_1 = 0.0
     alpha_2 = 0.0
     alpha_3 = 0.0
@@ -102,7 +88,7 @@ if __name__ == '__main__':
     sigma_press_acc = 1.0  # 1.0
     factor_H = 1.0  # 1.0
 
-    factor_proposal = 1.2  # 1.2
+    factor_proposal = 1.2   # 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -151,4 +137,5 @@ if __name__ == '__main__':
         factor_H,
         factor_proposal)
     show_fig = True
-    plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=True)
+    plt_smoothed = True
+    plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=plt_smoothed)

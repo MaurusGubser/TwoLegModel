@@ -8,9 +8,9 @@ from more_itertools import pairwise
 class DataReaderWriter:
 
     def __init__(self):
-        self.observations = np.empty(0)
+        self.observations_arr = np.empty(0)
         self.observations_list = []
-        self.true_states = np.empty(0)
+        self.true_states_arr = np.empty(0)
         self.states_list = []
 
     def read_states_as_arr(self, path_true_states, max_timesteps):
@@ -21,7 +21,7 @@ class DataReaderWriter:
                               skip_header=6,
                               usecols=tuple(range(1, 19)),
                               max_rows=max_timesteps)
-        self.true_states = truth
+        self.true_states_arr = truth
         return None
 
     def read_observations_as_arr(self, path_observations, max_timesteps):
@@ -45,24 +45,48 @@ class DataReaderWriter:
             observation_df = pd.merge(observation_df, df_obs, how='left', on='time')
 
         measurement_arr = observation_df.drop('time', axis=1).to_numpy(dtype=float)
-        self.observations = measurement_arr[0:max_timesteps, :]
+        self.observations_arr = measurement_arr[0:max_timesteps, :]
         return None
 
-    def prepare_lists(self):
-        if self.observations.shape[0] != self.true_states.shape[0]:
+    def data_arr_to_list(self):
+        if self.observations_arr.shape[0] != self.true_states_arr.shape[0]:
             raise AssertionError('Number of time steps in observations is {}; number of time steps in truth is {};'
-                                 'should be the same.'.format(self.observations.shape[0], self.true_states.shape[0]))
-        nb_timesteps = self.true_states.shape[0]
+                                 'should be the same.'.format(self.observations_arr.shape[0],
+                                                              self.true_states_arr.shape[0]))
+        nb_timesteps = self.true_states_arr.shape[0]
         for time_step in range(0, nb_timesteps):
-            self.states_list.append(np.reshape(self.true_states[time_step, :], (1, -1)))
-            self.observations_list.append(np.reshape(self.observations[time_step, :], (1, -1)))
+            self.states_list.append(np.reshape(self.true_states_arr[time_step, :], (1, -1)))
+            self.observations_list.append(np.reshape(self.observations_arr[time_step, :], (1, -1)))
         return None
+
+    def reduce_observations(self):
+        self.observations_arr = self.observations_arr[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
+        return None
+
+    def get_data_as_lists(self, generation_type, max_timesteps, dim_observations):
+        path_truth = 'GeneratedData/' + generation_type + '/truth.dat'
+        path_obs = 'GeneratedData/' + generation_type + '/noised_observations.dat'
+        self.read_states_as_arr(path_truth, max_timesteps)
+        self.read_observations_as_arr(path_obs, max_timesteps)
+        if dim_observations == 20:
+            self.reduce_observations()
+        self.data_arr_to_list()
+        return self.states_list, self.observations_list
+
+    def get_data_as_arr(self, generation_type, max_timesteps, dim_observations):
+        path_truth = 'GeneratedData/' + generation_type + '/truth.dat'
+        path_obs = 'GeneratedData/' + generation_type + '/noised_observations.dat'
+        self.read_states_as_arr(path_truth, max_timesteps)
+        self.read_observations_as_arr(path_obs, max_timesteps)
+        if dim_observations == 20:
+            self.reduce_observations()
+        return self.true_states_arr, self.observations_arr
 
     @staticmethod
     def export_trajectory(data_states, dt, file_name):
         nb_timesteps, nb_samples, _ = data_states.shape
         time_arr = dt * np.arange(1, nb_timesteps + 1)
-        header = '\nnb_samples: {}\n'.format(nb_timesteps) + 4*'nb_times: {}\n'.format(nb_timesteps)
+        header = '\nnb_samples: {}\n'.format(nb_timesteps) + 4 * 'nb_times: {}\n'.format(nb_timesteps)
         header = header + '# time,x_0,x_1,phi femur_l,phi fibula_l,phi femur_r,phi fibula_r,dx_0,dx_1,dphi femur_l,dphi fibula_l,dphi femur_r,dphi fibula_r,ddx_0,ddx_1,ddphi femur_l,ddphi fibula_l,ddphi femur_r,ddphi fibula_r\n'
 
         if not os.path.exists('AnimationSamples'):

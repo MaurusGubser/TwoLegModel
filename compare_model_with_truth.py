@@ -67,9 +67,9 @@ data_dt = 0.01
 
 data_reader.read_states_as_arr(path_truth, max_timesteps=max_steps)
 data_reader.read_observations_as_arr(path_obs, max_timesteps=max_steps)
-data_reader.prepare_lists()
-x = data_reader.true_states
-y = data_reader.observations
+data_reader.data_arr_to_list()
+x = data_reader.true_states_arr
+y = data_reader.observations_arr
 
 # ---------- model -----------------
 model_dt = 0.05

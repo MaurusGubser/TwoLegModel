@@ -123,9 +123,9 @@ data_reader = DataReaderWriter()
 max_timesteps = 1000
 data_reader.read_states_as_arr(path_truth, max_timesteps=max_timesteps)
 data_reader.read_observations_as_arr(path_obs, max_timesteps=max_timesteps)
-data_reader.prepare_lists()
-true_states = data_reader.true_states
-obs = data_reader.observations
+data_reader.data_arr_to_list()
+true_states = data_reader.true_states_arr
+obs = data_reader.observations_arr
 true_states = np.reshape(true_states, (max_timesteps, 1, DIM_STATES))
 if DIM_OBSERVATIONS == 20:
     obs = obs[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
