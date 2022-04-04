@@ -100,15 +100,18 @@ def learn_model_parameters(theta0, prior_dict, structured_prior, learning_alg, N
     s_process = end_process - start_process
     print('Time user {:.0f}h {:.0f}min; time processor {:.0f}h {:.0f}min'.format(s_user // 3600, s_user % 3600,
                                                                                  s_process // 3600, s_process % 3600))
+    data_writer = DataReaderWriter()
+    data_writer.export_parameters(alg, prior_dict, export_name)
     plotter = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig)
     plotter.plot_learned_parameters(alg, learning_alg, prior_dict)
+
     return None
 
 
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 1000
+    nb_timesteps = 100
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
     x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
@@ -122,15 +125,16 @@ if __name__ == '__main__':
     add_alphas = False
     set_theta0 = True
     theta0, prior_dict, prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
-    Nx = 5000
+    Nx = 50
     N = 20
-    t_start = 500
-    niter = 200
+    t_start = 50
+    niter = 20
     learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
     show_fig = True
+    prior_str = '_'.join(prior_dict.keys())
     export_name = 'Learning{}_data{}_steps{}_N{}_niter{}_tstart{}_prior{}'.format(learning_alg, generation_type,
                                                                                   nb_timesteps, N, niter, t_start,
-                                                                                  prior_dict)
+                                                                                  prior_str)
     learn_model_parameters(theta0=theta0, prior_dict=prior_dict, structured_prior=prior, learning_alg=learning_alg,
                            Nx=Nx, N=N, t_start=t_start, niter=niter, true_states=x, data=y, dt=dt, show_fig=show_fig,
                            export_name=export_name)

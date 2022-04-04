@@ -1,5 +1,4 @@
 import os
-
 import numpy as np
 import pandas as pd
 from more_itertools import pairwise
@@ -109,4 +108,14 @@ class DataReaderWriter:
             with open(export_name, 'a') as f_write:
                 f_write.write(time_str)
         print('Sampled states exported to AnimationSamples/{}'.format(file_name))
+        return None
+
+    @staticmethod
+    def export_parameters(alg, prior_dict, file_name):
+        data = np.array([alg.chain.theta[param] for param in prior_dict.keys()])
+        row_names = list(prior_dict.keys())
+        export_path = 'ParameterLearning/' + file_name
+        df = pd.DataFrame(data=data, index=row_names)
+        df.to_csv(export_path)
+        print('Learned parameters exported to ParameterLearning/{}'.format(file_name))
         return None
