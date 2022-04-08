@@ -114,7 +114,7 @@ class DataReaderWriter:
     def export_parameters(alg, prior_dict, file_name):
         data = np.array([alg.chain.theta[param] for param in prior_dict.keys()])
         row_names = list(prior_dict.keys())
-        export_path = 'ParameterLearning/' + file_name
+        export_path = 'ParameterLearning/' + file_name + '.csv'
         df = pd.DataFrame(data=data, index=row_names)
         df.to_csv(export_path)
         print('Learned parameters exported to ParameterLearning/{}'.format(file_name))
