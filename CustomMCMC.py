@@ -58,7 +58,7 @@ class TruncatedPMMH(PMMH):
                       smc_cls=smc_cls, prior=prior, data=data, smc_options=smc_options,
                       fk_cls=fk_cls, Nx=Nx, theta0=theta0, adaptive=adaptive, scale=scale,
                       rw_cov=rw_cov)
-        self.smc_options.update({'store_history': True, 'collect': [LogLts()]})
+        self.smc_options.update({'collect': [LogLts()]})
 
     def alg_instance(self, theta):
         return self.smc_cls(fk=self.fk_cls(ssm=self.ssm_cls(**theta), data=self.data), N=self.Nx,
