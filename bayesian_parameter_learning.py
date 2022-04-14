@@ -47,11 +47,11 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas, set_theta0):
     if add_legs:
         prior_legs = {'femur_left': dists.Uniform(0.3, 0.7), 'fibula_left': dists.Uniform(0.4, 0.8),
                       'femur_right': dists.Uniform(0.3, 0.7), 'fibula_right': dists.Uniform(0.4, 0.8)}
+        prior_legs = {'femur_left': dists.Uniform(0.3, 0.7),
+                      'femur_right': dists.Uniform(0.3, 0.7)}
         prior_dict.update(prior_legs)
         if set_theta0:
-            theta0 = np.array([(0.5, 0.6, 0.5, 0.6)],
-                              dtype=[('femur_left', 'float64'), ('fibula_left', 'float64'), ('femur_right', 'float64'),
-                                     ('fibula_right', 'float64')])
+            theta0 = np.array([(0.5, 0.5)], dtype=[('femur_left', 'float64'), ('femur_right', 'float64')])
     if add_imus:
         prior_imus = {'pos_imu0': dists.TruncNormal(mu=0.25, sigma=0.3, a=0.0, b=0.5),
                       'pos_imu1': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.6),
@@ -111,7 +111,7 @@ def learn_model_parameters(theta0, prior_dict, structured_prior, learning_alg, N
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 100
+    nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
     x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
@@ -120,15 +120,15 @@ if __name__ == '__main__':
     # ---------------------------- parameter learning ----------------------------
     add_Q = False
     add_H = False
-    add_legs = False
-    add_imu = True
+    add_legs = True
+    add_imu = False
     add_alphas = False
-    set_theta0 = True
+    set_theta0 = False
     theta0, prior_dict, prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
-    Nx = 50
+    Nx = 2000
     N = 20
-    t_start = 50
-    niter = 20
+    t_start = 500
+    niter = 200
     learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
     show_fig = True
     prior_str = '_'.join(prior_dict.keys())
