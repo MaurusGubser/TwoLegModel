@@ -49,13 +49,13 @@ if __name__ == '__main__':
         t_start,
         params)
 
-    parameters = [{'femur_left': 0.3, 'femur_right': 0.3}, {'femur_left': 0.4, 'femur_right': 0.4}, {'femur_left': 0.5, 'femur_right': 0.5}, {'femur_left': 0.6, 'femur_right': 0.6}, {'femur_left': 0.7, 'femur_right': 0.7}]
+    # parameters = [{'femur_left': 0.3, 'femur_right': 0.3}, {'femur_left': 0.4, 'femur_right': 0.4}, {'femur_left': 0.5, 'femur_right': 0.5}, {'femur_left': 0.6, 'femur_right': 0.6}, {'femur_left': 0.7, 'femur_right': 0.7}]
     # parameters = [{'femur_left': 0.3}, {'femur_left': 0.4}, {'femur_left': 0.5}, {'femur_left': 0.6}, {'femur_left': 0.7}]
     # parameters = [{'factor_proposal': 1.0}, {'factor_proposal': 1.05}, {'factor_proposal': 1.1}, {'factor_proposal': 1.15}, {'factor_proposal': 1.2}, {'factor_proposal': 1.25}, {'factor_proposal': 1.3}, {'factor_proposal': 1.35}, {'factor_proposal': 1.4}]
     # parameters = [{'pos_imu0': 0.15}, {'pos_imu0': 0.20}, {'pos_imu0': 0.25}, {}, {'pos_imu0': 0.35}, {'pos_imu0': 0.4}, {'pos_imu0': 0.45}]
     # parameters = [{'pos_imu0': 0.15, 'pos_imu2': 0.15}, {'pos_imu0': 0.2, 'pos_imu2': 0.2}, {'pos_imu0': 0.25, 'pos_imu2': 0.25}, {}, {'pos_imu0': 0.35, 'pos_imu2': 0.35}, {'pos_imu0': 0.4, 'pos_imu2': 0.4}, {'pos_imu0': 0.45, 'pos_imu2': 0.45}]
-    # parameters = [{'alpha_0': -0.2}, {'alpha_0': -0.1}, {'alpha_0': 0.0}, {'alpha_0': 0.1}, {'alpha_0': 0.2}, {'alpha_0': 0.3}]
-    # parameters = [{'alpha_0': -0.2, 'alpha_2': -0.2}, {'alpha_0': -0.1, 'alpha_2': -0.1}, {'alpha_0': 0.0, 'alpha_2': 0.0}, {'alpha_0': 0.1, 'alpha_2': 0.1}, {'alpha_0': 0.2, 'alpha_2': 0.2}, {'alpha_0': 0.3, 'alpha_2': 0.3}]
+    parameters = [{'alpha0': -0.2}, {'alpha0': -0.1}, {'alpha0': 0.0}, {'alpha0': 0.1}, {'alpha0': 0.2}, {'alpha0': 0.3}]
+    # parameters = [{'alpha0': -0.2, 'alpha2': -0.2}, {'alpha0': -0.1, 'alpha2': -0.1}, {'alpha0': 0.0, 'alpha2': 0.0}, {'alpha0': 0.1, 'alpha2': 0.1}, {'alpha0': 0.2, 'alpha2': 0.2}, {'alpha0': 0.3, 'alpha2': 0.3}]
     fk_models = {}
     for param in parameters:
         fk_models[str(param)] = ssm.GuidedPF(ssm=TwoLegModel(**param), data=y)

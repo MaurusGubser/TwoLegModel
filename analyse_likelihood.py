@@ -75,10 +75,10 @@ if __name__ == '__main__':
     pos_imu1 = 0.29  # 0.29
     pos_imu2 = 0.315  # 0.315
     pos_imu3 = 0.33  # 0.33
-    alpha_0 = 0.0
-    alpha_1 = 0.0
-    alpha_2 = 0.0
-    alpha_3 = 0.0
+    alpha0 = 0.0
+    alpha1 = 0.0
+    alpha2 = 0.0
+    alpha3 = 0.0
 
     b0 = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -108,10 +108,10 @@ if __name__ == '__main__':
                            pos_imu1=pos_imu1,
                            pos_imu2=pos_imu2,
                            pos_imu3=pos_imu3,
-                           alpha_0=alpha_0,
-                           alpha_1=alpha_1,
-                           alpha_2=alpha_2,
-                           alpha_3=alpha_3,
+                           alpha0=alpha0,
+                           alpha1=alpha1,
+                           alpha2=alpha2,
+                           alpha3=alpha3,
                            b0=b0,
                            factor_Q0=factor_Q0,
                            lambda_x=lambda_x,

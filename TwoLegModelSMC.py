@@ -28,10 +28,10 @@ class TwoLegModel(ssm.StateSpaceModel):
                  pos_imu1=0.29,
                  pos_imu2=0.315,
                  pos_imu3=0.33,
-                 alpha_0=0.0,
-                 alpha_1=0.0,
-                 alpha_2=0.0,
-                 alpha_3=0.0,
+                 alpha0=0.0,
+                 alpha1=0.0,
+                 alpha2=0.0,
+                 alpha3=0.0,
                  b0=np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                               0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                               0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
@@ -61,10 +61,10 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.pos_imu2 = pos_imu2
         self.pos_imu3 = pos_imu3
         self.pos_imus = np.array([self.pos_imu0, self.pos_imu1, self.pos_imu2, self.pos_imu3])
-        self.alpha_0 = alpha_0
-        self.alpha_1 = alpha_1
-        self.alpha_2 = alpha_2
-        self.alpha_3 = alpha_3
+        self.alpha0 = alpha0
+        self.alpha1 = alpha1
+        self.alpha2 = alpha2
+        self.alpha3 = alpha3
         self.R = np.eye(self.dim_observations)
         self.set_imu_rotation_matrices()
         self.b0 = b0
@@ -149,10 +149,10 @@ class TwoLegModel(ssm.StateSpaceModel):
         return None
 
     def set_imu_rotation_matrices(self):
-        R0 = create_rotation_matrix_z(self.alpha_0)
-        R1 = create_rotation_matrix_z(self.alpha_1)
-        R2 = create_rotation_matrix_z(self.alpha_2)
-        R3 = create_rotation_matrix_z(self.alpha_3)
+        R0 = create_rotation_matrix_z(self.alpha0)
+        R1 = create_rotation_matrix_z(self.alpha1)
+        R2 = create_rotation_matrix_z(self.alpha2)
+        R3 = create_rotation_matrix_z(self.alpha3)
         R = block_diag(R0, R0, R1, R1, R2, R2, R3, R3, np.eye(12))
         self.R = R
 

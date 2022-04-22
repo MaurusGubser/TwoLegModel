@@ -63,15 +63,15 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas, set_theta0):
         if set_theta0:
             theta0 = np.array([(0.25, 0.25)], dtype=[('pos_imu0', 'float64'), ('pos_imu2', 'float64')])
     if add_alphas:
-        prior_alphas = {'alpha_0': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
-                        'alpha_1': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
-                        'alpha_2': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
-                        'alpha_3': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57)}
-        prior_alphas = {'alpha_0': dists.TruncNormal(mu=0.0, sigma=1.0, a=-2.0, b=2.0),
-                        'alpha_2': dists.TruncNormal(mu=0.0, sigma=1.0, a=-2.0, b=2.0)}
+        prior_alphas = {'alpha0': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
+                        'alpha1': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
+                        'alpha2': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
+                        'alpha3': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57)}
+        prior_alphas = {'alpha0': dists.TruncNormal(mu=0.0, sigma=1.0, a=-2.0, b=2.0),
+                        'alpha2': dists.TruncNormal(mu=0.0, sigma=1.0, a=-2.0, b=2.0)}
         prior_dict.update(prior_alphas)
         if set_theta0:
-            theta0 = np.array([(0.0, 0.0)], dtype=[('alpha_0', 'float64'), ('alpha_2', 'float64')])
+            theta0 = np.array([(0.0, 0.0)], dtype=[('alpha0', 'float64'), ('alpha2', 'float64')])
     return theta0, prior_dict, dists.StructDist(prior_dict)
 
 
@@ -117,9 +117,9 @@ if __name__ == '__main__':
     # ---------------------------- parameter learning ----------------------------
     add_Q = False
     add_H = False
-    add_legs = True
+    add_legs = False
     add_imu = False
-    add_alphas = False
+    add_alphas = True
     set_theta0 = False
     theta0, prior_dict, prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
     Nx = 20
