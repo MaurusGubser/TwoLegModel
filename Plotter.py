@@ -220,7 +220,7 @@ class Plotter:
             plt.show()
         return None
 
-    def plot_observations(self, samples, model):
+    def plot_observations(self, samples, observation_map):
         nb_steps, nb_samples, dim_states = samples.shape
         nb_graphs = min(nb_samples, 5)
         if nb_steps != self.nb_steps or dim_states != self.dim_states:
@@ -229,7 +229,7 @@ class Plotter:
         true_obs = self.true_obs
         obs = np.empty((nb_steps, nb_graphs, self.dim_observations))
         for i in range(0, nb_graphs):
-            obs[:, i, :] = model.state_to_observation(samples[:, i, :])
+            obs[:, i, :] = observation_map(samples[:, i, :])
 
         if self.dim_observations == 20:
             obs_names = ['$\ddot x^0$', '$\ddot y^0$', '$\omega_z^0$',
