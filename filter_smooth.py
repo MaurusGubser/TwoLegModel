@@ -47,8 +47,8 @@ def plot_results(pf, obs_map, x, y, dt, export_name, show_fig, plt_smthng=False)
 
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
-    generation_type = 'Normal'
-    nb_timesteps = 100
+    generation_type = 'Missingdata005'
+    nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
     x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
@@ -75,7 +75,7 @@ if __name__ == '__main__':
                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     factor_Q0 = 0.1  # 0.01
 
-    lambda_x = 10000.0  # 10000.0
+    lambda_x = 0.5*10000.0  # 10000.0
     lambda_y = 1000.0  # 1000.0
     lambda_phi = 10000000.0  # 10000000.0
 
@@ -114,18 +114,25 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 50
+    nb_particles = 1000
     ESSrmin = 0.5
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=ESSrmin)
 
     # ---------------------------- plot results ----------------------------
-    export_name_single = 'SingleRun_{}_steps{}_particles{}_factorQ0{}_factorProp{}'.format(
+    export_name_single = 'SingleRun_{}_steps{}_particles{}_factorQ0{}_lambdax{}_lambday{}_lambdaphi{}_simuacc{}_simugyro{}_spressvelo{}_spressacc{}_factorProp{}'.format(
         generation_type,
         nb_timesteps,
         nb_particles,
         factor_Q0,
+        lambda_x,
+        lambda_y,
+        lambda_phi,
+        sigma_imu_acc,
+        sigma_imu_gyro,
+        sigma_press_velo,
+        sigma_press_acc,
         factor_proposal)
     show_fig = True
     plt_smoothed = True
