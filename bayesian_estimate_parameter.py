@@ -84,17 +84,14 @@ def learn_model_parameters(theta0, prior_dict, structured_prior, learning_alg, N
         alg = TruncatedPMMH(ssm_cls=TwoLegModel, prior=structured_prior, fk_cls=ssm.GuidedPF,
                             smc_options={'ESSrmin': 0.5}, data=data, Nx=Nx, theta0=theta0, niter=niter, verbose=niter,
                             adaptive=True, scale=1.0, t_start=t_start)
-    elif learning_alg == 'gibbs':
-        alg = mcmc.ParticleGibbs(ssm_cls=TwoLegModel, prior=structured_prior, fk_cls=ssm.GuidedPF, data=data, Nx=Nx,
-                                 theta0=theta0, niter=niter, verbose=niter)
     elif learning_alg == 'smc2':
         fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=structured_prior, fk_cls=ssm.GuidedPF, data=data, init_Nx=Nx,
                            ar_to_increase_Nx=-1.0, smc_options={'verbose': True})
         alg = particles.SMC(fk=fk_smc2, N=N)
     else:
-        raise ValueError("learning_alg has to be one of 'pmmh', 'gibbs', 'smc2'; got {} instead.".format(learning_alg))
+        raise ValueError("learning_alg has to be one of 'pmmh', 'smc2'; got {} instead.".format(learning_alg))
     start_user, start_process = time.time(), time.process_time()
-    alg.run()  # Warning: takes a few seconds
+    alg.run()
     end_user, end_process = time.time(), time.process_time()
     s_user = end_user - start_user
     s_process = end_process - start_process
@@ -111,7 +108,7 @@ def learn_model_parameters(theta0, prior_dict, structured_prior, learning_alg, N
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 1000
+    nb_timesteps = 100
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
     x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
@@ -125,11 +122,11 @@ if __name__ == '__main__':
     add_alphas = False
     set_theta0 = False
     theta0, prior_dict, prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
-    Nx = 2000
-    N = 20
-    t_start = 500
-    niter = 200
-    learning_alg = 'cpmmh'  # cpmmh, pmmh, gibbs, smc2
+    Nx = 20
+    N = 20  # only used for smc2
+    t_start = 50
+    niter = 20
+    learning_alg = 'cpmmh'  # cpmmh, pmmh, smc2
     show_fig = True
     prior_str = '_'.join(prior_dict.keys())
     export_name = 'Learning{}_data{}_steps{}_N{}_niter{}_tstart{}_prior{}'.format(learning_alg, generation_type,

@@ -103,14 +103,14 @@ def generate_observation_covar(s_imu_acc, s_imu_gyro, s_press_velo, s_press_acc,
 # -------- Model -----------
 dt = 0.01
 leg_constants = np.array([0.5, 0.6, 0.5, 0.6])
-imu_position = np.array([0.34, 0.29, 0.315, 0.33])
+imu_positions = np.array([0.34, 0.29, 0.315, 0.33])
 DIM_STATES = 18
 DIM_OBSERVATIONS = 20
 
 my_model = MechanicalModel(dt=dt,
                            dim_states=DIM_STATES,
                            dim_observations=DIM_OBSERVATIONS,
-                           imu_position=imu_position,
+                           imu_positions=imu_positions,
                            leg_constants=leg_constants,
                            R=np.eye(36)
                            )

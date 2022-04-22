@@ -74,14 +74,14 @@ y = data_reader.observations_arr
 # ---------- model -----------------
 model_dt = 0.05
 leg_constants = np.array([0.5, 0.6, 0.5, 0.6])
-imu_position = np.array([0.34, 0.29, 0.315, 0.33])
+imu_positions = np.array([0.34, 0.29, 0.315, 0.33])
 dim_state = 18
 dim_observations = 36
 
 my_model = MechanicalModel(dt=model_dt,
                            dim_states=dim_state,
                            dim_observations=dim_observations,
-                           imu_position=imu_position,
+                           imu_positions=imu_positions,
                            leg_constants=leg_constants,
                            R=np.eye(dim_observations))
 

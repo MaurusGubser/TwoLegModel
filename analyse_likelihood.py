@@ -44,7 +44,7 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
         logLts = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in results if
                   r['N'] == N]
         mean, var = np.mean(logLts, axis=0), np.var(logLts, axis=0)
-        print('N={:.5E}, Mean loglhd={:.5E}, Variance loglhd={:.5E}'.format(N, mean, var))
+        print('N={:.5E}, Mean truncated loglhd={:.5E}, Variance truncated loglhd={:.5E}'.format(N, mean, var))
         """
         bad_run, middle_run = get_extremal_cases(output_multismc=results, N=N, t_start=t_start)
         plotter.plot_particle_moments(bad_run['mean'], bad_run['var'], name_suffix='_bad_N{}_'.format(N))
@@ -58,7 +58,7 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 1000
+    nb_timesteps = 100
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
     x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
@@ -83,20 +83,17 @@ if __name__ == '__main__':
     b0 = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-
-    factor_init = 0.01  # 0.01
+    factor_Q0 = 0.1  # 0.01
 
     cov_step = dt  # 0.01
-    scale_x = 10000.0  # 10000.0
-    scale_y = 1000.0  # 1000.0
-    scale_phi = 10000000.0  # 10000000.0
-    factor_Q = 1.0  # 1.0
-    diag_Q = False
+    lambda_x = 10000.0  # 10000.0
+    lambda_y = 1000.0  # 1000.0
+    lambda_phi = 10000000.0  # 10000000.0
+
     sigma_imu_acc = 0.1  # 0.1
     sigma_imu_gyro = 0.1  # 0.1
     sigma_press_velo = 0.1  # 0.1
     sigma_press_acc = 1.0  # 1.0
-    factor_S = 1.0  # 1.0
 
     factor_proposal = 1.2  # 1.2
 
@@ -116,18 +113,14 @@ if __name__ == '__main__':
                            alpha_2=alpha_2,
                            alpha_3=alpha_3,
                            b0=b0,
-                           factor_init=factor_init,
-                           cov_step=cov_step,
-                           lambda_x=scale_x,
-                           lambda_y=scale_y,
-                           lambda_phi=scale_phi,
-                           factor_Q=factor_Q,
-                           diag_Q=diag_Q,
+                           factor_Q0=factor_Q0,
+                           lambda_x=lambda_x,
+                           lambda_y=lambda_y,
+                           lambda_phi=lambda_phi,
                            sigma_imu_acc=sigma_imu_acc,
                            sigma_imu_gyro=sigma_imu_gyro,
                            sigma_press_velo=sigma_press_velo,
                            sigma_press_acc=sigma_press_acc,
-                           factor_S=factor_S,
                            factor_proposal=factor_proposal
                            )
 
@@ -136,17 +129,15 @@ if __name__ == '__main__':
     # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
 
-    Ns = [500, 1000]
-    nb_runs = 5
-    t_start = 500
+    Ns = [50, 75, 100]
+    nb_runs = 10
+    t_start = 50
     show_fig = True
-    export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
+    export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorQ0{}_factorProp{}'.format(
         generation_type,
         nb_timesteps, Ns,
         nb_runs,
         t_start,
-        factor_init,
-        factor_Q,
-        factor_S,
+        factor_Q0,
         factor_proposal)
     analyse_likelihood(fk_guided, x, y, dt, Ns, nb_runs, t_start, show_fig=show_fig, export_name=export_name_multi)

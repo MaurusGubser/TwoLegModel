@@ -1,8 +1,6 @@
 import time
 import numpy as np
 import particles
-from matplotlib import pyplot as plt
-import seaborn as sb
 
 from particles.collectors import Moments, LogLts
 from particles import state_space_models as ssm
@@ -30,7 +28,7 @@ def compare_parameters(fk_models, true_states, data, dt, nb_particles, nb_runs, 
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 1000
+    nb_timesteps = 100
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
     x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
@@ -38,9 +36,9 @@ if __name__ == '__main__':
     # ---------------------------- model ----------------------------
     # ! model works with parameters defined below; other parameters are chosen as the standard params in TwoLegModelSMC.py
     dt = 0.01
-    N = 2000
-    t_start = 500
-    nb_runs = 50
+    N = 20
+    t_start = 50
+    nb_runs = 10
     show_fig = True
     params = 'legs'
     export_name = 'MultiRun_{}_steps{}_N{}_nbruns{}_tstart{}_params{}'.format(

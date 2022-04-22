@@ -48,7 +48,7 @@ def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 1000
+    nb_timesteps = 100
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
     x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
@@ -73,22 +73,18 @@ if __name__ == '__main__':
     b0 = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    factor_Q0 = 0.1  # 0.01
 
-    factor_init = 0.01  # 0.01
+    lambda_x = 10000.0  # 10000.0
+    lambda_y = 1000.0  # 1000.0
+    lambda_phi = 10000000.0  # 10000000.0
 
-    cov_step = dt  # 0.01
-    scale_x = 10000.0  # 10000.0
-    scale_y = 1000.0  # 1000.0
-    scale_phi = 10000000.0  # 10000000.0
-    factor_Q = 1.0  # 1.0
-    diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
-    sigma_imu_gyro = 0.01  # 0.1
+    sigma_imu_gyro = 0.1  # 0.1
     sigma_press_velo = 0.1  # 0.1
     sigma_press_acc = 1.0  # 1.0
-    factor_S = 1.0  # 1.0
 
-    factor_proposal = 1.0   # 1.2
+    factor_proposal = 1.2   # 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -106,35 +102,30 @@ if __name__ == '__main__':
                            alpha_2=alpha_2,
                            alpha_3=alpha_3,
                            b0=b0,
-                           factor_init=factor_init,
-                           cov_step=cov_step,
-                           lambda_x=scale_x,
-                           lambda_y=scale_y,
-                           lambda_phi=scale_phi,
-                           factor_Q=factor_Q,
-                           diag_Q=diag_Q,
+                           factor_Q0=factor_Q0,
+                           lambda_x=lambda_x,
+                           lambda_y=lambda_y,
+                           lambda_phi=lambda_phi,
                            sigma_imu_acc=sigma_imu_acc,
                            sigma_imu_gyro=sigma_imu_gyro,
                            sigma_press_velo=sigma_press_velo,
                            sigma_press_acc=sigma_press_acc,
-                           factor_S=factor_S,
                            factor_proposal=factor_proposal
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 500
+    nb_particles = 50
+    ESSrmin=0.5
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
+    pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=ESSrmin)
 
     # ---------------------------- plot results ----------------------------
-    export_name_single = 'SingleRun_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
+    export_name_single = 'SingleRun_{}_steps{}_particles{}_factorQ0{}_factorProp{}'.format(
         generation_type,
         nb_timesteps,
         nb_particles,
-        factor_init,
-        factor_Q,
-        factor_S,
+        factor_Q0,
         factor_proposal)
     show_fig = True
     plt_smoothed = True

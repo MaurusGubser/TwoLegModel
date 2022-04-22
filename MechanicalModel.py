@@ -305,14 +305,14 @@ def state_to_obs_linear(x, xp, dim_states, dim_observations, g, legs, imus, R):
 
 
 class MechanicalModel:
-    def __init__(self, dt, dim_states, dim_observations, imu_position, leg_constants, R):
+    def __init__(self, dt, dim_states, dim_observations, imu_positions, leg_constants, R):
         self.dt = dt
         self.dim_states = dim_states
         self.dim_observations = dim_observations
         self.A = np.zeros((self.dim_states, self.dim_states))
         self.set_process_transition_matrix()
         self.g = 9.81
-        self.imu_pos = imu_position
+        self.imu_pos = imu_positions
         self.leg_len = leg_constants
         self.R = R
 
