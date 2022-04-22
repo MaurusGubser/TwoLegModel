@@ -59,33 +59,26 @@ def plot_observations(y_nonlinear, y_linear, y_true, supress_zeros, export_name=
 
 
 # ---------- data -----------------
-path_truth = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Missingdata005/truth.dat'
-path_obs = '/home/maurus/Pycharm_Projects/TwoLegModelSMC/GeneratedData/Missingdata005/noised_observations.dat'
+generation_type = 'Normal'
+nb_timesteps = 1000
+dim_obs = 36
 data_reader = DataReaderWriter()
-max_steps = 1000
-data_dt = 0.01
-
-data_reader.read_states_as_arr(path_truth, max_timesteps=max_steps)
-data_reader.read_observations_as_arr(path_obs, max_timesteps=max_steps)
-data_reader.data_arr_to_list()
-x = data_reader.true_states_arr
-y = data_reader.observations_arr
+x, y = data_reader.get_data_as_arr(generation_type, nb_timesteps, dim_obs)
 
 # ---------- model -----------------
-model_dt = 0.05
 leg_constants = np.array([0.5, 0.6, 0.5, 0.6])
 imu_positions = np.array([0.34, 0.29, 0.315, 0.33])
 dim_state = 18
-dim_observations = 36
 
-my_model = MechanicalModel(dt=model_dt,
-                           dim_states=dim_state,
-                           dim_observations=dim_observations,
+my_model = MechanicalModel(dim_states=dim_state,
+                           dim_observations=dim_obs,
                            imu_positions=imu_positions,
                            leg_constants=leg_constants,
-                           R=np.eye(dim_observations))
+                           R=np.eye(dim_obs))
 
 # ---------- prediction -----------------
+data_dt = 0.01
+model_dt = 0.1
 granularity = int(model_dt / data_dt)
 y_nonlinear, y_linear = model_predictions(my_model, x, granularity)
 
