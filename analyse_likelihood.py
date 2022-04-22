@@ -133,11 +133,18 @@ if __name__ == '__main__':
     nb_runs = 10
     t_start = 50
     show_fig = True
-    export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorQ0{}_factorProp{}'.format(
+    export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorQ0{}_lambdax{}_lambday{}_lambdaphi{}_simuacc{}_simugyro{}_spressvelo{}_spressacc{}_factorProp{}'.format(
         generation_type,
         nb_timesteps, Ns,
         nb_runs,
         t_start,
         factor_Q0,
+        lambda_x,
+        lambda_y,
+        lambda_phi,
+        sigma_imu_acc,
+        sigma_imu_gyro,
+        sigma_press_velo,
+        sigma_press_acc,
         factor_proposal)
     analyse_likelihood(fk_guided, x, y, dt, Ns, nb_runs, t_start, show_fig=show_fig, export_name=export_name_multi)

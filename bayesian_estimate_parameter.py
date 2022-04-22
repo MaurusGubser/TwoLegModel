@@ -129,7 +129,7 @@ if __name__ == '__main__':
     learning_alg = 'cpmmh'  # cpmmh, pmmh, smc2
     show_fig = True
     prior_str = '_'.join(prior_dict.keys())
-    export_name = 'Learning{}_data{}_steps{}_N{}_niter{}_tstart{}_prior{}'.format(learning_alg, generation_type,
+    export_name = 'Learning{}_data{}_steps{}_Nx{}_niter{}_tstart{}_prior{}'.format(learning_alg, generation_type,
                                                                                   nb_timesteps, N, niter, t_start,
                                                                                   prior_str)
     learn_model_parameters(theta0=theta0, prior_dict=prior_dict, structured_prior=prior, learning_alg=learning_alg,
