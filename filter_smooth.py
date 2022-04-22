@@ -26,11 +26,11 @@ def run_particle_filter(fk_model, nb_particles, ESSrmin=0.5):
     return pf
 
 
-def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
+def plot_results(pf, obs_map, x, y, dt, export_name, show_fig, plt_smthng=False):
     plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt, show_fig=show_fig,
                       export_name=export_name)
 
-    plotter.plot_observations(np.array(pf.hist.X), model=my_model)
+    plotter.plot_observations(np.array(pf.hist.X), observation_map=obs_map)
     # plotter.plot_particles_trajectories(np.array(pf.hist.X))
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
@@ -47,7 +47,7 @@ def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
 
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
-    generation_type = 'Missingdata005'
+    generation_type = 'Normal'
     nb_timesteps = 100
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     sigma_press_velo = 0.1  # 0.1
     sigma_press_acc = 1.0  # 1.0
 
-    factor_proposal = 1.2   # 1.2
+    factor_proposal = 1.2  # 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
     # ---------------------------- particle filter ----------------------------
     nb_particles = 50
-    ESSrmin=0.5
+    ESSrmin = 0.5
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=ESSrmin)
@@ -129,4 +129,4 @@ if __name__ == '__main__':
         factor_proposal)
     show_fig = True
     plt_smoothed = True
-    plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=plt_smoothed)
+    plot_results(pf, my_model.state_to_observation, x, y, dt, export_name_single, show_fig, plt_smoothed)
