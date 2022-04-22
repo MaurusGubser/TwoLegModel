@@ -8,7 +8,7 @@ from particles.collectors import Moments, LogLts
 from particles import state_space_models as ssm
 
 from DataReaderWriter import DataReaderWriter
-from TwoLegSMCModel import TwoLegModel
+from TwoLegModelSMC import TwoLegModel
 from Plotter import Plotter
 
 

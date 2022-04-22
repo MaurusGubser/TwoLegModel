@@ -6,7 +6,7 @@ from particles.collectors import Moments, LogLts
 from particles import state_space_models as ssm
 
 from DataReaderWriter import DataReaderWriter
-from TwoLegSMCModel import TwoLegModel
+from TwoLegModelSMC import TwoLegModel
 from Plotter import Plotter
 
 
@@ -80,9 +80,9 @@ if __name__ == '__main__':
     alpha_2 = 0.0
     alpha_3 = 0.0
 
-    a = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    b0 = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
     factor_init = 0.01  # 0.01
 
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     sigma_imu_gyro = 0.1  # 0.1
     sigma_press_velo = 0.1  # 0.1
     sigma_press_acc = 1.0  # 1.0
-    factor_H = 1.0  # 1.0
+    factor_S = 1.0  # 1.0
 
     factor_proposal = 1.2  # 1.2
 
@@ -115,19 +115,19 @@ if __name__ == '__main__':
                            alpha_1=alpha_1,
                            alpha_2=alpha_2,
                            alpha_3=alpha_3,
-                           a=a,
+                           b0=b0,
                            factor_init=factor_init,
                            cov_step=cov_step,
-                           scale_x=scale_x,
-                           scale_y=scale_y,
-                           scale_phi=scale_phi,
+                           lambda_x=scale_x,
+                           lambda_y=scale_y,
+                           lambda_phi=scale_phi,
                            factor_Q=factor_Q,
                            diag_Q=diag_Q,
                            sigma_imu_acc=sigma_imu_acc,
                            sigma_imu_gyro=sigma_imu_gyro,
                            sigma_press_velo=sigma_press_velo,
                            sigma_press_acc=sigma_press_acc,
-                           factor_H=factor_H,
+                           factor_S=factor_S,
                            factor_proposal=factor_proposal
                            )
 
@@ -136,8 +136,8 @@ if __name__ == '__main__':
     # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
 
-    Ns = [1000, 2000, 3000, 4000, 5000]
-    nb_runs = 20
+    Ns = [500, 1000]
+    nb_runs = 5
     t_start = 500
     show_fig = True
     export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -147,6 +147,6 @@ if __name__ == '__main__':
         t_start,
         factor_init,
         factor_Q,
-        factor_H,
+        factor_S,
         factor_proposal)
     analyse_likelihood(fk_guided, x, y, dt, Ns, nb_runs, t_start, show_fig=show_fig, export_name=export_name_multi)

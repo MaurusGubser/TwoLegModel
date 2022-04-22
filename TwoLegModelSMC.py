@@ -28,25 +28,25 @@ class TwoLegModel(ssm.StateSpaceModel):
                  pos_imu1=0.29,
                  pos_imu2=0.315,
                  pos_imu3=0.33,
-                 a=np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-                             0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                             0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+                 b0=np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
                  alpha_0=0.0,
                  alpha_1=0.0,
                  alpha_2=0.0,
                  alpha_3=0.0,
                  factor_init=0.01,  # 0.01
                  cov_step=0.01,
-                 scale_x=10000.0,  # 10000.0
-                 scale_y=1000.0,  # 1000.0
-                 scale_phi=10000000.0,  # 10000000.0
+                 lambda_x=10000.0,  # 10000.0
+                 lambda_y=1000.0,  # 1000.0
+                 lambda_phi=10000000.0,  # 10000000.0
                  factor_Q=1.0,  # 1.0
                  diag_Q=False,
                  sigma_imu_acc=0.1,  # 0.1
                  sigma_imu_gyro=0.1,  # 0.1
                  sigma_press_velo=0.1,  # 0.1
                  sigma_press_acc=1.0,  # 1.0
-                 factor_H=1.0,  # 1.0
+                 factor_S=1.0,  # 1.0
                  factor_proposal=1.2):  # 1.2
         ssm.StateSpaceModel().__init__()
         self.dt = dt
@@ -70,22 +70,22 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.alpha_2 = alpha_2
         self.alpha_3 = alpha_3
         self.R = np.eye(self.dim_observations)
-        self.set_rotation_matrix()
-        self.a = a
+        self.set_imu_rotation_matrices()
+        self.a = b0
         self.factor_init = factor_init
         self.P = np.eye(self.dim_states)
         self.set_init_covariance()
         self.cov_step = cov_step
-        self.scale_x = scale_x
-        self.scale_y = scale_y
-        self.scale_phi = scale_phi
+        self.scale_x = lambda_x
+        self.scale_y = lambda_y
+        self.scale_phi = lambda_phi
         self.factor_Q = factor_Q
         self.diag_Q = diag_Q
         self.sigma_imu_acc = sigma_imu_acc
         self.sigma_imu_gyro = sigma_imu_gyro
         self.sigma_press_velo = sigma_press_velo
         self.sigma_press_acc = sigma_press_acc
-        self.factor_H = factor_H
+        self.factor_H = factor_S
         self.Q = np.zeros((self.dim_states, self.dim_states))
         self.set_process_covariance()
         self.H = np.zeros((self.dim_observations, self.dim_observations))
@@ -182,7 +182,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.H = self.factor_H * self.H
         return None
 
-    def set_rotation_matrix(self):
+    def set_imu_rotation_matrices(self):
         R0 = create_rotation_matrix_z(self.alpha_0)
         R1 = create_rotation_matrix_z(self.alpha_1)
         R2 = create_rotation_matrix_z(self.alpha_2)
@@ -196,6 +196,7 @@ class TwoLegModel(ssm.StateSpaceModel):
     def state_to_observation(self, x):
         return state_to_obs(x, self.dim_observations, self.g, self.len_legs, self.pos_imus, self.R)
 
+    # is not needed -> remove?
     def state_to_observation_linear(self, x, xp):
         return state_to_obs_linear(x, xp, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus)
 
@@ -221,17 +222,17 @@ class TwoLegModel(ssm.StateSpaceModel):
 
         # covariance masked
         x_hat = self.state_transition(xp)
-        df = self.compute_observation_derivatives(x_hat)
-        df = df[:, mask_not_nan.flatten(), :]
+        dh = self.compute_observation_derivatives(x_hat)
+        dh = dh[:, mask_not_nan.flatten(), :]
         H_masked = np.reshape(self.H[mask_2d], (nb_non_nan, nb_non_nan))
 
-        dfQ = np.matmul(df, self.Q)
-        S_inv = np.linalg.inv(np.matmul(dfQ, np.transpose(df, (0, 2, 1))) + H_masked)
-        kalman_gain = np.matmul(np.transpose(dfQ, (0, 2, 1)), S_inv)
+        dh_Q = np.matmul(dh, self.Q)
+        S_inv = np.linalg.inv(np.matmul(dh_Q, np.transpose(dh, (0, 2, 1))) + H_masked)
+        kalman_gain = np.matmul(np.transpose(dh_Q, (0, 2, 1)), S_inv)
         prediction_err = data_t[mask_not_nan] - self.state_to_observation(x_hat)[:, mask_not_nan.flatten()]
 
         mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, prediction_err)
-        sigma = self.Q - np.matmul(kalman_gain, dfQ)
+        sigma = self.Q - np.matmul(kalman_gain, dh_Q)
 
         return mu, sigma
 
@@ -243,7 +244,5 @@ class TwoLegModel(ssm.StateSpaceModel):
         covar = self.factor_proposal * np.mean(kalman_covs, axis=0)
         return dists.MvNormal(loc=mean, cov=covar)
 
-    def update_theta(self, theta, x):
-        new_theta = theta.copy()
-
-        pass
+    def upper_bound_log_pt(self, t):
+        return 1.0 / np.sqrt((2 * np.pi)**self.dim_states * np.linalg.det(self.Q))

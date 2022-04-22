@@ -12,7 +12,7 @@ from particles import smc_samplers as ssp
 
 from DataReaderWriter import DataReaderWriter
 from Plotter import Plotter
-from TwoLegSMCModel import TwoLegModel
+from TwoLegModelSMC import TwoLegModel
 from CustomMCMC import TruncatedPMMH
 
 

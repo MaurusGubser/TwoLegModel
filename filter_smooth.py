@@ -6,7 +6,7 @@ from particles.collectors import Moments, LogLts
 from particles import state_space_models as ssm
 
 from DataReaderWriter import DataReaderWriter
-from TwoLegSMCModel import TwoLegModel
+from TwoLegModelSMC import TwoLegModel
 from Plotter import Plotter
 
 
@@ -38,7 +38,7 @@ def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
     plotter.plot_ESS(pf.summaries.ESSs)
     plotter.plot_logLts_one_run(pf.summaries.logLts)
     if plt_smthng:
-        smooth_trajectories = pf.hist.backward_sampling(5, linear_cost=False, return_ar=False)
+        smooth_trajectories = pf.hist.backward_sampling(10, linear_cost=False, return_ar=False)
         data_writer = DataReaderWriter()
         data_writer.export_trajectory(np.array(smooth_trajectories), dt, export_name)
         plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
@@ -65,14 +65,14 @@ if __name__ == '__main__':
     pos_imu1 = 0.29  # 0.29
     pos_imu2 = 0.315  # 0.315
     pos_imu3 = 0.33  # 0.33
-    alpha_0 = -0.1
+    alpha_0 = 0.0
     alpha_1 = 0.0
     alpha_2 = 0.0
     alpha_3 = 0.0
 
-    a = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    b0 = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
     factor_init = 0.01  # 0.01
 
@@ -83,12 +83,12 @@ if __name__ == '__main__':
     factor_Q = 1.0  # 1.0
     diag_Q = False
     sigma_imu_acc = 0.1  # 0.1
-    sigma_imu_gyro = 0.1  # 0.1
+    sigma_imu_gyro = 0.01  # 0.1
     sigma_press_velo = 0.1  # 0.1
     sigma_press_acc = 1.0  # 1.0
-    factor_H = 1.0  # 1.0
+    factor_S = 1.0  # 1.0
 
-    factor_proposal = 1.2   # 1.2
+    factor_proposal = 1.0   # 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -105,24 +105,24 @@ if __name__ == '__main__':
                            alpha_1=alpha_1,
                            alpha_2=alpha_2,
                            alpha_3=alpha_3,
-                           a=a,
+                           b0=b0,
                            factor_init=factor_init,
                            cov_step=cov_step,
-                           scale_x=scale_x,
-                           scale_y=scale_y,
-                           scale_phi=scale_phi,
+                           lambda_x=scale_x,
+                           lambda_y=scale_y,
+                           lambda_phi=scale_phi,
                            factor_Q=factor_Q,
                            diag_Q=diag_Q,
                            sigma_imu_acc=sigma_imu_acc,
                            sigma_imu_gyro=sigma_imu_gyro,
                            sigma_press_velo=sigma_press_velo,
                            sigma_press_acc=sigma_press_acc,
-                           factor_H=factor_H,
+                           factor_S=factor_S,
                            factor_proposal=factor_proposal
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 1000
+    nb_particles = 500
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
@@ -134,7 +134,7 @@ if __name__ == '__main__':
         nb_particles,
         factor_init,
         factor_Q,
-        factor_H,
+        factor_S,
         factor_proposal)
     show_fig = True
     plt_smoothed = True

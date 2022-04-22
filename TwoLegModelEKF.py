@@ -132,9 +132,9 @@ if DIM_OBSERVATIONS == 20:
 obs = np.reshape(obs, (max_timesteps, 1, DIM_OBSERVATIONS))
 
 # -------- EKF -----------
-a = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-              0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+b0 = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+               0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+               0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 # dt already defined for model
 scale_x = 10000.0     # 100.0
 scale_y = 1000.0     # 100.0
@@ -147,7 +147,7 @@ sigma_press_acc = 1.0    # 1000.0
 H = generate_observation_covar(s_imu_acc=sigma_imu_acc, s_imu_gyro=sigma_imu_gyro, s_press_velo=sigma_press_velo,
                                s_press_acc=sigma_press_acc, dim_observations=DIM_OBSERVATIONS)
 
-my_ekf = TwoLegEKF(model=my_model, x0=a, Q=Q, H=H, numeric_jacobian=False)
+my_ekf = TwoLegEKF(model=my_model, x0=b0, Q=Q, H=H, numeric_jacobian=False)
 
 # -------- Simulation -----------
 x_vals = []

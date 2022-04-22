@@ -145,8 +145,7 @@ class Plotter:
                 for k in range(0, nb_graphs):
                     axs[j % nb_axes].plot(self.t_vals, samples[:, k, nb_axes * i + j], label='Sample {}'.format(k),
                                           lw=1)
-                axs[j % nb_axes].plot(self.t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5,
-                                      color='green')
+                axs[j % nb_axes].plot(self.t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5, color='green')
                 if state_names[nb_axes * i + j] == r'$y_H$':
                     axs[j].plot(self.t_vals, self.contact_left + 1.0, label='Contact left', color='red', lw=1.5)
                     axs[j].plot(self.t_vals, self.contact_right + 1.0, label='Contact right', color='orange', lw=1.5)
