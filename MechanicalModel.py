@@ -305,29 +305,13 @@ def state_to_obs_linear(x, xp, dim_states, dim_observations, g, legs, imus, R):
 
 
 class MechanicalModel:
-    def __init__(self, dt, dim_states, dim_observations, imu_positions, leg_constants, R):
-        self.dt = dt
+    def __init__(self, dim_states, dim_observations, imu_positions, leg_constants, R):
         self.dim_states = dim_states
         self.dim_observations = dim_observations
-        self.A = np.zeros((self.dim_states, self.dim_states))
-        self.set_process_transition_matrix()
         self.g = 9.81
         self.imu_pos = imu_positions
         self.leg_len = leg_constants
         self.R = R
-
-    def set_process_transition_matrix(self):
-        self.A = np.eye(self.dim_states)
-        for row in range(0, self.dim_states):
-            for col in range(0, self.dim_states):
-                if row + 6 == col:
-                    self.A[row, col] = self.dt
-                if row + 12 == col:
-                    self.A[row, col] = self.dt ** 2 / 2.0
-        return None
-
-    def state_transition(self, x):
-        return np.matmul(self.A, x.T).T
 
     def state_to_observation(self, x):
         return state_to_obs(x, self.dim_observations, self.g, self.leg_len, self.imu_pos, self.R)

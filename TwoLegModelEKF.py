@@ -8,27 +8,30 @@ from Plotter import Plotter
 
 
 class TwoLegEKF:
-    def __init__(self, model, x0, Q, S, numeric_jacobian):
-        self.a, self.h = model.state_transition, model.state_to_observation
-        self.A = model.A
+    def __init__(self, model, x0, dt, Q, S, numeric_jacobian):
+        self.dt = dt
         self.x = np.reshape(x0, (1, -1))
-        self.I, self.P = np.eye(self.x.shape[1]), np.eye(self.x.shape[1])
-        # modify these if the noise is not independent
-        self.Q, self.H = Q, S
-        self.dim_states = Q.shape[0]
-        self.dim_observations = S.shape[0]
+        self.dim_states = self.x.shape[1]
+        self.A = np.zeros((self.dim_states, self.dim_states))
+        self.set_transition_matrix()
+        self.a = (lambda x: (self.A @ x.T).T)
+        self.Q = Q
+        self.S = S
+        self.dim_observations = self.S.shape[0]
+        self.h = model.state_to_observation
+        self.I, self.P = np.eye(self.dim_states), np.eye(self.dim_states)
         if numeric_jacobian:
             self.compute_jacobian = model.compute_jacobian_observation_numeric
         else:
             self.compute_jacobian = model.compute_jacobian_observation
 
     def predict(self):
-        F = self.A
+        da = self.A
         self.x = self.a(self.x)
-        self.P = (F @ self.P @ F.T) + self.Q
+        self.P = (da @ self.P @ da.T) + self.Q
 
     def update(self, data_t):
-        x, P, H, I, h = self.x, self.P, self.H, self.I, self.h
+        x, P, H, I, h = self.x, self.P, self.S, self.I, self.h
         df = self.compute_jacobian(x)
         df = np.reshape(df, (self.dim_observations, self.dim_states))
         y = data_t - h(x)
@@ -36,6 +39,16 @@ class TwoLegEKF:
         K = P @ df.T @ np.linalg.inv(U)
         self.x += (K @ y.T).T
         self.P = (I - K @ df) @ P
+
+    def set_transition_matrix(self):
+        self.A = np.eye(self.dim_states)
+        for row in range(0, self.dim_states):
+            for col in range(0, self.dim_states):
+                if row + 6 == col:
+                    self.A[row, col] = self.dt
+                if row + 12 == col:
+                    self.A[row, col] = self.dt ** 2 / 2.0
+        return None
 
 
 def set_process_covariance(dim_states, dt, lambda_x, lambda_y, lambda_phi):
@@ -94,15 +107,13 @@ def set_observation_covar(dim_observations, s_imu_acc, s_imu_gyro, s_press_velo,
 
 
 # -------- Model -----------
-dt = 0.01
 leg_constants = np.array([0.5, 0.6, 0.5, 0.6])
 imu_positions = np.array([0.34, 0.29, 0.315, 0.33])
 dim_states = 18
 dim_observations = 20
 R = np.eye(36)
 
-model = MechanicalModel(dt=dt,
-                        dim_states=dim_states,
+model = MechanicalModel(dim_states=dim_states,
                         dim_observations=dim_observations,
                         imu_positions=imu_positions,
                         leg_constants=leg_constants,
@@ -121,7 +132,7 @@ true_states, obs = data_reader.get_data_as_lists(generation_type, nb_timesteps, 
 b0 = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-# dt already defined for model
+dt = 0.01
 lambda_x = 10000.0  # 100.0
 lambda_y = 1000.0  # 100.0
 lambda_phi = 10000000.0  # 250.0
@@ -133,7 +144,7 @@ sigma_press_acc = 1.0  # 1000.0
 S = set_observation_covar(dim_observations=dim_observations, s_imu_acc=sigma_imu_acc, s_imu_gyro=sigma_imu_gyro,
                           s_press_velo=sigma_press_velo,
                           s_press_acc=sigma_press_acc)
-ekf = TwoLegEKF(model=model, x0=b0, Q=Q, S=S, numeric_jacobian=False)
+ekf = TwoLegEKF(model=model, x0=b0, dt=dt, Q=Q, S=S, numeric_jacobian=False)
 
 # -------- run EKF -----------
 x_vals = []
