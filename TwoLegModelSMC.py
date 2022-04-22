@@ -69,8 +69,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.set_imu_rotation_matrices()
         self.b0 = b0
         self.factor_Q0 = factor_Q0
-        self.Q0 = np.eye(self.dim_states)
-        self.set_init_covariance()
+        self.Q0 = self.factor_Q0 * np.eye(self.dim_states)
         self.lambda_x = lambda_x
         self.lambda_y = lambda_y
         self.lambda_phi = lambda_phi
@@ -83,29 +82,6 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.S = np.zeros((self.dim_observations, self.dim_observations))
         self.set_observation_covariance()
         self.factor_proposal = factor_proposal
-
-    def set_init_covariance(self):
-        self.Q0[0, 0] = 0.1
-        self.Q0[1, 1] = 0.1
-        self.Q0[2, 2] = 0.2
-        self.Q0[3, 3] = 0.2
-        self.Q0[4, 4] = 0.2
-        self.Q0[5, 5] = 0.2
-        self.Q0[6, 6] = 0.1
-        self.Q0[7, 7] = 0.1
-        self.Q0[8, 8] = 1.0
-        self.Q0[9, 9] = 1.0
-        self.Q0[10, 10] = 1.0
-        self.Q0[11, 11] = 1.0
-        self.Q0[12, 12] = 1.0
-        self.Q0[13, 13] = 1.0
-        self.Q0[14, 14] = 5.0
-        self.Q0[15, 15] = 5.0
-        self.Q0[16, 16] = 5.0
-        self.Q0[17, 17] = 5.0
-        self.Q0 = np.eye(self.dim_states)
-        self.Q0 = self.factor_Q0 * self.Q0
-        return None
 
     def set_process_transition_matrix(self):
         self.A = np.eye(self.dim_states)
