@@ -121,7 +121,7 @@ if __name__ == '__main__':
     pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=ESSrmin)
 
     # ---------------------------- plot results ----------------------------
-    export_name_single = 'SingleRun_{}_steps{}_particles{}_factorQ0{}_lambdax{}_lambday{}_lambdaphi{}_simuacc{}_simugyro{}_spressvelo{}_spressacc{}_factorProp{}'.format(
+    export_name = 'SingleRun_{}_steps{}_particles{}_factorQ0{}_lambdax{}_lambday{}_lambdaphi{}_simuacc{}_simugyro{}_spressvelo{}_spressacc{}_factorProp{}'.format(
         generation_type,
         nb_timesteps,
         nb_particles,
@@ -136,4 +136,4 @@ if __name__ == '__main__':
         factor_proposal)
     show_fig = True
     plt_smoothed = True
-    plot_results(pf, my_model.state_to_observation, x, y, dt, export_name_single, show_fig, plt_smoothed)
+    plot_results(pf, my_model.state_to_observation, x, y, dt, export_name, show_fig, plt_smoothed)
