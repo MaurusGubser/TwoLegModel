@@ -1,5 +1,4 @@
 import itertools
-
 import numpy as np
 
 from MechanicalModel import MechanicalModel
@@ -112,7 +111,6 @@ imu_positions = np.array([0.34, 0.29, 0.315, 0.33])
 dim_states = 18
 dim_observations = 20
 R = np.eye(36)
-
 model = MechanicalModel(dim_states=dim_states,
                         dim_observations=dim_observations,
                         imu_positions=imu_positions,
@@ -121,7 +119,7 @@ model = MechanicalModel(dim_states=dim_states,
                         )
 
 # -------- Data -----------
-### EKF cannot handle missing data so far! ###
+### EKF cannot handle missing data! ###
 generation_type = 'Normal'
 nb_timesteps = 1000
 dim_obs = 20
