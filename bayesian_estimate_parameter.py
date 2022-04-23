@@ -83,7 +83,7 @@ def learn_model_parameters(theta0, prior_dict, structured_prior, learning_alg, N
     elif learning_alg == 'cpmmh':
         alg = TruncatedPMMH(ssm_cls=TwoLegModel, prior=structured_prior, fk_cls=ssm.GuidedPF,
                             smc_options={'ESSrmin': 0.5}, data=data, Nx=Nx, theta0=theta0, niter=niter, verbose=niter,
-                            adaptive=True, scale=1.0, t_start=t_start)
+                            adaptive=True, scale=1.0, t_trunc=t_start)
     elif learning_alg == 'smc2':
         fk_smc2 = ssp.SMC2(ssm_cls=TwoLegModel, prior=structured_prior, fk_cls=ssm.GuidedPF, data=data, init_Nx=Nx,
                            ar_to_increase_Nx=-1.0, smc_options={'verbose': True})
@@ -124,14 +124,14 @@ if __name__ == '__main__':
     theta0, prior_dict, prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
     Nx = 20
     N = 20  # only used for smc2
-    t_start = 50
+    t_trunc = 50
     niter = 20
-    learning_alg = 'cpmmh'  # cpmmh, pmmh, smc2
+    learning_alg = 'pmmh'  # cpmmh, pmmh, smc2
     show_fig = True
     prior_str = '_'.join(prior_dict.keys())
-    export_name = 'Learning{}_data{}_steps{}_Nx{}_niter{}_tstart{}_prior{}'.format(learning_alg, generation_type,
-                                                                                  nb_timesteps, N, niter, t_start,
-                                                                                  prior_str)
+    export_name = 'Learning{}_data{}_steps{}_Nx{}_niter{}_ttrunc{}_prior{}'.format(learning_alg, generation_type,
+                                                                                   nb_timesteps, N, niter, t_trunc,
+                                                                                   prior_str)
     learn_model_parameters(theta0=theta0, prior_dict=prior_dict, structured_prior=prior, learning_alg=learning_alg,
-                           Nx=Nx, N=N, t_start=t_start, niter=niter, true_states=x, data=y, dt=dt, show_fig=show_fig,
+                           Nx=Nx, N=N, t_start=t_trunc, niter=niter, true_states=x, data=y, dt=dt, show_fig=show_fig,
                            export_name=export_name)

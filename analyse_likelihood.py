@@ -29,7 +29,7 @@ def get_extremal_cases(output_multismc, N, t_start):
     return bad_run, middle_run
 
 
-def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t_start, show_fig, export_name=None):
+def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t_trunc, show_fig, export_name=None):
     start_user, start_process = time.time(), time.process_time()
     results = particles.multiSMC(fk=fk_model, N=nb_particles, nruns=nb_runs, collect=[Moments()], nprocs=-1)
     end_user, end_process = time.time(), time.process_time()
@@ -37,11 +37,11 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
     s_process = end_process - start_process
     print('Time user {:.0f}min {:.0f}s; time processor {:.0f}min {:.0f}s'.format(s_user // 60, s_user % 60,
                                                                                  s_process // 60, s_process % 60))
-    assert t_start < results[0]['output'].fk.T, 'Start time should be shorter than number of steps.'
+    assert t_trunc < results[0]['output'].fk.T, 'Start time should be shorter than number of steps.'
 
     plotter = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig=show_fig)
     for N in nb_particles:
-        logLts = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in results if
+        logLts = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_trunc] for r in results if
                   r['N'] == N]
         mean, var = np.mean(logLts, axis=0), np.var(logLts, axis=0)
         print('N={:.5E}, Mean truncated loglhd={:.5E}, Variance truncated loglhd={:.5E}'.format(N, mean, var))
@@ -51,7 +51,7 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
         plotter.plot_particle_moments(middle_run['mean'], middle_run['var'],
                                                name_suffix='_middle_N{}_'.format(N))
         """
-    plotter.plot_logLts_multiple_runs(results, nb_particles, nb_runs, t_start)
+    plotter.plot_logLts_multiple_runs(results, nb_particles, nb_runs, t_trunc)
     return None
 
 
@@ -129,15 +129,15 @@ if __name__ == '__main__':
     # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
 
-    Ns = [50, 75, 100]
+    nb_particles_list = [50, 75, 100]
     nb_runs = 10
-    t_start = 50
+    t_trunc = 50
     show_fig = True
     export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorQ0{}_lambdax{}_lambday{}_lambdaphi{}_simuacc{}_simugyro{}_spressvelo{}_spressacc{}_factorProp{}'.format(
         generation_type,
-        nb_timesteps, Ns,
+        nb_timesteps, nb_particles_list,
         nb_runs,
-        t_start,
+        t_trunc,
         factor_Q0,
         lambda_x,
         lambda_y,
@@ -147,4 +147,4 @@ if __name__ == '__main__':
         sigma_press_velo,
         sigma_press_acc,
         factor_proposal)
-    analyse_likelihood(fk_guided, x, y, dt, Ns, nb_runs, t_start, show_fig=show_fig, export_name=export_name_multi)
+    analyse_likelihood(fk_guided, x, y, dt, nb_particles_list, nb_runs, t_trunc, show_fig=show_fig, export_name=export_name_multi)

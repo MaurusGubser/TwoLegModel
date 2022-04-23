@@ -10,7 +10,7 @@ from TwoLegModelSMC import TwoLegModel
 from Plotter import Plotter
 
 
-def compare_parameters(fk_models, true_states, data, dt, nb_particles, nb_runs, t_start, show_fig, export_name=None):
+def compare_parameters(fk_models, true_states, data, dt, nb_particles, nb_runs, t_trunc, show_fig, export_name=None):
     start_user, start_process = time.time(), time.process_time()
     results = particles.multiSMC(fk=fk_models, N=nb_particles, nruns=nb_runs, collect=[LogLts()], nprocs=-1)
     end_user, end_process = time.time(), time.process_time()
@@ -20,7 +20,7 @@ def compare_parameters(fk_models, true_states, data, dt, nb_particles, nb_runs, 
                                                                                  s_process // 60, s_process % 60))
 
     plotter = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig)
-    plotter.plot_likelihood_parameters(results, fk_models.keys(), t_start)
+    plotter.plot_likelihood_parameters(results, fk_models.keys(), t_trunc)
 
     return None
 
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     # ! model works with parameters defined below; other parameters are chosen as the standard params in TwoLegModelSMC.py
     dt = 0.01
     N = 20
-    t_start = 50
+    t_trunc = 50
     nb_runs = 10
     show_fig = True
     params = 'legs'
@@ -46,7 +46,7 @@ if __name__ == '__main__':
         nb_timesteps,
         N,
         nb_runs,
-        t_start,
+        t_trunc,
         params)
 
     # parameters = [{'femur_left': 0.3, 'femur_right': 0.3}, {'femur_left': 0.4, 'femur_right': 0.4}, {'femur_left': 0.5, 'femur_right': 0.5}, {'femur_left': 0.6, 'femur_right': 0.6}, {'femur_left': 0.7, 'femur_right': 0.7}]
@@ -60,4 +60,4 @@ if __name__ == '__main__':
     for param in parameters:
         fk_models[str(param)] = ssm.GuidedPF(ssm=TwoLegModel(**param), data=y)
     compare_parameters(fk_models=fk_models, true_states=x, data=y, dt=dt, nb_particles=N, nb_runs=nb_runs,
-                       t_start=t_start, show_fig=show_fig, export_name=export_name)
+                       t_trunc=t_trunc, show_fig=show_fig, export_name=export_name)
