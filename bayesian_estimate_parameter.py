@@ -107,7 +107,7 @@ def learn_model_parameters(theta0, prior_dict, structured_prior, learning_alg, N
 
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
-    generation_type = 'Missingdata005'
+    generation_type = 'Missingdata005'  # name of data subfolder
     nb_timesteps = 100
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()

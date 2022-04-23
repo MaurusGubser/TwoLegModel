@@ -47,7 +47,7 @@ def plot_results(pf, obs_map, x, y, dt, export_name, show_fig, plt_smthng=False)
 
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
-    generation_type = 'Missingdata005'
+    generation_type = 'Missingdata005'  # name of data subfolder
     nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
@@ -75,7 +75,7 @@ if __name__ == '__main__':
                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     factor_Q0 = 0.1  # 0.01
 
-    lambda_x = 0.5*10000.0  # 10000.0
+    lambda_x = 10000.0  # 10000.0
     lambda_y = 1000.0  # 1000.0
     lambda_phi = 10000000.0  # 10000000.0
 
