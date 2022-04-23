@@ -2,11 +2,10 @@ import itertools
 import numpy as np
 from particles import state_space_models as ssm
 from particles import distributions as dists
-from CustomDistributions import MvNormalMultiDimCov, MvStudent, MvNormalMissingObservations
+from CustomDistributions import MvNormalMissingObservations
 from scipy.linalg import block_diag
 
-from MechanicalModel import state_to_obs, compute_jacobian_obs, state_to_obs_linear, create_rotation_matrix_z
-
+from MechanicalModel import state_to_obs, compute_jacobian_obs, create_rotation_matrix_z
 
 CONST_GRAVITATION = 9.81
 
@@ -116,7 +115,8 @@ class TwoLegModel(ssm.StateSpaceModel):
                     if row == col:
                         self.Q[row, col] = self.dt
         idx_groups = [[0, 6, 12], [1, 7, 13], [2, 8, 14], [3, 9, 15], [4, 10, 16], [5, 11, 17]]
-        scale_factors = [self.lambda_x, self.lambda_y, self.lambda_phi, self.lambda_phi, self.lambda_phi, self.lambda_phi]
+        scale_factors = [self.lambda_x, self.lambda_y, self.lambda_phi, self.lambda_phi, self.lambda_phi,
+                         self.lambda_phi]
         for factor, idxs in zip(scale_factors, idx_groups):
             for row, col in itertools.product(idxs, idxs):
                 self.Q[row, col] *= factor
@@ -205,4 +205,4 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=mu, cov=Sigma)
 
     def upper_bound_log_pt(self, t):
-        return 1.0 / np.sqrt((2 * np.pi)**self.dim_states * np.linalg.det(self.Q))
+        return 1.0 / np.sqrt((2 * np.pi) ** self.dim_states * np.linalg.det(self.Q))

@@ -20,9 +20,6 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas, set_theta0):
     prior_dict = {}
     theta0 = None
     if add_Q:
-        prior_Q = {'scale_x': dists.LinearD(dists.InvGamma(3.0, 2.0), a=100.0, b=0.0),
-                   'scale_y': dists.LinearD(dists.InvGamma(3.0, 2.0), a=100.0, b=0.0),
-                   'scale_phi': dists.LinearD(dists.InvGamma(3.0, 2.0), a=250.0, b=0.0)}
         prior_Q = {'scale_x': dists.Uniform(20.0, 200.0),
                    'scale_y': dists.Uniform(20.0, 200.0),
                    'scale_phi': dists.Uniform(50.0, 500.0)}
@@ -31,14 +28,10 @@ def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas, set_theta0):
             theta0 = np.array([(10000.0, 1000.0, 10000000.0)],
                               dtype=[('scale_x', 'float64'), ('scale_y', 'float64'), ('scale_phi', 'float64')])
     if add_H:
-        prior_H = {'sigma_imu_acc': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.1, b=0.0),
-                   'sigma_imu_gyro': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.01, b=0.0),
-                   'sigma_press_velo': dists.LinearD(dists.InvGamma(3.0, 2.0), a=0.1, b=0.0),
-                   'sigma_press_acc': dists.LinearD(dists.InvGamma(3.0, 2.0), a=1000.0, b=0.0)}
-        prior_H = {'sigma_imu_acc': dists.Uniform(0.0001, 0.01),
-                   'sigma_imu_gyro': dists.Uniform(0.0001, 0.01),
-                   'sigma_press_velo': dists.Uniform(0.0001, 0.01),
-                   'sigma_press_acc': dists.Uniform(0.001, 0.1)}
+        prior_H = {'sigma_imu_acc': dists.Uniform(0.01, 1.0),
+                   'sigma_imu_gyro': dists.Uniform(0.01, 1.0),
+                   'sigma_press_velo': dists.Uniform(0.01, 1.0),
+                   'sigma_press_acc': dists.Uniform(0.1, 10.0)}
         prior_dict.update(prior_H)
         if set_theta0:
             theta0 = np.array([(0.1, 0.1, 0.1, 1.0)],
