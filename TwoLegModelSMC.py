@@ -79,7 +79,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.sigma_press_acc = sigma_press_acc
         self.Q = np.zeros((self.dim_states, self.dim_states))
         self.set_process_covariance()
-        self.S = np.zeros((self.dim_observations, self.dim_observations))
+        self.V = np.zeros((self.dim_observations, self.dim_observations))
         self.set_observation_covariance()
         self.factor_proposal = factor_proposal
 
@@ -124,14 +124,14 @@ class TwoLegModel(ssm.StateSpaceModel):
 
     def set_observation_covariance(self):
         if self.dim_observations == 20:
-            self.S = np.diag([self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
+            self.V = np.diag([self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
                               self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
                               self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
                               self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
                               self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc, self.sigma_press_acc,
                               self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc, self.sigma_press_acc])
         elif self.dim_observations == 36:
-            self.S = np.diag([self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
+            self.V = np.diag([self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
                               self.sigma_imu_gyro, self.sigma_imu_gyro,
                               self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
                               self.sigma_imu_gyro, self.sigma_imu_gyro,
@@ -169,7 +169,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=self.state_transition(xp), cov=self.Q)
 
     def PY(self, t, xp, x):
-        return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.S)
+        return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.V)
 
     def compute_observation_derivatives(self, x):
         return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus,
@@ -184,11 +184,11 @@ class TwoLegModel(ssm.StateSpaceModel):
         x_hat = self.state_transition(xp)
         dh = self.compute_observation_derivatives(x_hat)
         dh = dh[:, mask_not_nan.flatten(), :]
-        S_masked = np.reshape(self.S[mask_2d], (nb_non_nan, nb_non_nan))
+        V_masked = np.reshape(self.V[mask_2d], (nb_non_nan, nb_non_nan))
 
         dh_Q = np.matmul(dh, self.Q)
-        U_inv = np.linalg.inv(np.matmul(dh_Q, np.transpose(dh, (0, 2, 1))) + S_masked)
-        kalman_gain = np.matmul(np.transpose(dh_Q, (0, 2, 1)), U_inv)
+        S_inv = np.linalg.inv(np.matmul(dh_Q, np.transpose(dh, (0, 2, 1))) + V_masked)
+        kalman_gain = np.matmul(np.transpose(dh_Q, (0, 2, 1)), S_inv)
         prediction_err = data_t[mask_not_nan] - self.state_to_observation(x_hat)[:, mask_not_nan.flatten()]
 
         mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, prediction_err)
@@ -200,9 +200,9 @@ class TwoLegModel(ssm.StateSpaceModel):
         return self.PX0()
 
     def proposal(self, t, xp, data):
-        mean, kalman_covs = self.compute_ekf_proposal(xp, data[t])
-        covar = self.factor_proposal * np.mean(kalman_covs, axis=0)
-        return dists.MvNormal(loc=mean, cov=covar)
+        mu, Sigma = self.compute_ekf_proposal(xp, data[t])
+        Sigma = self.factor_proposal * np.mean(Sigma, axis=0)
+        return dists.MvNormal(loc=mu, cov=Sigma)
 
     def upper_bound_log_pt(self, t):
         return 1.0 / np.sqrt((2 * np.pi)**self.dim_states * np.linalg.det(self.Q))
