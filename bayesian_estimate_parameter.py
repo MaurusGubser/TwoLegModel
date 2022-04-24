@@ -123,7 +123,7 @@ if __name__ == '__main__':
     show_fig = True
     prior_str = '_'.join(prior_dict.keys())
     export_name = 'Learning{}_data{}_steps{}_Nx{}_niter{}_ttrunc{}_prior{}'.format(learning_alg, generation_type,
-                                                                                   nb_timesteps, N, niter, t_trunc,
+                                                                                   nb_timesteps, Nx, niter, t_trunc,
                                                                                    prior_str)
     learn_model_parameters(theta0=theta0, prior_dict=prior_dict, structured_prior=prior, learning_alg=learning_alg,
                            Nx=Nx, N=N, t_start=t_trunc, niter=niter, true_states=x, data=y, dt=dt, show_fig=show_fig,
