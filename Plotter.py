@@ -373,7 +373,7 @@ class Plotter:
         axs[1].set_xlabel('N')
         axs[1].set_ylabel(r'$\log(p(y_{t_{0}:T} | y_{0:t_{0}+1}))$')
         axs[1].set_title('Truncated loglikelihood')
-        fig.suptitle('N vs. Loglikelihood, averaged over {} runs'.format(nb_runs))
+        fig.suptitle('N vs. Loglikelihood, truncated at {}, averaged over {} runs'.format(t_trunc, nb_runs))
         if self.export_path:
             plt.savefig(self.export_path + '/nb_particles_vs_loglikelihood.pdf')
 
@@ -385,7 +385,7 @@ class Plotter:
             showfliers=False)
         plt.xlabel('$\log(p(y_{t_{0}+1:T} | y_{0:t_{0}}))$')
         plt.ylabel('Number of particles')
-        fig.suptitle('Truncated loglikelihood at {} , averaged over {} runs'.format(t_trunc, nb_runs))
+        fig.suptitle('Loglikelihood truncated at {}, averaged over {} runs'.format(t_trunc, nb_runs))
         if self.export_path:
             plt.savefig(self.export_path + '/Likelihood_Boxplot.pdf')
 
@@ -396,8 +396,7 @@ class Plotter:
             hue=[str(r['N']) for r in output_multismc], multiple='dodge')
         plt.xlabel(r'Bins of $\log(p(y_{t_{0}+1:T}|y_{0:t_{0}}))$')
         fig.suptitle(
-            'Histogram of truncated loglikelihood of {} timesteps, averaged over {} runs '.format(self.nb_steps,
-                                                                                                  nb_runs))
+            'Histogram of loglikelihood truncated at {}, averaged over {} runs '.format(t_trunc, nb_runs))
         if self.export_path:
             plt.savefig(self.export_path + '/Likelihood_Histogram.pdf')
         if self.show_fig:
