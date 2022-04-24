@@ -91,7 +91,6 @@ class Plotter:
                     axs[j].plot(self.t_vals, X_hist[:, k, nb_axes * i + j], lw=1)
                 axs[j].plot(self.t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5, color='green')
                 axs[j].set_title(state_names[nb_axes * i + j])
-                axs[j].legend()
                 if state_names[nb_axes * i + j] == r'$y_H$':
                     axs[j].plot(self.t_vals, self.contact_left + 1.0, label='Contact left', color='red', lw=1.5)
                     axs[j].plot(self.t_vals, self.contact_right + 1.0, label='Contact right', color='orange', lw=1.5)
@@ -101,6 +100,7 @@ class Plotter:
                 else:
                     axs[j].plot(self.t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
                     axs[j].plot(self.t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
+                axs[j].legend()
             fig.suptitle('{} particle trajectories'.format(nb_graphs))
             fig.tight_layout()
             fig_list.append(fig)
@@ -309,7 +309,7 @@ class Plotter:
         residuals = np.abs(self.true_obs - observations)
         return residuals
 
-    def plot_logLts_multiple_runs(self, output_multismc, nb_particles, nb_runs, t_start):
+    def plot_logLts_multiple_runs(self, output_multismc, nb_particles, nb_runs, t_trunc):
         logLts_data = {}
         for N in nb_particles:
             logLts_data[N] = np.array([r['output'].summaries.logLts for r in output_multismc if r['N'] == N])
@@ -340,7 +340,7 @@ class Plotter:
         fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9, 6))
         axs[0].grid(axis='both')
         axs[1].grid(axis='both')
-        t_start_vals = np.arange(0, t_start + 1, t_start // 50)
+        t_start_vals = np.arange(0, t_trunc + 1, t_trunc // 50)
         for key, loglts in logLts_data.items():
             logLts_truncated = np.array([loglts[:, -1] - loglts[:, t] for t in t_start_vals]).T
             mean_truncated = np.mean(logLts_truncated, axis=0)
@@ -368,7 +368,7 @@ class Plotter:
         axs[0].set_xlabel('N')
         axs[0].set_ylabel(r'$\log(p(y_{0:T}))$')
         axs[0].set_title('Loglikelihood')
-        means_N_truncated = np.array([np.mean(loglts[:, -1] - loglts[:, t_start]) for loglts in logLts_data.values()])
+        means_N_truncated = np.array([np.mean(loglts[:, -1] - loglts[:, t_trunc]) for loglts in logLts_data.values()])
         axs[1].plot(nb_particles, means_N_truncated, marker='o')
         axs[1].set_xlabel('N')
         axs[1].set_ylabel(r'$\log(p(y_{t_{0}:T} | y_{0:t_{0}+1}))$')
@@ -380,19 +380,19 @@ class Plotter:
         # boxplot of truncated logLts
         fig = plt.figure(figsize=(9, 6))
         sb.boxplot(
-            x=[r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in output_multismc],
+            x=[r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_trunc] for r in output_multismc],
             y=[str(r['N']) for r in output_multismc],
             showfliers=False)
-        plt.xlabel('r$\log(p(y_{t_{0}+1:T} | y_{0:t_{0}}))$')
+        plt.xlabel('$\log(p(y_{t_{0}+1:T} | y_{0:t_{0}}))$')
         plt.ylabel('Number of particles')
-        fig.suptitle('Truncated loglikelihood of {} timesteps, averaged over {} runs'.format(self.nb_steps, nb_runs))
+        fig.suptitle('Truncated loglikelihood at {} , averaged over {} runs'.format(t_trunc, nb_runs))
         if self.export_path:
             plt.savefig(self.export_path + '/Likelihood_Boxplot.pdf')
 
         # hists of truncated logLts
         fig = plt.figure(figsize=(9, 6))
         sb.histplot(
-            x=[r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in output_multismc],
+            x=[r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_trunc] for r in output_multismc],
             hue=[str(r['N']) for r in output_multismc], multiple='dodge')
         plt.xlabel(r'Bins of $\log(p(y_{t_{0}+1:T}|y_{0:t_{0}}))$')
         fig.suptitle(
