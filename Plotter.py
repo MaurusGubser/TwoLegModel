@@ -403,18 +403,18 @@ class Plotter:
             plt.show()
         return None
 
-    def plot_likelihood_parameters(self, output_multismc, model_params, t_start):
+    def plot_likelihood_parameters(self, output_multismc, model_params, t_trunc):
         logLts = [r['output'].summaries.logLts[-1] for r in output_multismc]
         plt.figure(figsize=(9, 6))
         sb.boxplot(x=logLts, y=[r['fk'] for r in output_multismc], showfliers=False)
-        plt.title('Boxplots for loglikelihood')
+        plt.title('Boxplots for loglikelihood, non-truncated')
         if self.export_path:
             plt.savefig(self.export_path + '/Boxplot_different_params.pdf')
-        logLts_truncated = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in
+        logLts_truncated = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_trunc] for r in
                             output_multismc]
         plt.figure(figsize=(9, 6))
         sb.boxplot(x=logLts_truncated, y=[r['fk'] for r in output_multismc], showfliers=False)
-        plt.title('Boxplots for truncated loglikelihood')
+        plt.title('Boxplots for loglikelihood, truncated at {}'.format(t_trunc))
         if self.export_path:
             plt.savefig(self.export_path + '/Boxplot_truncated_different_params.pdf')
         plt.figure(figsize=(9, 6))
@@ -423,13 +423,13 @@ class Plotter:
             mean, std = np.mean(logLts, axis=0), np.std(logLts, axis=0)
             print('Parameters={}; mean of loglikelihood={};\nmean of truncated likelihood={}'.format(fk_model, mean[-1],
                                                                                                      mean[-1] - mean[
-                                                                                                         t_start]))
+                                                                                                         t_trunc]))
             plt.plot(self.t_vals, mean, label=fk_model)
             # plt.fill_between(self.t_vals, mean - std, mean + std, alpha=0.2)
             plt.xlabel('Timesteps')
             plt.ylabel('$p(y_{0:t})$')
             plt.legend()
-            plt.title('Loglikelihood, not truncated')
+            plt.title('Non-truncated loglikelihood')
         if self.export_path:
             plt.savefig(self.export_path + '/Likelihood_different_params.pdf')
         if self.show_fig:
