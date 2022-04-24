@@ -332,7 +332,7 @@ class Plotter:
             axs[1].set_xlabel('t')
             axs[1].set_ylabel(r'Variance of $\log(p(y_{0:t}))$')
             axs[1].set_title(r'Variance of $\log(p(y_{0:t}))$')
-            fig.suptitle('Loglikelihood, non-truncated, averaged over {} runs'.format(nb_runs))
+            fig.suptitle('Non-truncated loglikelihood, averaged over {} runs'.format(nb_runs))
             if self.export_path:
                 plt.savefig(self.export_path + '/Likelihoods_mean_var.pdf')
 
@@ -349,7 +349,7 @@ class Plotter:
             # axs[0].fill_between(t_start_vals, mean_truncated - std_trunacted, mean_truncated + std_trunacted, alpha=0.5)
             axs[0].set_xlabel('Start time $ t_{0} $')
             axs[0].set_ylabel(r'$\log(p(y_{t_{0}+1:T} | y_{0:t_{0}})$')
-            axs[0].set_title('Truncated loglikelihood')
+            axs[0].set_title('Mean with std deviation')
             axs[0].legend()
             axs[1].plot(t_start_vals, std_trunacted ** 2, label='N={}'.format(key))
             axs[1].set_xlabel('Start time $ t_{0} $')
