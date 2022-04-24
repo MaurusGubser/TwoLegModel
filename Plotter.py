@@ -315,7 +315,7 @@ class Plotter:
             logLts_data[N] = np.array([r['output'].summaries.logLts for r in output_multismc if r['N'] == N])
 
         # temporal progress of logLts
-        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9, 6))
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
         axs[0].grid(axis='both')
         axs[1].grid(axis='both')
         for key, loglts in logLts_data.items():
@@ -337,7 +337,7 @@ class Plotter:
                 plt.savefig(self.export_path + '/Likelihoods_mean_var.pdf')
 
         # comparison of differently truncated logLts
-        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9, 6))
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
         axs[0].grid(axis='both')
         axs[1].grid(axis='both')
         t_start_vals = np.arange(0, t_trunc + 1, t_trunc // 50)
@@ -360,7 +360,7 @@ class Plotter:
             plt.savefig(self.export_path + '/Truncated_Likelihood_different_start_times.pdf')
 
         # nb_particles-vs-var plot
-        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9, 6))
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
         axs[0].grid(axis='both')
         axs[1].grid(axis='both')
         means_N = np.array([np.mean(loglts[:, -1]) for loglts in logLts_data.values()])
@@ -378,7 +378,7 @@ class Plotter:
             plt.savefig(self.export_path + '/nb_particles_vs_loglikelihood.pdf')
 
         # boxplot of truncated logLts
-        fig = plt.figure(figsize=(9, 6))
+        fig = plt.figure(figsize=(12, 8))
         sb.boxplot(
             x=[r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_trunc] for r in output_multismc],
             y=[str(r['N']) for r in output_multismc],
@@ -390,7 +390,7 @@ class Plotter:
             plt.savefig(self.export_path + '/Likelihood_Boxplot.pdf')
 
         # hists of truncated logLts
-        fig = plt.figure(figsize=(9, 6))
+        fig = plt.figure(figsize=(12, 8))
         sb.histplot(
             x=[r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_trunc] for r in output_multismc],
             hue=[str(r['N']) for r in output_multismc], multiple='dodge')
@@ -405,19 +405,19 @@ class Plotter:
 
     def plot_likelihood_parameters(self, output_multismc, model_params, t_trunc):
         logLts = [r['output'].summaries.logLts[-1] for r in output_multismc]
-        plt.figure(figsize=(9, 6))
+        plt.figure(figsize=(12, 8))
         sb.boxplot(x=logLts, y=[r['fk'] for r in output_multismc], showfliers=False)
         plt.title('Boxplots for loglikelihood, non-truncated')
         if self.export_path:
             plt.savefig(self.export_path + '/Boxplot_different_params.pdf')
         logLts_truncated = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_trunc] for r in
                             output_multismc]
-        plt.figure(figsize=(9, 6))
+        plt.figure(figsize=(12, 8))
         sb.boxplot(x=logLts_truncated, y=[r['fk'] for r in output_multismc], showfliers=False)
         plt.title('Boxplots for loglikelihood, truncated at {}'.format(t_trunc))
         if self.export_path:
             plt.savefig(self.export_path + '/Boxplot_truncated_different_params.pdf')
-        plt.figure(figsize=(9, 6))
+        plt.figure(figsize=(12, 8))
         for fk_model in model_params:
             logLts = np.array([r['output'].summaries.logLts for r in output_multismc if r['fk'] == fk_model])
             mean, std = np.mean(logLts, axis=0), np.std(logLts, axis=0)
