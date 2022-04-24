@@ -82,13 +82,13 @@ class Plotter:
         fig_list = []
         axs_list = []
         for i in range(0, nb_figures):
-            fig, axs = plt.subplots(ncols=1, nrows=nb_axes, figsize=(12, 8))
+            fig, axs = plt.subplots(ncols=1, nrows=nb_axes, figsize=(9, 6))
             for j in range(0, nb_axes):
                 if i * nb_axes + j > self.dim_states - 1:
                     break
                 axs[j].grid(axis='both')
                 for k in range(0, nb_graphs):
-                    axs[j].plot(self.t_vals, X_hist[:, k, nb_axes * i + j], label='Sample {}'.format(k), lw=1)
+                    axs[j].plot(self.t_vals, X_hist[:, k, nb_axes * i + j], lw=1)
                 axs[j].plot(self.t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5, color='green')
                 axs[j].set_title(state_names[nb_axes * i + j])
                 axs[j].legend()
@@ -136,15 +136,15 @@ class Plotter:
         fig_list = []
         axs_list = []
         for i in range(0, nb_figures):
-            fig, axs = plt.subplots(ncols=1, nrows=nb_axes, figsize=(12, 8))
+            fig, axs = plt.subplots(ncols=1, nrows=nb_axes, figsize=(9, 6))
             for j in range(0, nb_axes):
                 if i * nb_axes + j > self.dim_states - 1:
                     break
                 axs[j].grid(axis='both')
                 for k in range(0, nb_graphs):
-                    axs[j % nb_axes].plot(self.t_vals, samples[:, k, nb_axes * i + j], label='Sample {}'.format(k),
-                                          lw=1)
-                axs[j % nb_axes].plot(self.t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5, color='green')
+                    axs[j % nb_axes].plot(self.t_vals, samples[:, k, nb_axes * i + j], lw=1)
+                axs[j % nb_axes].plot(self.t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5,
+                                      color='green')
                 if state_names[nb_axes * i + j] == r'$y_H$':
                     axs[j].plot(self.t_vals, self.contact_left + 1.0, label='Contact left', color='red', lw=1.5)
                     axs[j].plot(self.t_vals, self.contact_right + 1.0, label='Contact right', color='orange', lw=1.5)
@@ -187,7 +187,7 @@ class Plotter:
         fig_list = []
         axs_list = []
         for i in range(0, nb_figures):
-            fig, axs = plt.subplots(ncols=1, nrows=nb_axes, figsize=(12, 8))
+            fig, axs = plt.subplots(ncols=1, nrows=nb_axes, figsize=(9, 6))
             for j in range(0, nb_axes):
                 if i * nb_axes + j > self.dim_states - 1:
                     break
@@ -250,13 +250,13 @@ class Plotter:
         nb_axes = 3
         nb_figures = int(np.ceil(nb_observations / nb_axes))
         for i in range(0, nb_figures):
-            fig, axs = plt.subplots(ncols=1, nrows=nb_axes, figsize=(12, 8))
+            fig, axs = plt.subplots(ncols=1, nrows=nb_axes, figsize=(9, 6))
             for j in range(0, nb_axes):
                 if i * nb_axes + j > nb_observations - 1:
                     break
                 axs[j].grid(axis='both')
                 for k in range(0, nb_graphs):
-                    axs[j].plot(self.t_vals, obs[:, k, i * nb_axes + j], label='Sample {}'.format(k), lw=1)
+                    axs[j].plot(self.t_vals, obs[:, k, i * nb_axes + j], lw=1)
                 axs[j].plot(self.t_vals, true_obs[:, :, i * nb_axes + j], label='True observation', color='green',
                             lw=1.5)
                 if obs_names[i * nb_axes + j] in ['$\ddot y^0$', '$\ddot y^1$', '$\ddot y^2$', '$\ddot y^3$']:
@@ -277,7 +277,7 @@ class Plotter:
     def plot_ESS(self, ESS):
         window_avg = np.ones(10) / 10.0
         moving_avg = np.convolve(ESS, window_avg, 'same')
-        fig = plt.figure(figsize=(12, 8))
+        fig = plt.figure(figsize=(9, 6))
         plt.grid(axis='both')
         plt.plot(self.t_vals, ESS, label='ESS')
         plt.plot(self.t_vals, moving_avg, label='ESS Moving Avg')
@@ -292,7 +292,7 @@ class Plotter:
         return None
 
     def plot_logLts_one_run(self, logLts):
-        fig = plt.figure(figsize=(12, 8))
+        fig = plt.figure(figsize=(9, 6))
         plt.grid(axis='both')
         plt.plot(self.t_vals, logLts)
         plt.xlabel('t')
@@ -315,7 +315,7 @@ class Plotter:
             logLts_data[N] = np.array([r['output'].summaries.logLts for r in output_multismc if r['N'] == N])
 
         # temporal progress of logLts
-        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9, 6))
         axs[0].grid(axis='both')
         axs[1].grid(axis='both')
         for key, loglts in logLts_data.items():
@@ -337,7 +337,7 @@ class Plotter:
                 plt.savefig(self.export_path + '/Likelihoods_mean_var.pdf')
 
         # comparison of differently truncated logLts
-        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9, 6))
         axs[0].grid(axis='both')
         axs[1].grid(axis='both')
         t_start_vals = np.arange(0, t_start + 1, t_start // 50)
@@ -360,7 +360,7 @@ class Plotter:
             plt.savefig(self.export_path + '/Truncated_Likelihood_different_start_times.pdf')
 
         # nb_particles-vs-var plot
-        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 8))
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9, 6))
         axs[0].grid(axis='both')
         axs[1].grid(axis='both')
         means_N = np.array([np.mean(loglts[:, -1]) for loglts in logLts_data.values()])
@@ -378,7 +378,7 @@ class Plotter:
             plt.savefig(self.export_path + '/nb_particles_vs_loglikelihood.pdf')
 
         # boxplot of truncated logLts
-        fig = plt.figure(figsize=(12, 8))
+        fig = plt.figure(figsize=(9, 6))
         sb.boxplot(
             x=[r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in output_multismc],
             y=[str(r['N']) for r in output_multismc],
@@ -390,7 +390,7 @@ class Plotter:
             plt.savefig(self.export_path + '/Likelihood_Boxplot.pdf')
 
         # hists of truncated logLts
-        fig = plt.figure(figsize=(12, 8))
+        fig = plt.figure(figsize=(9, 6))
         sb.histplot(
             x=[r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in output_multismc],
             hue=[str(r['N']) for r in output_multismc], multiple='dodge')
@@ -406,19 +406,19 @@ class Plotter:
 
     def plot_likelihood_parameters(self, output_multismc, model_params, t_start):
         logLts = [r['output'].summaries.logLts[-1] for r in output_multismc]
-        plt.figure(figsize=(12, 8))
+        plt.figure(figsize=(9, 6))
         sb.boxplot(x=logLts, y=[r['fk'] for r in output_multismc], showfliers=False)
         plt.title('Boxplots for loglikelihood')
         if self.export_path:
             plt.savefig(self.export_path + '/Boxplot_different_params.pdf')
         logLts_truncated = [r['output'].summaries.logLts[-1] - r['output'].summaries.logLts[t_start] for r in
                             output_multismc]
-        plt.figure(figsize=(12, 8))
+        plt.figure(figsize=(9, 6))
         sb.boxplot(x=logLts_truncated, y=[r['fk'] for r in output_multismc], showfliers=False)
         plt.title('Boxplots for truncated loglikelihood')
         if self.export_path:
             plt.savefig(self.export_path + '/Boxplot_truncated_different_params.pdf')
-        plt.figure(figsize=(12, 8))
+        plt.figure(figsize=(9, 6))
         for fk_model in model_params:
             logLts = np.array([r['output'].summaries.logLts for r in output_multismc if r['fk'] == fk_model])
             mean, std = np.mean(logLts, axis=0), np.std(logLts, axis=0)
@@ -441,7 +441,7 @@ class Plotter:
         if learning_alg == 'pmmh' or learning_alg == 'cpmmh' or learning_alg == 'gibbs':
             burnin = 0  # discard the __ first iterations
             for i, param in enumerate(prior_dict.keys()):
-                plt.figure(figsize=(12, 8))
+                plt.figure(figsize=(9, 6))
                 sb.histplot(alg.chain.theta[param][burnin:], bins=10)
                 plt.title(param)
                 if self.export_path:
@@ -449,7 +449,7 @@ class Plotter:
             plt.show()
         elif learning_alg == 'smc2':
             for i, param in enumerate(prior_dict.keys()):
-                plt.figure(figsize=(12, 8))
+                plt.figure(figsize=(9, 6))
                 sb.histplot([t[i] for t in alg.X.theta], bins=10)
                 plt.title(param)
                 if self.export_path:
