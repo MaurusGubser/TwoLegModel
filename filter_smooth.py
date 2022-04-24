@@ -10,7 +10,11 @@ from TwoLegModelSMC import TwoLegModel
 from Plotter import Plotter
 
 
-def run_particle_filter(fk_model, nb_particles, ESSrmin=0.5):
+def run_particle_filter(use_guided, nb_particles, ESSrmin=0.5):
+    if use_guided:
+        fk_model = ssm.GuidedPF(ssm=my_model, data=y)   # guided filter
+    else:
+        fk_model = ssm.Bootstrap(ssm=my_model, data=y)  # bootstrap filter
     pf = particles.SMC(fk=fk_model, N=nb_particles, ESSrmin=ESSrmin, store_history=True, collect=[Moments()],
                        verbose=True)
     start_user, start_process = time.time(), time.process_time()
@@ -31,7 +35,7 @@ def plot_results(pf, obs_map, x, y, dt, export_name, show_fig, plt_smthng=False)
                       export_name=export_name)
 
     plotter.plot_observations(np.array(pf.hist.X), observation_map=obs_map)
-    # plotter.plot_particles_trajectories(np.array(pf.hist.X))
+    plotter.plot_particles_trajectories(np.array(pf.hist.X))
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
@@ -75,14 +79,14 @@ if __name__ == '__main__':
                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     factor_Q0 = 0.1  # 0.01
 
-    lambda_x = 10000.0  # 10000.0
-    lambda_y = 1000.0  # 1000.0
-    lambda_phi = 10000000.0  # 10000000.0
+    lambda_x = 1.0  # 10000.0
+    lambda_y = 0.1  # 1000.0
+    lambda_phi = 1000.0  # 10000000.0
 
-    sigma_imu_acc = 0.1  # 0.1
-    sigma_imu_gyro = 0.1  # 0.1
-    sigma_press_velo = 0.1  # 0.1
-    sigma_press_acc = 1.0  # 1.0
+    sigma_imu_acc = 1.0  # 0.1
+    sigma_imu_gyro = 1.0  # 0.1
+    sigma_press_velo = 1.0  # 0.1
+    sigma_press_acc = 10.0  # 1.0
 
     factor_proposal = 1.2  # 1.2
 
@@ -114,16 +118,16 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 1000
+    use_guided = False
+    nb_particles = 10000
     ESSrmin = 0.5
-    fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
-    fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=ESSrmin)
+    pf = run_particle_filter(use_guided=use_guided, nb_particles=nb_particles, ESSrmin=ESSrmin)
 
     # ---------------------------- plot results ----------------------------
-    export_name = 'SingleRun_{}_steps{}_particles{}_factorQ0{}_lambdax{}_lambday{}_lambdaphi{}_simuacc{}_simugyro{}_spressvelo{}_spressacc{}_factorProp{}'.format(
+    export_name = 'SingleRun_{}_steps{}_guided{}_particles{}_factorQ0{}_lambdax{}_lambday{}_lambdaphi{}_simuacc{}_simugyro{}_spressvelo{}_spressacc{}_factorProp{}'.format(
         generation_type,
         nb_timesteps,
+        use_guided,
         nb_particles,
         factor_Q0,
         lambda_x,
