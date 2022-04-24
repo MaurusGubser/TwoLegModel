@@ -34,7 +34,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                  b0=np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                               0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                               0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-                 factor_Q0=0.01,  # 0.01
+                 factor_Q0=0.1,  # 0.1
                  lambda_x=10000.0,  # 10000.0
                  lambda_y=1000.0,  # 1000.0
                  lambda_phi=10000000.0,  # 10000000.0
