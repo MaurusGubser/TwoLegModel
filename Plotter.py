@@ -441,7 +441,7 @@ class Plotter:
             burnin = 0  # discard the __ first iterations
             for i, param in enumerate(prior_dict.keys()):
                 plt.figure(figsize=(9, 6))
-                sb.histplot(alg.chain.theta[param][burnin:], bins=10)
+                sb.histplot(alg.chain.theta[param][burnin:])
                 plt.title(param)
                 if self.export_path:
                     plt.savefig('{}/Histplot_{}_{}.pdf'.format(self.export_path, learning_alg, str(param)))
@@ -449,7 +449,7 @@ class Plotter:
         elif learning_alg == 'smc2':
             for i, param in enumerate(prior_dict.keys()):
                 plt.figure(figsize=(9, 6))
-                sb.histplot([t[i] for t in alg.X.theta], bins=10)
+                sb.histplot([t[i] for t in alg.X.theta])
                 plt.title(param)
                 if self.export_path:
                     plt.savefig('{}/Histplot_{}_{}.pdf'.format(self.export_path, learning_alg, str(param)))

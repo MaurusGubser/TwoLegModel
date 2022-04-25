@@ -58,7 +58,7 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'  # name of data subfolder
-    nb_timesteps = 100
+    nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
     x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
@@ -129,9 +129,9 @@ if __name__ == '__main__':
     # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
 
-    nb_particles_list = [50, 75, 100]
-    nb_runs = 10
-    t_trunc = 50
+    nb_particles_list = [1000, 3000, 5000]
+    nb_runs = 30
+    t_trunc = 500
     show_fig = True
     export_name_multi = 'MultiRun_{}_steps{}_Ns{}_nbruns{}_tstart{}_factorQ0{}_lambdax{}_lambday{}_lambdaphi{}_simuacc{}_simugyro{}_spressvelo{}_spressacc{}_factorProp{}'.format(
         generation_type,

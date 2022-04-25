@@ -12,7 +12,7 @@ from Plotter import Plotter
 
 def run_particle_filter(use_guided, nb_particles, ESSrmin=0.5):
     if use_guided:
-        fk_model = ssm.GuidedPF(ssm=my_model, data=y)   # guided filter
+        fk_model = ssm.GuidedPF(ssm=my_model, data=y)  # guided filter
     else:
         fk_model = ssm.Bootstrap(ssm=my_model, data=y)  # bootstrap filter
     pf = particles.SMC(fk=fk_model, N=nb_particles, ESSrmin=ESSrmin, store_history=True, collect=[Moments()],
@@ -79,14 +79,14 @@ if __name__ == '__main__':
                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     factor_Q0 = 0.1  # 0.01
 
-    lambda_x = 1.0  # 10000.0
-    lambda_y = 0.1  # 1000.0
-    lambda_phi = 1000.0  # 10000000.0
+    lambda_x = 10000.0  # 10000.0
+    lambda_y = 1000.0  # 1000.0
+    lambda_phi = 10000000.0  # 10000000.0
 
-    sigma_imu_acc = 1.0  # 0.1
-    sigma_imu_gyro = 1.0  # 0.1
-    sigma_press_velo = 1.0  # 0.1
-    sigma_press_acc = 10.0  # 1.0
+    sigma_imu_acc = 0.1  # 0.1
+    sigma_imu_gyro = 0.1  # 0.1
+    sigma_press_velo = 0.1  # 0.1
+    sigma_press_acc = 1.0  # 1.0
 
     factor_proposal = 1.2  # 1.2
 
@@ -118,8 +118,8 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- particle filter ----------------------------
-    use_guided = False
-    nb_particles = 10000
+    use_guided = True
+    nb_particles = 1000
     ESSrmin = 0.5
     pf = run_particle_filter(use_guided=use_guided, nb_particles=nb_particles, ESSrmin=ESSrmin)
 

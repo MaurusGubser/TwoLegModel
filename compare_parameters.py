@@ -28,7 +28,7 @@ def compare_parameters(fk_models, true_states, data, dt, nb_particles, nb_runs, 
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'  # name of data subfolder
-    nb_timesteps = 100
+    nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
     x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
@@ -36,11 +36,11 @@ if __name__ == '__main__':
     # ---------------------------- model ----------------------------
     # ! model works with parameters defined below; other parameters are chosen as the standard params in TwoLegModelSMC.py
     dt = 0.01
-    N = 20
-    t_trunc = 50
-    nb_runs = 10
+    N = 1000
+    t_trunc = 500
+    nb_runs = 30
     show_fig = True
-    params = 'legs'
+    params = 'pos_imu'
     export_name = 'MultiRun_{}_steps{}_N{}_nbruns{}_tstart{}_params{}'.format(
         generation_type,
         nb_timesteps,

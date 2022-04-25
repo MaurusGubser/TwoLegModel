@@ -101,7 +101,7 @@ def learn_model_parameters(theta0, prior_dict, structured_prior, learning_alg, N
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'  # name of data subfolder
-    nb_timesteps = 100
+    nb_timesteps = 1000
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
     x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
@@ -111,14 +111,14 @@ if __name__ == '__main__':
     add_Q = False
     add_H = False
     add_legs = False
-    add_imu = False
-    add_alphas = True
-    set_theta0 = False
+    add_imu = True
+    add_alphas = False
+    set_theta0 = True
     theta0, prior_dict, prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
-    Nx = 44
+    Nx = 100
     N = 20  # only used for smc2
-    t_trunc = 50
-    niter = 20
+    t_trunc = 500
+    niter = 200
     learning_alg = 'cpmmh'  # cpmmh, pmmh, smc2
     show_fig = True
     prior_str = '_'.join(prior_dict.keys())
