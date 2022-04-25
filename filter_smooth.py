@@ -35,7 +35,7 @@ def plot_results(pf, obs_map, x, y, dt, export_name, show_fig, plt_smthng=False)
                       export_name=export_name)
 
     plotter.plot_observations(np.array(pf.hist.X), observation_map=obs_map)
-    plotter.plot_particles_trajectories(np.array(pf.hist.X))
+    # plotter.plot_particles_trajectories(np.array(pf.hist.X))
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
@@ -69,26 +69,26 @@ if __name__ == '__main__':
     pos_imu1 = 0.29  # 0.29
     pos_imu2 = 0.315  # 0.315
     pos_imu3 = 0.33  # 0.33
-    alpha0 = -0.3
+    alpha0 = 0.0
     alpha1 = 0.0
-    alpha2 = -0.3
+    alpha2 = 0.0
     alpha3 = 0.0
 
     b0 = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-    factor_Q0 = 0.1  # 0.1
+    factor_Q0 = 0.1     # 0.1
 
-    lambda_x = 10000.0  # 10000.0
-    lambda_y = 1000.0  # 1000.0
-    lambda_phi = 10000000.0  # 10000000.0
+    lambda_x = 10000.0          # 10000.0
+    lambda_y = 1000.0           # 1000.0
+    lambda_phi = 10000000.0     # 10000000.0
 
-    sigma_imu_acc = 0.1  # 0.1
-    sigma_imu_gyro = 0.1  # 0.1
+    sigma_imu_acc = 0.1     # 0.1
+    sigma_imu_gyro = 0.1    # 0.1
     sigma_press_velo = 0.1  # 0.1
-    sigma_press_acc = 1.0  # 1.0
+    sigma_press_acc = 1.0   # 1.0
 
-    factor_proposal = 1.2  # 1.2
+    factor_proposal = 1.2   # 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     pf = run_particle_filter(use_guided=use_guided, model=my_model, nb_particles=nb_particles, ESSrmin=ESSrmin)
 
     # ---------------------------- plot results ----------------------------
-    export_name = 'SingleRun_alphas-0.3_{}_steps{}_guided{}_particles{}_factorQ0{}_lambdax{}_lambday{}_lambdaphi{}_simuacc{}_simugyro{}_spressvelo{}_spressacc{}_factorProp{}'.format(
+    export_name = 'SingleRun_alphas0.0_{}_steps{}_guided{}_particles{}_factorQ0{}_lambdax{}_lambday{}_lambdaphi{}_simuacc{}_simugyro{}_spressvelo{}_spressacc{}_factorProp{}'.format(
         generation_type,
         nb_timesteps,
         use_guided,
