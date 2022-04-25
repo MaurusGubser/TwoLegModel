@@ -425,7 +425,6 @@ class Plotter:
                                                                                                      mean[-1] - mean[
                                                                                                          t_trunc]))
             plt.plot(self.t_vals, mean, label=fk_model)
-            # plt.fill_between(self.t_vals, mean - std, mean + std, alpha=0.2)
             plt.xlabel('Timesteps')
             plt.ylabel('$p(y_{0:t})$')
             plt.legend()
