@@ -88,8 +88,8 @@ def learn_model_parameters(theta0, prior_dict, structured_prior, learning_alg, N
     end_user, end_process = time.time(), time.process_time()
     s_user = end_user - start_user
     s_process = end_process - start_process
-    print('Time user {:.0f}h {:.0f}min; time processor {:.0f}h {:.0f}min'.format(s_user // 3600, s_user % 3600,
-                                                                                 s_process // 3600, s_process % 3600))
+    print('Time user {:.0f}h {:.0f}min; time processor {:.0f}h {:.0f}min'.format(s_user // 3600, s_user // 60,
+                                                                                 s_process // 3600, s_process // 60))
     data_writer = DataReaderWriter()
     data_writer.export_parameters(alg, prior_dict, export_name)
     plotter = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig)
@@ -115,11 +115,11 @@ if __name__ == '__main__':
     add_alphas = True
     set_theta0 = False
     theta0, prior_dict, prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
-    Nx = 20
+    Nx = 44
     N = 20  # only used for smc2
     t_trunc = 50
     niter = 20
-    learning_alg = 'pmmh'  # cpmmh, pmmh, smc2
+    learning_alg = 'cpmmh'  # cpmmh, pmmh, smc2
     show_fig = True
     prior_str = '_'.join(prior_dict.keys())
     export_name = 'Learning{}_data{}_steps{}_Nx{}_niter{}_ttrunc{}_prior{}'.format(learning_alg, generation_type,
