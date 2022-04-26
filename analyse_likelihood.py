@@ -45,12 +45,6 @@ def analyse_likelihood(fk_model, true_states, data, dt, nb_particles, nb_runs, t
                   r['N'] == N]
         mean, var = np.mean(logLts, axis=0), np.var(logLts, axis=0)
         print('N={:.5E}, Mean truncated loglhd={:.5E}, Variance truncated loglhd={:.5E}'.format(N, mean, var))
-        """
-        bad_run, middle_run = get_extremal_cases(output_multismc=results, N=N, t_start=t_start)
-        plotter.plot_particle_moments(bad_run['mean'], bad_run['var'], name_suffix='_bad_N{}_'.format(N))
-        plotter.plot_particle_moments(middle_run['mean'], middle_run['var'],
-                                               name_suffix='_middle_N{}_'.format(N))
-        """
     plotter.plot_logLts_multiple_runs(results, nb_particles, nb_runs, t_trunc)
     return None
 
@@ -125,8 +119,6 @@ if __name__ == '__main__':
                            )
 
     # ---------------------------- loglikelihood stats ----------------------------
-
-    # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
 
     nb_particles_list = [1000, 3000, 5000]
@@ -147,4 +139,4 @@ if __name__ == '__main__':
         sigma_press_velo,
         sigma_press_acc,
         factor_proposal)
-    analyse_likelihood(fk_guided, x, y, dt, nb_particles_list, nb_runs, t_trunc, show_fig=show_fig, export_name=export_name_multi)
+    analyse_likelihood(fk_guided, x, y, dt, nb_particles_list, nb_runs, t_trunc, show_fig, export_name_multi)
