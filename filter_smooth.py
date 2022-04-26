@@ -35,7 +35,7 @@ def plot_results(pf, obs_map, x, y, dt, export_name, show_fig, plt_smthng=False)
                       export_name=export_name)
 
     plotter.plot_observations(np.array(pf.hist.X), observation_map=obs_map)
-    # plotter.plot_particles_trajectories(np.array(pf.hist.X))
+    plotter.plot_particles_trajectories(np.array(pf.hist.X))
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
     plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
@@ -69,9 +69,9 @@ if __name__ == '__main__':
     pos_imu1 = 0.29  # 0.29
     pos_imu2 = 0.315  # 0.315
     pos_imu3 = 0.33  # 0.33
-    alpha0 = 0.0
+    alpha0 = 0.05
     alpha1 = 0.0
-    alpha2 = 0.0
+    alpha2 = -0.02
     alpha3 = 0.0
 
     b0 = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
@@ -139,5 +139,5 @@ if __name__ == '__main__':
         sigma_press_acc,
         factor_proposal)
     show_fig = True
-    plt_smoothed = True
+    plt_smoothed = True     # set to False if no smoothing wanted
     plot_results(pf, my_model.state_to_observation, x, y, dt, export_name, show_fig, plt_smoothed)
