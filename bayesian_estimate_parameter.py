@@ -16,50 +16,23 @@ from TwoLegModelSMC import TwoLegModel
 from CustomMCMC import TruncatedPMMH
 
 
-def set_prior(add_Q, add_H, add_legs, add_imus, add_alphas, set_theta0):
+def set_prior(add_legs, add_imus, add_alphas, set_theta0):
     prior_dict = {}
     theta0 = None
-    if add_Q:
-        prior_Q = {'scale_x': dists.Uniform(20.0, 200.0),
-                   'scale_y': dists.Uniform(20.0, 200.0),
-                   'scale_phi': dists.Uniform(50.0, 500.0)}
-        prior_dict.update(prior_Q)
-        if set_theta0:
-            theta0 = np.array([(10000.0, 1000.0, 10000000.0)],
-                              dtype=[('scale_x', 'float64'), ('scale_y', 'float64'), ('scale_phi', 'float64')])
-    if add_H:
-        prior_H = {'sigma_imu_acc': dists.Uniform(0.01, 1.0),
-                   'sigma_imu_gyro': dists.Uniform(0.01, 1.0),
-                   'sigma_press_velo': dists.Uniform(0.01, 1.0),
-                   'sigma_press_acc': dists.Uniform(0.1, 10.0)}
-        prior_dict.update(prior_H)
-        if set_theta0:
-            theta0 = np.array([(0.1, 0.1, 0.1, 1.0)],
-                              dtype=[('sigma_imu_acc', 'float64'), ('sigma_imu_gyro', 'float64'),
-                                     ('sigma_press_velo', 'float64'), ('sigma_press_acc', 'float64')])
     if add_legs:
         prior_legs = {'femur_left': dists.Uniform(0.3, 0.7), 'fibula_left': dists.Uniform(0.4, 0.8),
                       'femur_right': dists.Uniform(0.3, 0.7), 'fibula_right': dists.Uniform(0.4, 0.8)}
-        prior_legs = {'femur_left': dists.Uniform(0.3, 0.7),
-                      'femur_right': dists.Uniform(0.3, 0.7)}
         prior_dict.update(prior_legs)
         if set_theta0:
-            theta0 = np.array([(0.5, 0.5)], dtype=[('femur_left', 'float64'), ('femur_right', 'float64')])
+            theta0 = np.array([(0.5, 0.5, 0.5, 0.5)], dtype=[('femur_left', 'float64'), ('fibula_left', 'float64'),
+                                                             ('femur_right', 'float64'), ('fibula_right', 'float64')])
     if add_imus:
-        prior_imus = {'pos_imu0': dists.TruncNormal(mu=0.25, sigma=0.3, a=0.0, b=0.5),
-                      'pos_imu1': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.6),
-                      'pos_imu2': dists.TruncNormal(mu=0.25, sigma=0.3, a=0.0, b=0.5),
-                      'pos_imu3': dists.TruncNormal(mu=0.3, sigma=0.3, a=0.0, b=0.6)}
         prior_imus = {'pos_imu0': dists.Uniform(a=0.0, b=0.5),
                       'pos_imu2': dists.Uniform(a=0.0, b=0.5)}
         prior_dict.update(prior_imus)
         if set_theta0:
             theta0 = np.array([(0.25, 0.25)], dtype=[('pos_imu0', 'float64'), ('pos_imu2', 'float64')])
     if add_alphas:
-        prior_alphas = {'alpha0': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
-                        'alpha1': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
-                        'alpha2': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57),
-                        'alpha3': dists.TruncNormal(mu=0.0, sigma=0.5, a=-1.57, b=1.57)}
         prior_alphas = {'alpha0': dists.TruncNormal(mu=0.0, sigma=1.0, a=-2.0, b=2.0),
                         'alpha2': dists.TruncNormal(mu=0.0, sigma=1.0, a=-2.0, b=2.0)}
         prior_dict.update(prior_alphas)
@@ -109,18 +82,16 @@ if __name__ == '__main__':
     dt = 0.01
 
     # ---------------------------- parameter learning ----------------------------
-    add_Q = False
-    add_H = False
     add_legs = False
-    add_imu = True
-    add_alphas = False
-    set_theta0 = True
-    theta0, prior_dict, prior = set_prior(add_Q, add_H, add_legs, add_imu, add_alphas, set_theta0)
-    Nx = 2000
+    add_imu = False
+    add_alphas = True
+    set_theta0 = True   # can only be used if not more than one parameter is chosen
+    theta0, prior_dict, prior = set_prior(add_legs, add_imu, add_alphas, set_theta0)
+    Nx = 1000
     N = 20  # only used for smc2
     t_trunc = 500
     niter = 100
-    learning_alg = 'cpmmh'  # cpmmh, pmmh, smc2
+    learning_alg = 'cpmmh'  # choose sampler: cpmmh, pmmh, smc2
     show_fig = True
     prior_str = '_'.join(prior_dict.keys())
     export_name = 'Learning{}_data{}_steps{}_Nx{}_niter{}_ttrunc{}_prior{}'.format(learning_alg, generation_type,
