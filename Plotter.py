@@ -346,7 +346,6 @@ class Plotter:
             mean_truncated = np.mean(logLts_truncated, axis=0)
             std_trunacted = np.std(logLts_truncated, axis=0)
             axs[0].plot(t_start_vals, mean_truncated, label='N={}'.format(key))
-            # axs[0].fill_between(t_start_vals, mean_truncated - std_trunacted, mean_truncated + std_trunacted, alpha=0.5)
             axs[0].set_xlabel('Start time $ t_{0} $')
             axs[0].set_ylabel(r'$\log(p(y_{t_{0}+1:T} | y_{0:t_{0}})$')
             axs[0].set_title('Mean with std deviation')
