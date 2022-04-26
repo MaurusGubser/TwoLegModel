@@ -11,9 +11,6 @@ CONST_GRAVITATION = 9.81
 
 
 class TwoLegModel(ssm.StateSpaceModel):
-    """
-    Two leg model...
-    """
 
     def __init__(self,
                  dt=0.01,
@@ -180,12 +177,13 @@ class TwoLegModel(ssm.StateSpaceModel):
         mask_2d = np.outer(mask_not_nan, mask_not_nan)
         nb_non_nan = np.sum(mask_not_nan)
 
-        # covariance masked
+        # compute masked covariance and Jacobian
         x_hat = self.state_transition(xp)
         dh = self.compute_observation_derivatives(x_hat)
         dh = dh[:, mask_not_nan.flatten(), :]
         V_masked = np.reshape(self.V[mask_2d], (nb_non_nan, nb_non_nan))
 
+        # EKF
         dh_Q = np.matmul(dh, self.Q)
         S_inv = np.linalg.inv(np.matmul(dh_Q, np.transpose(dh, (0, 2, 1))) + V_masked)
         kalman_gain = np.matmul(np.transpose(dh_Q, (0, 2, 1)), S_inv)
