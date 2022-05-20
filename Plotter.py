@@ -61,7 +61,7 @@ class Plotter:
                 'Truth and particles are not compatible: shape truth is {}; shape particles is {}'.format(
                     self.true_states.shape, X_hist.shape))
 
-        nb_graphs = min(nb_particles, 5)
+        nb_trajectories = min(nb_particles, 5)
         nb_axes = 3
         nb_figures = int(np.ceil(self.dim_states / nb_axes))
         if self.dim_states == 18:
@@ -87,7 +87,7 @@ class Plotter:
                 if i * nb_axes + j > self.dim_states - 1:
                     break
                 axs[j].grid(axis='both')
-                for k in range(0, nb_graphs):
+                for k in range(0, nb_trajectories):
                     axs[j].plot(self.t_vals, X_hist[:, k, nb_axes * i + j], lw=1)
                 axs[j].plot(self.t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5, color='green')
                 axs[j].set_title(state_names[nb_axes * i + j])
@@ -101,7 +101,7 @@ class Plotter:
                     axs[j].plot(self.t_vals, self.contact_left, label='Contact left', color='red', lw=1.5)
                     axs[j].plot(self.t_vals, self.contact_right, label='Contact right', color='orange', lw=1.5)
                 axs[j].legend()
-            fig.suptitle('{} particle trajectories'.format(nb_graphs))
+            fig.suptitle('{} particle trajectories'.format(nb_trajectories))
             fig.tight_layout()
             fig_list.append(fig)
             axs_list.append(axs)
@@ -116,7 +116,7 @@ class Plotter:
         assert nb_steps == self.nb_steps and dim_states == self.dim_states, 'Truth and states are not compatible: shape truth is {}; shape samples is {}'.format(
             self.true_states.shape, samples.shape)
 
-        nb_graphs = min(nb_samples, 5)
+        nb_trajectories = min(nb_samples, 5)
         nb_axes = 3
         nb_figures = int(np.ceil(self.dim_states / nb_axes))
         if self.dim_states == 18:
@@ -141,7 +141,7 @@ class Plotter:
                 if i * nb_axes + j > self.dim_states - 1:
                     break
                 axs[j].grid(axis='both')
-                for k in range(0, nb_graphs):
+                for k in range(0, nb_trajectories):
                     axs[j % nb_axes].plot(self.t_vals, samples[:, k, nb_axes * i + j], lw=1)
                 axs[j % nb_axes].plot(self.t_vals, self.true_states[:, :, nb_axes * i + j], label='truth', lw=1.5,
                                       color='green')
@@ -221,13 +221,13 @@ class Plotter:
 
     def plot_observations(self, samples, observation_map):
         nb_steps, nb_samples, dim_states = samples.shape
-        nb_graphs = min(nb_samples, 5)
+        nb_trajectories = min(nb_samples, 5)
         if nb_steps != self.nb_steps or dim_states != self.dim_states:
             raise AssertionError('Truth and states are not compatible: shape truth is {}; shape samples is {}'.format(
                 self.true_states.shape, samples.shape))
         true_obs = self.true_obs
-        obs = np.empty((nb_steps, nb_graphs, self.dim_observations))
-        for i in range(0, nb_graphs):
+        obs = np.empty((nb_steps, nb_trajectories, self.dim_observations))
+        for i in range(0, nb_trajectories):
             obs[:, i, :] = observation_map(samples[:, i, :])
 
         if self.dim_observations == 20:
@@ -255,7 +255,7 @@ class Plotter:
                 if i * nb_axes + j > nb_observations - 1:
                     break
                 axs[j].grid(axis='both')
-                for k in range(0, nb_graphs):
+                for k in range(0, nb_trajectories):
                     axs[j].plot(self.t_vals, obs[:, k, i * nb_axes + j], lw=1)
                 axs[j].plot(self.t_vals, true_obs[:, :, i * nb_axes + j], label='True observation', color='green',
                             lw=1.5)
@@ -305,7 +305,6 @@ class Plotter:
         return None
 
     def compute_residuals(self, observations):
-        residuals = np.empty_like(observations)
         residuals = np.abs(self.true_obs - observations)
         return residuals
 

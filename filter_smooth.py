@@ -69,9 +69,9 @@ if __name__ == '__main__':
     pos_imu1 = 0.29  # 0.29
     pos_imu2 = 0.315  # 0.315
     pos_imu3 = 0.33  # 0.33
-    alpha0 = 0.05
+    alpha0 = 0.0
     alpha1 = 0.0
-    alpha2 = -0.02
+    alpha2 = 0.0
     alpha3 = 0.0
 
     b0 = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
@@ -119,12 +119,12 @@ if __name__ == '__main__':
 
     # ---------------------------- particle filter ----------------------------
     use_guided = True
-    nb_particles = 1000
+    nb_particles = 500
     ESSrmin = 0.5
     pf = run_particle_filter(use_guided=use_guided, model=my_model, nb_particles=nb_particles, ESSrmin=ESSrmin)
 
     # ---------------------------- plot results ----------------------------
-    export_name = 'SingleRun_alphas0.0_{}_steps{}_guided{}_particles{}_factorQ0{}_lambdax{}_lambday{}_lambdaphi{}_simuacc{}_simugyro{}_spressvelo{}_spressacc{}_factorProp{}'.format(
+    export_name = 'SingleRun_{}_steps{}_guided{}_particles{}_factorQ0{}_lambdax{}_lambday{}_lambdaphi{}_simuacc{}_simugyro{}_spressvelo{}_spressacc{}_factorProp{}'.format(
         generation_type,
         nb_timesteps,
         use_guided,
