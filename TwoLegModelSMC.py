@@ -208,7 +208,6 @@ class TwoLegModel(ssm.StateSpaceModel):
 
     def PY(self, t, xp, x):
         return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.H)
-        # return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
 
     def compute_observation_derivatives(self, x):
         return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus,
