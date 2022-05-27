@@ -212,7 +212,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         dists_1d = []
         for i in range(0, self.dim_observations):
             if i in self.idx_press:
-                dists_1d.append(dists.MixMissing(pmiss=0.5, base_dist=dists.Normal(loc=y_pred[:, i], scale=self.H[i, i])))
+                dists_1d.append(dists.MixMissing(pmiss=0.2, base_dist=dists.Normal(loc=y_pred[:, i], scale=self.H[i, i])))
             else:
                 dists_1d.append(dists.Normal(loc=y_pred[:, i], scale=self.H[i, i]))
         # return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.H)
