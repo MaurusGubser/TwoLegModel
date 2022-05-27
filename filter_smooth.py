@@ -48,7 +48,7 @@ def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 1000
+    nb_timesteps = 600
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
     x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     sigma_press_acc = 1.0  # 1.0
     factor_S = 1.0  # 1.0
 
-    factor_proposal = 1.0   # 1.2
+    factor_proposal = 1.2   # 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,

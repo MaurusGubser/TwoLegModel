@@ -90,6 +90,7 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.set_process_covariance()
         self.H = np.zeros((self.dim_observations, self.dim_observations))
         self.set_observation_covariance()
+        self.idx_press = np.arange(12, 20) if self.dim_observations == 20 else np.arange(24, 36)
         self.factor_proposal = factor_proposal
         self.kalman_covs = np.empty((1, self.dim_states, self.dim_states))
 
@@ -207,8 +208,15 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=self.state_transition(xp), cov=self.Q)
 
     def PY(self, t, xp, x):
-        return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.H)
-        # return dists.MvNormal(loc=self.state_to_observation(x), cov=self.H)
+        y_pred = self.state_to_observation(x)
+        dists_1d = []
+        for i in range(0, self.dim_observations):
+            if i in self.idx_press:
+                dists_1d.append(dists.MixMissing(pmiss=0.5, base_dist=dists.Normal(loc=y_pred[:, i], scale=self.H[i, i])))
+            else:
+                dists_1d.append(dists.Normal(loc=y_pred[:, i], scale=self.H[i, i]))
+        # return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.H)
+        return dists.IndepProd(*dists_1d)
 
     def compute_observation_derivatives(self, x):
         return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus,
@@ -245,4 +253,4 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=mean, cov=covar)
 
     def upper_bound_log_pt(self, t):
-        return 1.0 / np.sqrt((2 * np.pi)**self.dim_states * np.linalg.det(self.Q))
+        return 1.0 / np.sqrt((2 * np.pi) ** self.dim_states * np.linalg.det(self.Q))
