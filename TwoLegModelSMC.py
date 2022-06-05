@@ -47,7 +47,8 @@ class TwoLegModel(ssm.StateSpaceModel):
                  sigma_press_velo=0.1,  # 0.1
                  sigma_press_acc=1.0,  # 1.0
                  factor_S=1.0,  # 1.0
-                 factor_proposal=1.2):  # 1.2
+                 factor_proposal=1.2,  # 1.2
+                 observations=np.zeros(20)):
         ssm.StateSpaceModel().__init__()
         self.dt = dt
         self.dim_states = dim_states
@@ -90,7 +91,12 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.set_process_covariance()
         self.H = np.zeros((self.dim_observations, self.dim_observations))
         self.set_observation_covariance()
-        self.idx_press = np.arange(12, 20) if self.dim_observations == 20 else np.arange(24, 36)
+        self.idx_left = np.arange(12, 16) if self.dim_observations == 20 else np.arange(24, 30)
+        self.idx_right = np.arange(16, 20) if self.dim_observations == 20 else np.arange(30, 36)
+        self.left_missing = np.isnan(observations[:, :, 12]).flatten() if self.dim_observations == 20 else np.isnan(
+            observations[:, :, 24]).flatten()
+        self.right_missing = np.isnan(observations[:, :, 16]).flatten() if self.dim_observations == 20 else np.isnan(
+            observations[:, :, 30]).flatten()
         self.factor_proposal = factor_proposal
         self.kalman_covs = np.empty((1, self.dim_states, self.dim_states))
 
@@ -210,11 +216,24 @@ class TwoLegModel(ssm.StateSpaceModel):
     def PY(self, t, xp, x):
         y_pred = self.state_to_observation(x)
         dists_1d = []
+
+        # FlatNormal
         for i in range(0, self.dim_observations):
-            if i in self.idx_press:
+            if i in self.idx_left and self.left_missing[i]:
+                dists_1d.append(dists.FlatNormal(loc=y_pred[:, i]))
+            elif i in self.idx_right and self.right_missing[i]:
+                dists_1d.append(dists.FlatNormal(loc=y_pred[:, i]))
+            else:
+                dists_1d.append(dists.Normal(loc=y_pred[:, i], scale=self.H[i, i]))
+
+        """
+        # MixMissing
+        for i in range(0, self.dim_observations):
+            if i in self.idx_left or i in self.idx_right:
                 dists_1d.append(dists.MixMissing(pmiss=0.2, base_dist=dists.Normal(loc=y_pred[:, i], scale=self.H[i, i])))
             else:
                 dists_1d.append(dists.Normal(loc=y_pred[:, i], scale=self.H[i, i]))
+        """
         # return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.H)
         return dists.IndepProd(*dists_1d)
 

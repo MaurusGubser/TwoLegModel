@@ -48,7 +48,7 @@ def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
 if __name__ == '__main__':
     # ---------------------------- data ----------------------------
     generation_type = 'Missingdata005'
-    nb_timesteps = 600
+    nb_timesteps = 500
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
     x, y = data_reader.get_data_as_lists(generation_type, nb_timesteps, dim_obs)
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     sigma_press_acc = 1.0  # 1.0
     factor_S = 1.0  # 1.0
 
-    factor_proposal = 1.2   # 1.2
+    factor_proposal = 1.2  # 1.2
 
     my_model = TwoLegModel(dt=dt,
                            dim_states=dim_states,
@@ -118,12 +118,12 @@ if __name__ == '__main__':
                            sigma_press_velo=sigma_press_velo,
                            sigma_press_acc=sigma_press_acc,
                            factor_S=factor_S,
-                           factor_proposal=factor_proposal
-                           )
+                           factor_proposal=factor_proposal,
+                           observations=np.array(y))
 
     # ---------------------------- particle filter ----------------------------
-    nb_particles = 500
-    fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
+    nb_particles = 100
+    # fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
     pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
 
