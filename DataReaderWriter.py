@@ -34,7 +34,8 @@ class DataReaderWriter:
         sensors_measurements = []
         for i, j in pairwise(sensor_idxs):
             df_sensor = df.iloc[i + 1:j]
-            df_sensor.columns = ['time'] + [col_name + '_' + str(i) for col_name in df_sensor.columns[1:]]
+            df_sensor.columns = ['time'] + [col_name + '_' + str(i) for col_name in
+                                            df_sensor.columns[1:]]
             sensors_measurements.append(df_sensor)
         last_idx = sensor_idxs[-1] + 1
         sensors_measurements.append(df[last_idx:])
@@ -49,17 +50,23 @@ class DataReaderWriter:
 
     def data_arr_to_list(self):
         if self.observations_arr.shape[0] != self.true_states_arr.shape[0]:
-            raise AssertionError('Number of time steps in observations is {}; number of time steps in truth is {};'
-                                 'should be the same.'.format(self.observations_arr.shape[0],
-                                                              self.true_states_arr.shape[0]))
+            raise AssertionError(
+                'Number of time steps in observations is {}; number of time steps in'
+                'truth is {}; should be the same.'.format(
+                    self.observations_arr.shape[0],
+                    self.true_states_arr.shape[0]))
         nb_timesteps = self.true_states_arr.shape[0]
         for time_step in range(0, nb_timesteps):
-            self.states_list.append(np.reshape(self.true_states_arr[time_step, :], (1, -1)))
-            self.observations_list.append(np.reshape(self.observations_arr[time_step, :], (1, -1)))
+            self.states_list.append(
+                np.reshape(self.true_states_arr[time_step, :], (1, -1)))
+            self.observations_list.append(
+                np.reshape(self.observations_arr[time_step, :], (1, -1)))
         return None
 
     def reduce_observations(self):
-        self.observations_arr = self.observations_arr[:, (0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 31, 33, 34)]
+        self.observations_arr = self.observations_arr[:, (0, 1, 5, 6, 7, 11, 12, 13, 17,
+                                                          18, 19, 23, 24, 25, 27, 28,
+                                                          30, 31, 33, 34)]
         return None
 
     def get_data_as_lists(self, generation_type, max_timesteps, dim_observations):
@@ -85,7 +92,8 @@ class DataReaderWriter:
     def export_trajectory(data_states, dt, file_name):
         nb_timesteps, nb_samples, _ = data_states.shape
         time_arr = dt * np.arange(1, nb_timesteps + 1)
-        header = '\nnb_samples: {}\n'.format(nb_timesteps) + 4 * 'nb_times: {}\n'.format(nb_timesteps)
+        header = '\nnb_samples: {}\n'.format(
+            nb_timesteps) + 4 * 'nb_times: {}\n'.format(nb_timesteps)
         header = header + '# time,x_0,x_1,phi femur_l,phi fibula_l,phi femur_r,phi fibula_r,dx_0,dx_1,dphi femur_l,dphi fibula_l,dphi femur_r,dphi fibula_r,ddx_0,ddx_1,ddphi femur_l,ddphi fibula_l,ddphi femur_r,ddphi fibula_r\n'
 
         if not os.path.exists('AnimationSamples'):
