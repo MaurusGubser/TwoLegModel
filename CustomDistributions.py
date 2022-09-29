@@ -1,24 +1,19 @@
 from __future__ import division, print_function
 
-import warnings
-from particles.distributions import ProbDist, MvNormal
-from collections import OrderedDict  # see prior
+from particles.distributions import MvNormal
 import numpy as np
-import numpy.random as random
-import scipy.stats as stats
-from scipy.linalg import solve_triangular, inv, cholesky
+from scipy.linalg import solve_triangular
 
-HALFLOG2PI = 0.5 * np.log(2. * np.pi)
+HALFLOG2PI = 0.5 * np.log(2.0 * np.pi)
 
 
 class MvNormalMissingObservations(MvNormal):
-
-    def __init__(self, loc=0., scale=1., cov=None):
+    def __init__(self, loc=0.0, scale=1.0, cov=None):
         MvNormal.__init__(self, loc=loc, scale=scale, cov=cov)
 
     def logpdf(self, x):
         nb_part, _ = x.shape
-        assert nb_part == 1, 'x is expected to be 2-dimensional, got {} array instead'.format(x.shape)
+        assert (nb_part == 1), "x is expected to be 2-dimensional, got {} array instead".format(x.shape)
         mask_not_nan = np.invert(np.isnan(x))[0]
         x_not_nan = x[:, mask_not_nan]
         loc_not_nan = self.loc[:, mask_not_nan]
@@ -33,4 +28,4 @@ class MvNormalMissingObservations(MvNormal):
         else:
             logdet = np.sum(np.log(self.scale), axis=-1)
         logdet += self.halflogdetcor
-        return - 0.5 * np.sum(z * z, axis=0) - logdet - self.dim * HALFLOG2PI
+        return -0.5 * np.sum(z * z, axis=0) - logdet - self.dim * HALFLOG2PI

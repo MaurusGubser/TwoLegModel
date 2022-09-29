@@ -2,7 +2,7 @@
 SSM implementation of a two leg motion model, using particles library for filtering, smoothing and parameter learning. The two leg model is implemented as a class, the SMC tasks like filtering, smoothing, parameter learning are done using the particles library.
 
 The following files are implementation of classes:
-- CustormDistributions.py sublasses ProbDist class of particles to implement custom distributions
+- CustomDistributions.py sublasses ProbDist class of particles to implement custom distributions
 - CustomMCMC.py subclasses PMMH class of particles to implement a custom PMMH sampler.
 - DataReaderWriter.py is a class for reading and preparing data for the SMC sapmler of particles. Also, particles data can be exported.
 - MechanicalModel.py implements the mechanical two leg model as a python class.

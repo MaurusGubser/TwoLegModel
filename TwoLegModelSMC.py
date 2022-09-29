@@ -11,35 +11,55 @@ CONST_GRAVITATION = 9.81
 
 
 class TwoLegModel(ssm.StateSpaceModel):
-
-    def __init__(self,
-                 dt=0.01,
-                 dim_states=18,
-                 dim_observations=20,
-                 femur_left=0.5,
-                 fibula_left=0.6,
-                 femur_right=0.5,
-                 fibula_right=0.6,
-                 pos_imu0=0.34,
-                 pos_imu1=0.29,
-                 pos_imu2=0.315,
-                 pos_imu3=0.33,
-                 alpha0=0.0,
-                 alpha1=0.0,
-                 alpha2=0.0,
-                 alpha3=0.0,
-                 b0=np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-                 factor_Q0=0.1,  # 0.1
-                 lambda_x=10000.0,  # 10000.0
-                 lambda_y=1000.0,  # 1000.0
-                 lambda_phi=10000000.0,  # 10000000.0
-                 sigma_imu_acc=0.1,  # 0.1
-                 sigma_imu_gyro=0.1,  # 0.1
-                 sigma_press_velo=0.1,  # 0.1
-                 sigma_press_acc=1.0,  # 1.0
-                 factor_proposal=1.2):  # 1.2
+    def __init__(
+            self,
+            dt=0.01,
+            dim_states=18,
+            dim_observations=20,
+            femur_left=0.5,
+            fibula_left=0.6,
+            femur_right=0.5,
+            fibula_right=0.6,
+            pos_imu0=0.34,
+            pos_imu1=0.29,
+            pos_imu2=0.315,
+            pos_imu3=0.33,
+            alpha0=0.0,
+            alpha1=0.0,
+            alpha2=0.0,
+            alpha3=0.0,
+            b0=np.array(
+                [
+                    0.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                ]
+            ),
+            factor_Q0=0.1,  # 0.1
+            lambda_x=10000.0,  # 10000.0
+            lambda_y=1000.0,  # 1000.0
+            lambda_phi=10000000.0,  # 10000000.0
+            sigma_imu_acc=0.1,  # 0.1
+            sigma_imu_gyro=0.1,  # 0.1
+            sigma_press_velo=0.1,  # 0.1
+            sigma_press_acc=1.0,  # 1.0
+            factor_proposal=1.2,
+    ):  # 1.2
         ssm.StateSpaceModel().__init__()
         self.dt = dt
         self.dim_states = dim_states
@@ -51,12 +71,16 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.fibula_left = fibula_left
         self.femur_right = femur_right
         self.fibula_right = fibula_right
-        self.len_legs = np.array([self.femur_left, self.fibula_left, self.femur_right, self.fibula_right])
+        self.len_legs = np.array(
+            [self.femur_left, self.fibula_left, self.femur_right, self.fibula_right]
+        )
         self.pos_imu0 = pos_imu0
         self.pos_imu1 = pos_imu1
         self.pos_imu2 = pos_imu2
         self.pos_imu3 = pos_imu3
-        self.pos_imus = np.array([self.pos_imu0, self.pos_imu1, self.pos_imu2, self.pos_imu3])
+        self.pos_imus = np.array(
+            [self.pos_imu0, self.pos_imu1, self.pos_imu2, self.pos_imu3]
+        )
         self.alpha0 = alpha0
         self.alpha1 = alpha1
         self.alpha2 = alpha2
@@ -111,9 +135,22 @@ class TwoLegModel(ssm.StateSpaceModel):
                 elif 2 * block_size <= row:
                     if row == col:
                         self.Q[row, col] = self.dt
-        idx_groups = [[0, 6, 12], [1, 7, 13], [2, 8, 14], [3, 9, 15], [4, 10, 16], [5, 11, 17]]
-        scale_factors = [self.lambda_x, self.lambda_y, self.lambda_phi, self.lambda_phi, self.lambda_phi,
-                         self.lambda_phi]
+        idx_groups = [
+            [0, 6, 12],
+            [1, 7, 13],
+            [2, 8, 14],
+            [3, 9, 15],
+            [4, 10, 16],
+            [5, 11, 17],
+        ]
+        scale_factors = [
+            self.lambda_x,
+            self.lambda_y,
+            self.lambda_phi,
+            self.lambda_phi,
+            self.lambda_phi,
+            self.lambda_phi,
+        ]
         for factor, idxs in zip(scale_factors, idx_groups):
             for row, col in itertools.product(idxs, idxs):
                 self.Q[row, col] *= factor
@@ -121,28 +158,77 @@ class TwoLegModel(ssm.StateSpaceModel):
 
     def set_observation_covariance(self):
         if self.dim_observations == 20:
-            self.V = np.diag([self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc, self.sigma_press_acc,
-                              self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc, self.sigma_press_acc])
+            self.V = np.diag(
+                [
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_press_velo,
+                    self.sigma_press_velo,
+                    self.sigma_press_acc,
+                    self.sigma_press_acc,
+                    self.sigma_press_velo,
+                    self.sigma_press_velo,
+                    self.sigma_press_acc,
+                    self.sigma_press_acc,
+                ]
+            )
         elif self.dim_observations == 36:
-            self.V = np.diag([self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_gyro, self.sigma_imu_gyro,
-                              self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_gyro, self.sigma_imu_gyro,
-                              self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_gyro, self.sigma_imu_gyro,
-                              self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_gyro, self.sigma_imu_gyro,
-                              self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc,
-                              self.sigma_press_acc, self.sigma_press_acc,
-                              self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc,
-                              self.sigma_press_acc, self.sigma_press_acc])
+            self.V = np.diag(
+                [
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_press_velo,
+                    self.sigma_press_velo,
+                    self.sigma_press_velo,
+                    self.sigma_press_acc,
+                    self.sigma_press_acc,
+                    self.sigma_press_acc,
+                    self.sigma_press_velo,
+                    self.sigma_press_velo,
+                    self.sigma_press_velo,
+                    self.sigma_press_acc,
+                    self.sigma_press_acc,
+                    self.sigma_press_acc,
+                ]
+            )
         else:
             raise AssertionError(
-                'Observation dimension must be 20 or 36; got {} instead.'.format(self.dim_observations))
+                "Observation dimension must be 20 or 36; got {} instead.".format(
+                    self.dim_observations
+                )
+            )
         return None
 
     def set_imu_rotation_matrices(self):
@@ -157,7 +243,9 @@ class TwoLegModel(ssm.StateSpaceModel):
         return np.matmul(self.A, xp.T).T
 
     def state_to_observation(self, x):
-        return state_to_obs(x, self.dim_observations, self.g, self.len_legs, self.pos_imus, self.R)
+        return state_to_obs(
+            x, self.dim_observations, self.g, self.len_legs, self.pos_imus, self.R
+        )
 
     def PX0(self):
         return dists.MvNormal(loc=self.b0, cov=self.Q0)
@@ -169,8 +257,15 @@ class TwoLegModel(ssm.StateSpaceModel):
         return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.V)
 
     def compute_observation_derivatives(self, x):
-        return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus,
-                                    self.R)
+        return compute_jacobian_obs(
+            x,
+            self.dim_states,
+            self.dim_observations,
+            self.g,
+            self.len_legs,
+            self.pos_imus,
+            self.R,
+        )
 
     def compute_ekf_proposal(self, xp, data_t):
         mask_not_nan = np.invert(np.isnan(data_t))
@@ -187,9 +282,8 @@ class TwoLegModel(ssm.StateSpaceModel):
         dh_Q = np.matmul(dh, self.Q)
         S_inv = np.linalg.inv(np.matmul(dh_Q, np.transpose(dh, (0, 2, 1))) + V_masked)
         kalman_gain = np.matmul(np.transpose(dh_Q, (0, 2, 1)), S_inv)
-        prediction_err = data_t[mask_not_nan] - self.state_to_observation(x_hat)[:, mask_not_nan.flatten()]
-
-        mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, prediction_err)
+        prediction_err = (data_t[mask_not_nan] - self.state_to_observation(x_hat)[:, mask_not_nan.flatten()])
+        mu = x_hat + np.einsum("ijk, ik -> ij", kalman_gain, prediction_err)
         Sigma = self.Q - np.matmul(kalman_gain, dh_Q)
 
         return mu, Sigma

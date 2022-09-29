@@ -1,24 +1,18 @@
 from __future__ import division, print_function
 
-import itertools
 import numpy as np
-from numpy import random
-from scipy import stats
-from scipy.linalg import cholesky, LinAlgError
 
 import particles
 from particles import smc_samplers as ssp
 from particles.state_space_models import Bootstrap
-from particles import utils
 from particles.mcmc import PMMH
 from particles.collectors import Moments, LogLts
 
 
 class TruncatedPMMH(PMMH):
-    def __init__(self, niter=10, verbose=0, ssm_cls=None,
-                 smc_cls=particles.SMC, prior=None, data=None, smc_options=None,
-                 fk_cls=Bootstrap, Nx=100, theta0=None, adaptive=True, scale=1.,
-                 rw_cov=None, t_trunc=0):
+    def __init__(self, niter=10, verbose=0, ssm_cls=None, smc_cls=particles.SMC, prior=None, data=None,
+                 smc_options=None, fk_cls=Bootstrap, Nx=100, theta0=None, adaptive=True, scale=1.0, rw_cov=None,
+                 t_trunc=0):
         """
         Parameters
         ----------
@@ -53,20 +47,19 @@ class TruncatedPMMH(PMMH):
         t_trunc: int
             start time, on which likelihood is conditioned, i.e. p(y_{t_start:T}|y_{0:t_start})
         """
+
         self.t_trunc = t_trunc
-        PMMH.__init__(self, niter=niter, verbose=verbose, ssm_cls=ssm_cls,
-                      smc_cls=smc_cls, prior=prior, data=data, smc_options=smc_options,
-                      fk_cls=fk_cls, Nx=Nx, theta0=theta0, adaptive=adaptive, scale=scale,
+        PMMH.__init__(self, niter=niter, verbose=verbose, ssm_cls=ssm_cls, smc_cls=smc_cls, prior=prior, data=data,
+                      smc_options=smc_options, fk_cls=fk_cls, Nx=Nx, theta0=theta0, adaptive=adaptive, scale=scale,
                       rw_cov=rw_cov)
-        self.smc_options.update({'collect': [LogLts()]})
+        self.smc_options.update({"collect": [LogLts()]})
 
     def alg_instance(self, theta):
-        return self.smc_cls(fk=self.fk_cls(ssm=self.ssm_cls(**theta), data=self.data), N=self.Nx,
-                            **self.smc_options)
+        return self.smc_cls(fk=self.fk_cls(ssm=self.ssm_cls(**theta), data=self.data), N=self.Nx, **self.smc_options)
 
     def compute_post(self):
         self.prop.lpost[0] = self.prior.logpdf(self.prop.theta)
         if np.isfinite(self.prop.lpost[0]):
             pf = self.alg_instance(ssp.rec_to_dict(self.prop.theta[0]))
             pf.run()
-            self.prop.lpost[0] += pf.summaries.logLts[-1] - pf.summaries.logLts[self.t_trunc]
+            self.prop.lpost[0] += (pf.summaries.logLts[-1] - pf.summaries.logLts[self.t_trunc])

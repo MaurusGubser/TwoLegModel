@@ -16,17 +16,18 @@ def compare_parameters(fk_models, true_states, data, dt, nb_particles, nb_runs, 
     end_user, end_process = time.time(), time.process_time()
     s_user = end_user - start_user
     s_process = end_process - start_process
-    print('Time user {:.0f}min {:.0f}s; time processor {:.0f}min {:.0f}s'.format(s_user // 60, s_user % 60,
-                                                                                 s_process // 60, s_process % 60))
+    print(
+        "Time user {:.0f}min {:.0f}s; time processor {:.0f}min {:.0f}s".format(s_user // 60, s_user % 60,
+                                                                               s_process // 60, s_process % 60))
 
     plotter = Plotter(np.array(true_states), np.array(data), dt, export_name, show_fig)
     plotter.plot_likelihood_parameters(results, fk_models.keys(), t_trunc)
     return None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # ---------------------------- data ----------------------------
-    generation_type = 'Missingdata005'  # name of data subfolder
+    generation_type = "Missingdata005"  # name of data subfolder
     nb_timesteps = 100
     dim_obs = 20  # 20 or 36
     data_reader = DataReaderWriter()
@@ -39,14 +40,9 @@ if __name__ == '__main__':
     t_trunc = 50
     nb_runs = 10
     show_fig = True
-    params = 'alphas'
-    export_name = 'MultiRun_{}_steps{}_N{}_nbruns{}_tstart{}_params{}'.format(
-        generation_type,
-        nb_timesteps,
-        N,
-        nb_runs,
-        t_trunc,
-        params)
+    params = "alphas"
+    export_name = "MultiRun_{}_steps{}_N{}_nbruns{}_tstart{}_params{}".format(generation_type, nb_timesteps, N, nb_runs,
+                                                                              t_trunc, params)
 
     # suggestions for parameters, for which likelihood should be compared
     # parameters = [{'femur_left': 0.3, 'femur_right': 0.3}, {'femur_left': 0.4, 'femur_right': 0.4}, {'femur_left': 0.5, 'femur_right': 0.5}, {'femur_left': 0.6, 'femur_right': 0.6}, {'femur_left': 0.7, 'femur_right': 0.7}]
@@ -55,9 +51,10 @@ if __name__ == '__main__':
     # parameters = [{'pos_imu0': 0.15}, {'pos_imu0': 0.20}, {'pos_imu0': 0.25}, {}, {'pos_imu0': 0.35}, {'pos_imu0': 0.4}, {'pos_imu0': 0.45}]
     # parameters = [{'pos_imu0': 0.15, 'pos_imu2': 0.15}, {'pos_imu0': 0.2, 'pos_imu2': 0.2}, {'pos_imu0': 0.25, 'pos_imu2': 0.25}, {}, {'pos_imu0': 0.35, 'pos_imu2': 0.35}, {'pos_imu0': 0.4, 'pos_imu2': 0.4}, {'pos_imu0': 0.45, 'pos_imu2': 0.45}]
     # parameters = [{'alpha0': -0.2}, {'alpha0': -0.1}, {'alpha0': 0.0}, {'alpha0': 0.1}, {'alpha0': 0.2}, {'alpha0': 0.3}]
-    parameters = [{'alpha0': -0.2, 'alpha2': -0.2}, {'alpha0': -0.1, 'alpha2': -0.1}, {'alpha0': 0.0, 'alpha2': 0.0},
-                  {'alpha0': 0.1, 'alpha2': 0.1}, {'alpha0': 0.2, 'alpha2': 0.2}, {'alpha0': 0.3, 'alpha2': 0.3}]
+    parameters = [{"alpha0": -0.2, "alpha2": -0.2}, {"alpha0": -0.1, "alpha2": -0.1}, {"alpha0": 0.0, "alpha2": 0.0},
+                  {"alpha0": 0.1, "alpha2": 0.1}, {"alpha0": 0.2, "alpha2": 0.2}, {"alpha0": 0.3, "alpha2": 0.3}, ]
     fk_models = {}
     for param in parameters:
         fk_models[str(param)] = ssm.GuidedPF(ssm=TwoLegModel(**param), data=y)
+
     compare_parameters(fk_models, x, y, dt, N, nb_runs, t_trunc, show_fig, export_name)

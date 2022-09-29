@@ -2,18 +2,18 @@ from sympy import symbols, Function, Matrix, diff, cos, sin, simplify, init_prin
 from IPython.display import display
 
 # two-leg-model parameters
-s0, s1, s2, s3 = symbols('s_0 s_1 s_2 s_3')
-l0, l1, l2, l3 = symbols('l_0 l_1 l_2 l_3')
-g = symbols('g')
-t = symbols('t')
+s0, s1, s2, s3 = symbols("s_0 s_1 s_2 s_3")
+l0, l1, l2, l3 = symbols("l_0 l_1 l_2 l_3")
+g = symbols("g")
+t = symbols("t")
 
 # state functions
-x = Function('x_0')(t)
-y = Function('x_1')(t)
-phi0 = Function('phi_0')(t)
-phi1 = Function('phi_1')(t)
-phi2 = Function('phi_2')(t)
-phi3 = Function('phi_3')(t)
+x = Function("x_0")(t)
+y = Function("x_1")(t)
+phi0 = Function("phi_0")(t)
+phi1 = Function("phi_1")(t)
+phi2 = Function("phi_2")(t)
+phi3 = Function("phi_3")(t)
 
 # Rotation matrices for limb-aligned coordinate systems
 Rphi0 = Matrix([[cos(phi0), sin(phi0)], [-sin(phi0), cos(phi0)]])
@@ -49,6 +49,8 @@ r5ddot = simplify(diff(r5, t, 2))
 
 # print first and second derivatives
 init_printing()
-rs = [r0dot, r0ddot, r1dot, r1ddot, r4dot, r4ddot, r2dot, r2ddot, r3dot, r3ddot, r5dot, r5ddot]
+rs = [r0dot, r0ddot, r1dot, r1ddot, r4dot, r4ddot,
+      r2dot, r2ddot, r3dot, r3ddot, r5dot, r5ddot]
+
 for r in rs:
     display(r)
