@@ -4,9 +4,9 @@ import warnings
 from particles.distributions import ProbDist, MvNormal
 import numpy as np
 import scipy.stats as stats
-from scipy.linalg import solve_triangular, inv, cholesky
+from scipy.linalg import solve_triangular, inv
 
-HALFLOG2PI = 0.5 * np.log(2. * np.pi)
+HALFLOG2PI = 0.5 * np.log(2.0 * np.pi)
 
 
 class MvNormalMultiDimCov(ProbDist):
@@ -49,11 +49,11 @@ class MvNormalMultiDimCov(ProbDist):
     i.e for each n=1...N we have a different mean, and a different scale.
     """
 
-    def __init__(self, loc=0., scale=1., cov=None):
+    def __init__(self, loc=0.0, scale=1.0, cov=None):
         self.loc = loc
         self.scale = scale
         self.cov = cov
-        err_msg = 'mvnorm: argument cov must be a Nxdxd ndarray, with d>1, defining a symmetric positive matrix'
+        err_msg = "mvnorm: argument cov must be a Nxdxd ndarray, with d>1, defining a symmetric positive matrix"
         try:
             self.L = np.linalg.cholesky(cov)  # L*L.T = cov
             self.halflogdetcor = np.array([np.sum(np.log(np.diag(l))) for l in self.L])
@@ -74,7 +74,9 @@ class MvNormalMultiDimCov(ProbDist):
     def logpdf(self, x):
         z_solved = np.empty_like(x.T)
         for i in range(0, x.shape[0]):
-            z_solved[:, i] = solve_triangular(self.L[i], np.transpose((x - self.loc)[i] / self.scale), lower=True)
+            z_solved[:, i] = solve_triangular(
+                self.L[i], np.transpose((x - self.loc)[i] / self.scale), lower=True
+            )
         # z is dxN, not Nxd
         if np.asarray(self.scale).ndim == 0:
             # handle as array of dimension N? To handle with logdet...
@@ -83,7 +85,9 @@ class MvNormalMultiDimCov(ProbDist):
             # This case is not adapted to cov (N, d, d) form
             logdet = np.sum(np.log(self.scale), axis=-1)
         logdet += self.halflogdetcor
-        return - 0.5 * np.sum(z_solved * z_solved, axis=0) - logdet - self.dim * HALFLOG2PI
+        return (
+            -0.5 * np.sum(z_solved * z_solved, axis=0) - logdet - self.dim * HALFLOG2PI
+        )
 
     def rvs(self, size=None):
         if size is None:
@@ -123,13 +127,12 @@ class MvNormalMultiDimCov(ProbDist):
         Siginv = inv(Sigma)
         Qpost = inv(self.cov) + n * Siginv
         Sigpost = inv(Qpost)
-        mupost = (np.matmul(Siginv, self.loc) + np.matmul(Siginv, np.sum(x, axis=0)))
+        mupost = np.matmul(Siginv, self.loc) + np.matmul(Siginv, np.sum(x, axis=0))
         return MvNormalMultiDimCov(loc=mupost, cov=Sigpost)
 
 
 class MvStudent(ProbDist):
-
-    def __init__(self, loc=0., shape=1, df=1.0):
+    def __init__(self, loc=0.0, shape=1, df=1.0):
         self.loc = loc
         self.locs = [loc[i, :] for i in range(0, loc.shape[0])]
         self.shape = shape
@@ -142,26 +145,38 @@ class MvStudent(ProbDist):
     def logpdf(self, x):
         nb_particles, _ = x.shape
         return np.array(
-            [stats.multivariate_t(loc=self.locs[i], shape=self.shape, allow_singular=True).logpdf(x[i, :]) for i in
-             range(0, nb_particles)])
+            [
+                stats.multivariate_t(
+                    loc=self.locs[i], shape=self.shape, allow_singular=True
+                ).logpdf(x[i, :])
+                for i in range(0, nb_particles)
+            ]
+        )
 
     def rvs(self, size=1):
         return np.array(
-            [stats.multivariate_t(loc=mu, shape=self.shape, allow_singular=True).rvs(size=1) for mu in self.locs])
+            [
+                stats.multivariate_t(loc=mu, shape=self.shape, allow_singular=True).rvs(
+                    size=1
+                )
+                for mu in self.locs
+            ]
+        )
 
     def ppf(self, u):
-        warnings.warn('Using ppf of MvStudent', UserWarning)
+        warnings.warn("Using ppf of MvStudent", UserWarning)
         pass
 
 
 class MvNormalMissingObservations(MvNormal):
-
-    def __init__(self, loc=0., scale=1., cov=None):
+    def __init__(self, loc=0.0, scale=1.0, cov=None):
         MvNormal.__init__(self, loc=loc, scale=scale, cov=cov)
 
     def logpdf(self, x):
         nb_part, _ = x.shape
-        assert nb_part == 1, 'x is expected to be 2-dimensional, got {} array instead'.format(x.shape)
+        assert (
+            nb_part == 1
+        ), "x is expected to be 2-dimensional, got {} array instead".format(x.shape)
         mask_not_nan = np.invert(np.isnan(x))[0]
         x_not_nan = x[:, mask_not_nan]
         loc_not_nan = self.loc[:, mask_not_nan]
@@ -169,11 +184,13 @@ class MvNormalMissingObservations(MvNormal):
         nb_non_nan = np.sum(mask_not_nan)
         L_not_nan = np.reshape(self.L[mask_2d], (nb_non_nan, nb_non_nan))
 
-        z = solve_triangular(L_not_nan, np.transpose((x_not_nan - loc_not_nan) / self.scale), lower=True)
+        z = solve_triangular(
+            L_not_nan, np.transpose((x_not_nan - loc_not_nan) / self.scale), lower=True
+        )
         # z is dxN, not Nxd
         if np.asarray(self.scale).ndim == 0:
             logdet = self.dim * np.log(self.scale)
         else:
             logdet = np.sum(np.log(self.scale), axis=-1)
         logdet += self.halflogdetcor
-        return - 0.5 * np.sum(z * z, axis=0) - logdet - self.dim * HALFLOG2PI
+        return -0.5 * np.sum(z * z, axis=0) - logdet - self.dim * HALFLOG2PI

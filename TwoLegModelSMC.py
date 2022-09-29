@@ -1,12 +1,16 @@
 import itertools
 import numpy as np
-import scipy
 from particles import state_space_models as ssm
 from particles import distributions as dists
-from CustomDistributions import MvNormalMultiDimCov, MvStudent, MvNormalMissingObservations
+from CustomDistributions import MvNormalMissingObservations
 from scipy.linalg import block_diag
 
-from MechanicalModel import state_to_obs, compute_jacobian_obs, state_to_obs_linear, create_rotation_matrix_z
+from MechanicalModel import (
+    state_to_obs,
+    compute_jacobian_obs,
+    state_to_obs_linear,
+    create_rotation_matrix_z,
+)
 
 CONST_GRAVITATION = 9.81
 
@@ -16,38 +20,59 @@ class TwoLegModel(ssm.StateSpaceModel):
     Two leg model...
     """
 
-    def __init__(self,
-                 dt=0.01,
-                 dim_states=18,
-                 dim_observations=20,
-                 femur_left=0.5,
-                 fibula_left=0.6,
-                 femur_right=0.5,
-                 fibula_right=0.6,
-                 pos_imu0=0.34,
-                 pos_imu1=0.29,
-                 pos_imu2=0.315,
-                 pos_imu3=0.33,
-                 b0=np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
-                 alpha_0=0.0,
-                 alpha_1=0.0,
-                 alpha_2=0.0,
-                 alpha_3=0.0,
-                 factor_init=0.01,  # 0.01
-                 cov_step=0.01,
-                 lambda_x=10000.0,  # 10000.0
-                 lambda_y=1000.0,  # 1000.0
-                 lambda_phi=10000000.0,  # 10000000.0
-                 factor_Q=1.0,  # 1.0
-                 diag_Q=False,
-                 sigma_imu_acc=0.1,  # 0.1
-                 sigma_imu_gyro=0.1,  # 0.1
-                 sigma_press_velo=0.1,  # 0.1
-                 sigma_press_acc=1.0,  # 1.0
-                 factor_S=1.0,  # 1.0
-                 factor_proposal=1.2):  # 1.2
+    def __init__(
+        self,
+        dt=0.01,
+        dim_states=18,
+        dim_observations=20,
+        femur_left=0.5,
+        fibula_left=0.6,
+        femur_right=0.5,
+        fibula_right=0.6,
+        pos_imu0=0.34,
+        pos_imu1=0.29,
+        pos_imu2=0.315,
+        pos_imu3=0.33,
+        b0=np.array(
+            [
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ]
+        ),
+        alpha_0=0.0,
+        alpha_1=0.0,
+        alpha_2=0.0,
+        alpha_3=0.0,
+        factor_init=0.01,  # 0.01
+        cov_step=0.01,
+        lambda_x=10000.0,  # 10000.0
+        lambda_y=1000.0,  # 1000.0
+        lambda_phi=10000000.0,  # 10000000.0
+        factor_Q=1.0,  # 1.0
+        diag_Q=False,
+        sigma_imu_acc=0.1,  # 0.1
+        sigma_imu_gyro=0.1,  # 0.1
+        sigma_press_velo=0.1,  # 0.1
+        sigma_press_acc=1.0,  # 1.0
+        factor_S=1.0,  # 1.0
+        factor_proposal=1.2,
+    ):  # 1.2
         ssm.StateSpaceModel().__init__()
         self.dt = dt
         self.dim_states = dim_states
@@ -59,12 +84,16 @@ class TwoLegModel(ssm.StateSpaceModel):
         self.fibula_left = fibula_left
         self.femur_right = femur_right
         self.fibula_right = fibula_right
-        self.len_legs = np.array([self.femur_left, self.fibula_left, self.femur_right, self.fibula_right])
+        self.len_legs = np.array(
+            [self.femur_left, self.fibula_left, self.femur_right, self.fibula_right]
+        )
         self.pos_imu0 = pos_imu0
         self.pos_imu1 = pos_imu1
         self.pos_imu2 = pos_imu2
         self.pos_imu3 = pos_imu3
-        self.pos_imus = np.array([self.pos_imu0, self.pos_imu1, self.pos_imu2, self.pos_imu3])
+        self.pos_imus = np.array(
+            [self.pos_imu0, self.pos_imu1, self.pos_imu2, self.pos_imu3]
+        )
         self.alpha_0 = alpha_0
         self.alpha_1 = alpha_1
         self.alpha_2 = alpha_2
@@ -122,7 +151,7 @@ class TwoLegModel(ssm.StateSpaceModel):
                 if row + 6 == col:
                     self.A[row, col] = self.dt
                 if row + 12 == col:
-                    self.A[row, col] = self.dt ** 2 / 2.0
+                    self.A[row, col] = self.dt**2 / 2.0
         return None
 
     def set_process_covariance(self):
@@ -131,24 +160,38 @@ class TwoLegModel(ssm.StateSpaceModel):
             for col in range(0, self.dim_states):
                 if row < block_size:
                     if row == col:
-                        self.Q[row, col] = self.cov_step ** 5 / 20.0
+                        self.Q[row, col] = self.cov_step**5 / 20.0
                     elif row + 6 == col and not self.diag_Q:
-                        self.Q[row, col] = self.cov_step ** 4 / 8.0
-                        self.Q[col, row] = self.cov_step ** 4 / 8.0
+                        self.Q[row, col] = self.cov_step**4 / 8.0
+                        self.Q[col, row] = self.cov_step**4 / 8.0
                     elif row + 12 == col and not self.diag_Q:
-                        self.Q[row, col] = self.cov_step ** 3 / 6.0
-                        self.Q[col, row] = self.cov_step ** 3 / 6.0
+                        self.Q[row, col] = self.cov_step**3 / 6.0
+                        self.Q[col, row] = self.cov_step**3 / 6.0
                 elif block_size <= row < 2 * block_size:
                     if row == col:
-                        self.Q[row, col] = self.cov_step ** 3 / 3.0
+                        self.Q[row, col] = self.cov_step**3 / 3.0
                     elif row + 6 == col and not self.diag_Q:
-                        self.Q[row, col] = self.cov_step ** 2 / 2.0
-                        self.Q[col, row] = self.cov_step ** 2 / 2.0
+                        self.Q[row, col] = self.cov_step**2 / 2.0
+                        self.Q[col, row] = self.cov_step**2 / 2.0
                 elif 2 * block_size <= row:
                     if row == col:
                         self.Q[row, col] = self.cov_step
-        idx_groups = [[0, 6, 12], [1, 7, 13], [2, 8, 14], [3, 9, 15], [4, 10, 16], [5, 11, 17]]
-        scale_factors = [self.scale_x, self.scale_y, self.scale_phi, self.scale_phi, self.scale_phi, self.scale_phi]
+        idx_groups = [
+            [0, 6, 12],
+            [1, 7, 13],
+            [2, 8, 14],
+            [3, 9, 15],
+            [4, 10, 16],
+            [5, 11, 17],
+        ]
+        scale_factors = [
+            self.scale_x,
+            self.scale_y,
+            self.scale_phi,
+            self.scale_phi,
+            self.scale_phi,
+            self.scale_phi,
+        ]
         for factor, idxs in zip(scale_factors, idx_groups):
             for row, col in itertools.product(idxs, idxs):
                 self.Q[row, col] *= factor
@@ -157,28 +200,77 @@ class TwoLegModel(ssm.StateSpaceModel):
 
     def set_observation_covariance(self):
         if self.dim_observations == 20:
-            self.H = np.diag([self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc, self.sigma_press_acc,
-                              self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc, self.sigma_press_acc])
+            self.H = np.diag(
+                [
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_press_velo,
+                    self.sigma_press_velo,
+                    self.sigma_press_acc,
+                    self.sigma_press_acc,
+                    self.sigma_press_velo,
+                    self.sigma_press_velo,
+                    self.sigma_press_acc,
+                    self.sigma_press_acc,
+                ]
+            )
         elif self.dim_observations == 36:
-            self.H = np.diag([self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_gyro, self.sigma_imu_gyro,
-                              self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_gyro, self.sigma_imu_gyro,
-                              self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_gyro, self.sigma_imu_gyro,
-                              self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_acc, self.sigma_imu_gyro,
-                              self.sigma_imu_gyro, self.sigma_imu_gyro,
-                              self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc,
-                              self.sigma_press_acc, self.sigma_press_acc,
-                              self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_velo, self.sigma_press_acc,
-                              self.sigma_press_acc, self.sigma_press_acc])
+            self.H = np.diag(
+                [
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_acc,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_imu_gyro,
+                    self.sigma_press_velo,
+                    self.sigma_press_velo,
+                    self.sigma_press_velo,
+                    self.sigma_press_acc,
+                    self.sigma_press_acc,
+                    self.sigma_press_acc,
+                    self.sigma_press_velo,
+                    self.sigma_press_velo,
+                    self.sigma_press_velo,
+                    self.sigma_press_acc,
+                    self.sigma_press_acc,
+                    self.sigma_press_acc,
+                ]
+            )
         else:
             raise AssertionError(
-                'Observation dimension must be 20 or 36; got {} instead.'.format(self.dim_observations))
+                "Observation dimension must be 20 or 36; got {} instead.".format(
+                    self.dim_observations
+                )
+            )
         self.H = self.factor_H * self.H
         return None
 
@@ -194,11 +286,21 @@ class TwoLegModel(ssm.StateSpaceModel):
         return np.matmul(self.A, xp.T).T
 
     def state_to_observation(self, x):
-        return state_to_obs(x, self.dim_observations, self.g, self.len_legs, self.pos_imus, self.R)
+        return state_to_obs(
+            x, self.dim_observations, self.g, self.len_legs, self.pos_imus, self.R
+        )
 
     # is not needed -> remove?
     def state_to_observation_linear(self, x, xp):
-        return state_to_obs_linear(x, xp, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus)
+        return state_to_obs_linear(
+            x,
+            xp,
+            self.dim_states,
+            self.dim_observations,
+            self.g,
+            self.len_legs,
+            self.pos_imus,
+        )
 
     def PX0(self):
         return dists.MvNormal(loc=self.a, cov=self.P)
@@ -210,8 +312,15 @@ class TwoLegModel(ssm.StateSpaceModel):
         return MvNormalMissingObservations(loc=self.state_to_observation(x), cov=self.H)
 
     def compute_observation_derivatives(self, x):
-        return compute_jacobian_obs(x, self.dim_states, self.dim_observations, self.g, self.len_legs, self.pos_imus,
-                                    self.R)
+        return compute_jacobian_obs(
+            x,
+            self.dim_states,
+            self.dim_observations,
+            self.g,
+            self.len_legs,
+            self.pos_imus,
+            self.R,
+        )
 
     def compute_ekf_proposal(self, xp, data_t):
         nb_particles = xp.shape[0]
@@ -228,9 +337,12 @@ class TwoLegModel(ssm.StateSpaceModel):
         dh_Q = np.matmul(dh, self.Q)
         S_inv = np.linalg.inv(np.matmul(dh_Q, np.transpose(dh, (0, 2, 1))) + H_masked)
         kalman_gain = np.matmul(np.transpose(dh_Q, (0, 2, 1)), S_inv)
-        prediction_err = data_t[mask_not_nan] - self.state_to_observation(x_hat)[:, mask_not_nan.flatten()]
+        prediction_err = (
+            data_t[mask_not_nan]
+            - self.state_to_observation(x_hat)[:, mask_not_nan.flatten()]
+        )
 
-        mu = x_hat + np.einsum('ijk, ik -> ij', kalman_gain, prediction_err)
+        mu = x_hat + np.einsum("ijk, ik -> ij", kalman_gain, prediction_err)
         sigma = self.Q - np.matmul(kalman_gain, dh_Q)
 
         return mu, sigma
@@ -244,4 +356,4 @@ class TwoLegModel(ssm.StateSpaceModel):
         return dists.MvNormal(loc=mean, cov=covar)
 
     def upper_bound_log_pt(self, t):
-        return 1.0 / np.sqrt((2 * np.pi)**self.dim_states * np.linalg.det(self.Q))
+        return 1.0 / np.sqrt((2 * np.pi) ** self.dim_states * np.linalg.det(self.Q))
