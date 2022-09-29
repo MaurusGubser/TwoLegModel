@@ -56,8 +56,7 @@ class MvNormalMultiDimCov(ProbDist):
         err_msg = 'mvnorm: argument cov must be a Nxdxd ndarray, with d>1, defining a symmetric positive matrix'
         try:
             self.L = np.linalg.cholesky(cov)  # L*L.T = cov
-            self.halflogdetcor = np.array(
-                [np.sum(np.log(np.diag(l))) for l in self.L])
+            self.halflogdetcor = np.array([np.sum(np.log(np.diag(l))) for l in self.L])
         except:
             raise ValueError(err_msg)
         assert cov[0, :, :].shape == (self.dim, self.dim), err_msg
@@ -69,15 +68,13 @@ class MvNormalMultiDimCov(ProbDist):
     def linear_transform(self, z):
         z_transformed = np.empty_like(z)
         for i in range(0, z.shape[0]):
-            z_transformed[i, :] = self.loc[i] + self.scale * np.dot(z[i],
-                                                                    self.L[i].T)
+            z_transformed[i, :] = self.loc[i] + self.scale * np.dot(z[i], self.L[i].T)
         return z_transformed
 
     def logpdf(self, x):
         z_solved = np.empty_like(x.T)
         for i in range(0, x.shape[0]):
-            z_solved[:, i] = solve_triangular(self.L[i], np.transpose(
-                (x - self.loc)[i] / self.scale), lower=True)
+            z_solved[:, i] = solve_triangular(self.L[i], np.transpose((x - self.loc)[i] / self.scale), lower=True)
         # z is dxN, not Nxd
         if np.asarray(self.scale).ndim == 0:
             # handle as array of dimension N? To handle with logdet...
@@ -86,8 +83,7 @@ class MvNormalMultiDimCov(ProbDist):
             # This case is not adapted to cov (N, d, d) form
             logdet = np.sum(np.log(self.scale), axis=-1)
         logdet += self.halflogdetcor
-        return - 0.5 * np.sum(z_solved * z_solved,
-                              axis=0) - logdet - self.dim * HALFLOG2PI
+        return - 0.5 * np.sum(z_solved * z_solved, axis=0) - logdet - self.dim * HALFLOG2PI
 
     def rvs(self, size=None):
         if size is None:
@@ -127,10 +123,7 @@ class MvNormalMultiDimCov(ProbDist):
         Siginv = inv(Sigma)
         Qpost = inv(self.cov) + n * Siginv
         Sigpost = inv(Qpost)
-
-        mupost = (np.matmul(Siginv, self.loc) +
-                  np.matmul(Siginv, np.sum(x, axis=0)))
-
+        mupost = (np.matmul(Siginv, self.loc) + np.matmul(Siginv, np.sum(x, axis=0)))
         return MvNormalMultiDimCov(loc=mupost, cov=Sigpost)
 
 
@@ -149,15 +142,12 @@ class MvStudent(ProbDist):
     def logpdf(self, x):
         nb_particles, _ = x.shape
         return np.array(
-            [stats.multivariate_t(loc=self.locs[i], shape=self.shape,
-                                  allow_singular=True).logpdf(x[i, :]) for i in
+            [stats.multivariate_t(loc=self.locs[i], shape=self.shape, allow_singular=True).logpdf(x[i, :]) for i in
              range(0, nb_particles)])
 
     def rvs(self, size=1):
         return np.array(
-            [stats.multivariate_t(loc=mu, shape=self.shape,
-                                  allow_singular=True).rvs(size=1) for mu in
-             self.locs])
+            [stats.multivariate_t(loc=mu, shape=self.shape, allow_singular=True).rvs(size=1) for mu in self.locs])
 
     def ppf(self, u):
         warnings.warn('Using ppf of MvStudent', UserWarning)
@@ -171,8 +161,7 @@ class MvNormalMissingObservations(MvNormal):
 
     def logpdf(self, x):
         nb_part, _ = x.shape
-        assert nb_part == 1, 'x is expected to be 2-dimensional, got {} array instead'.format(
-            x.shape)
+        assert nb_part == 1, 'x is expected to be 2-dimensional, got {} array instead'.format(x.shape)
         mask_not_nan = np.invert(np.isnan(x))[0]
         x_not_nan = x[:, mask_not_nan]
         loc_not_nan = self.loc[:, mask_not_nan]
@@ -180,8 +169,7 @@ class MvNormalMissingObservations(MvNormal):
         nb_non_nan = np.sum(mask_not_nan)
         L_not_nan = np.reshape(self.L[mask_2d], (nb_non_nan, nb_non_nan))
 
-        z = solve_triangular(L_not_nan, np.transpose(
-            (x_not_nan - loc_not_nan) / self.scale), lower=True)
+        z = solve_triangular(L_not_nan, np.transpose((x_not_nan - loc_not_nan) / self.scale), lower=True)
         # z is dxN, not Nxd
         if np.asarray(self.scale).ndim == 0:
             logdet = self.dim * np.log(self.scale)

@@ -19,38 +19,30 @@ def run_particle_filter(fk_model, nb_particles, ESSrmin=0.5):
     end_user, end_process = time.time(), time.process_time()
     s_user = end_user - start_user
     s_process = end_process - start_process
-    print(
-        'Time user {:.0f}min {:.0f}s; time processor {:.0f}min {:.0f}s'.format(
-            s_user // 60, s_user % 60,
-            s_process // 60, s_process % 60))
-    print('Resampled {} of totally {} steps.'.format(
-        np.sum(pf.summaries.rs_flags), nb_timesteps))
+    print('Time user {:.0f}min {:.0f}s; time processor {:.0f}min {:.0f}s'.format(s_user // 60, s_user % 60,
+                                                                                 s_process // 60, s_process % 60))
+    print('Resampled {} of totally {} steps.'.format(np.sum(pf.summaries.rs_flags), nb_timesteps))
     loglikelihood = pf.summaries.logLts[-1]
     print('Log likelihood = {:.3E}'.format(loglikelihood))
     return pf
 
 
 def plot_results(pf, x, y, dt, export_name, show_fig, plt_smthng=False):
-    plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt,
-                      show_fig=show_fig,
+    plotter = Plotter(true_states=np.array(x), true_obs=np.array(y), delta_t=dt, show_fig=show_fig,
                       export_name=export_name)
 
     plotter.plot_observations(np.array(pf.hist.X), model=my_model)
     # plotter.plot_particles_trajectories(np.array(pf.hist.X))
     particles_mean = np.array([m['mean'] for m in pf.summaries.moments])
     particles_var = np.array([m['var'] for m in pf.summaries.moments])
-    plotter.plot_particle_moments(particles_mean=particles_mean,
-                                  particles_var=particles_var)
+    plotter.plot_particle_moments(particles_mean=particles_mean, particles_var=particles_var)
     plotter.plot_ESS(pf.summaries.ESSs)
     plotter.plot_logLts_one_run(pf.summaries.logLts)
     if plt_smthng:
-        smooth_trajectories = pf.hist.backward_sampling(10, linear_cost=False,
-                                                        return_ar=False)
+        smooth_trajectories = pf.hist.backward_sampling(10, linear_cost=False, return_ar=False)
         data_writer = DataReaderWriter()
-        data_writer.export_trajectory(np.array(smooth_trajectories), dt,
-                                      export_name)
-        plotter.plot_smoothed_trajectories(
-            samples=np.array(smooth_trajectories))
+        data_writer.export_trajectory(np.array(smooth_trajectories), dt, export_name)
+        plotter.plot_smoothed_trajectories(samples=np.array(smooth_trajectories))
     return None
 
 
@@ -134,8 +126,7 @@ if __name__ == '__main__':
     nb_particles = 500
     fk_boot = ssm.Bootstrap(ssm=my_model, data=y)
     fk_guided = ssm.GuidedPF(ssm=my_model, data=y)
-    pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles,
-                             ESSrmin=0.5)
+    pf = run_particle_filter(fk_model=fk_guided, nb_particles=nb_particles, ESSrmin=0.5)
 
     # ---------------------------- plot results ----------------------------
     export_name_single = 'SingleRun_{}_steps{}_particles{}_factorP{}_factorQ{}_factorH{}_factorProp{}'.format(
@@ -148,5 +139,4 @@ if __name__ == '__main__':
         factor_proposal)
     show_fig = True
     plt_smoothed = True
-    plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig,
-                 plt_smthng=plt_smoothed)
+    plot_results(pf, x, y, dt, export_name_single, show_fig=show_fig, plt_smthng=plt_smoothed)

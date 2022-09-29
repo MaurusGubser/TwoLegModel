@@ -9,10 +9,9 @@ from particles.collectors import Moments, LogLts
 
 
 class TruncatedPMMH(PMMH):
-    def __init__(self, niter=10, verbose=0, ssm_cls=None,
-                 smc_cls=particles.SMC, prior=None, data=None, smc_options=None,
-                 fk_cls=Bootstrap, Nx=100, theta0=None, adaptive=True, scale=1.,
-                 rw_cov=None, t_start=0):
+    def __init__(self, niter=10, verbose=0, ssm_cls=None, smc_cls=particles.SMC, prior=None, data=None,
+                 smc_options=None, fk_cls=Bootstrap, Nx=100, theta0=None, adaptive=True, scale=1., rw_cov=None,
+                 t_start=0):
         """
         Parameters
         ----------
@@ -48,11 +47,8 @@ class TruncatedPMMH(PMMH):
             start time, on which likelihood is conditioned, i.e. p(y_{t_start:T}|y_{0:t_start})
         """
         self.t_start = t_start
-        PMMH.__init__(self, niter=niter, verbose=verbose, ssm_cls=ssm_cls,
-                      smc_cls=smc_cls, prior=prior, data=data,
-                      smc_options=smc_options,
-                      fk_cls=fk_cls, Nx=Nx, theta0=theta0, adaptive=adaptive,
-                      scale=scale,
+        PMMH.__init__(self, niter=niter, verbose=verbose, ssm_cls=ssm_cls, smc_cls=smc_cls, prior=prior, data=data,
+                      smc_options=smc_options, fk_cls=fk_cls, Nx=Nx, theta0=theta0, adaptive=adaptive, scale=scale,
                       rw_cov=rw_cov)
         self.smc_options.update({'collect': [LogLts()]})
 
@@ -67,5 +63,4 @@ class TruncatedPMMH(PMMH):
         if np.isfinite(self.prop.lpost[0]):
             pf = self.alg_instance(ssp.rec_to_dict(self.prop.theta[0]))
             pf.run()
-            self.prop.lpost[0] += pf.summaries.logLts[-1] - pf.summaries.logLts[
-                self.t_start]
+            self.prop.lpost[0] += pf.summaries.logLts[-1] - pf.summaries.logLts[self.t_start]
