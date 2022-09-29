@@ -1,4 +1,5 @@
-from sympy import symbols, Function, Matrix, diff, cos, sin, simplify, init_printing
+from sympy import symbols, Function, Matrix, diff, cos, sin, simplify, \
+    init_printing
 from IPython.display import display
 
 # two-leg-model parameters
@@ -17,20 +18,26 @@ phi3 = Function('phi_3')(t)
 
 # Rotation matrices for limb-aligned coordinate systems
 Rphi0 = Matrix([[cos(phi0), sin(phi0)], [-sin(phi0), cos(phi0)]])
-Rphi1 = Matrix([[cos(phi0 + phi1), sin(phi0 + phi1)], [-sin(phi0 + phi1), cos(phi0 + phi1)]])
+Rphi1 = Matrix([[cos(phi0 + phi1), sin(phi0 + phi1)],
+                [-sin(phi0 + phi1), cos(phi0 + phi1)]])
 Rphi2 = Matrix([[cos(phi2), sin(phi2)], [-sin(phi2), cos(phi2)]])
-Rphi3 = Matrix([[cos(phi2 + phi3), sin(phi2 + phi3)], [-sin(phi2 + phi3), cos(phi2 + phi3)]])
+Rphi3 = Matrix([[cos(phi2 + phi3), sin(phi2 + phi3)],
+                [-sin(phi2 + phi3), cos(phi2 + phi3)]])
 
 # position of imus and pressure sensors
 
 # left leg
 r0 = Matrix([x + s0 * sin(phi0), y - s0 * cos(phi0)])
-r1 = Matrix([x + l0 * sin(phi0) + s1 * sin(phi0 + phi1), y - l0 * cos(phi0) - s1 * cos(phi0 + phi1)])
-r4 = Matrix([x + l0 * sin(phi0) + l1 * sin(phi0 + phi1), y - l0 * cos(phi0) - l1 * cos(phi0 + phi1)])
+r1 = Matrix([x + l0 * sin(phi0) + s1 * sin(phi0 + phi1),
+             y - l0 * cos(phi0) - s1 * cos(phi0 + phi1)])
+r4 = Matrix([x + l0 * sin(phi0) + l1 * sin(phi0 + phi1),
+             y - l0 * cos(phi0) - l1 * cos(phi0 + phi1)])
 # right leg
 r2 = Matrix([x + s2 * sin(phi2), y - s2 * cos(phi2)])
-r3 = Matrix([x + l2 * sin(phi2) + s3 * sin(phi2 + phi3), y - l2 * cos(phi2) - s3 * cos(phi2 + phi3)])
-r5 = Matrix([x + l2 * sin(phi2) + l3 * sin(phi2 + phi3), y - l2 * cos(phi2) - l3 * cos(phi2 + phi3)])
+r3 = Matrix([x + l2 * sin(phi2) + s3 * sin(phi2 + phi3),
+             y - l2 * cos(phi2) - s3 * cos(phi2 + phi3)])
+r5 = Matrix([x + l2 * sin(phi2) + l3 * sin(phi2 + phi3),
+             y - l2 * cos(phi2) - l3 * cos(phi2 + phi3)])
 
 # first and second derivatives
 r0dot = simplify(Rphi0 * diff(r0, t))
@@ -49,6 +56,7 @@ r5ddot = simplify(diff(r5, t, 2))
 
 # print first and second derivatives
 init_printing()
-rs = [r0dot, r0ddot, r1dot, r1ddot, r4dot, r4ddot, r2dot, r2ddot, r3dot, r3ddot, r5dot, r5ddot]
+rs = [r0dot, r0ddot, r1dot, r1ddot, r4dot, r4ddot, r2dot, r2ddot, r3dot, r3ddot,
+      r5dot, r5ddot]
 for r in rs:
     display(r)

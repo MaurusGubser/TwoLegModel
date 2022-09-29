@@ -1,8 +1,6 @@
 import time
 import numpy as np
 import particles
-from matplotlib import pyplot as plt
-import seaborn as sb
 
 from particles.collectors import Moments, LogLts
 from particles import state_space_models as ssm
